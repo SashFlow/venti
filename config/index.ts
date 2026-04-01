@@ -26,7 +26,7 @@ export const config = {
 		// Whether organizations are enabled in general
 		enable: true,
 		// Whether billing for organizations should be enabled (below you can enable it for users instead)
-		enableBilling: true,
+		enableBilling: false,
 		// Whether the organization should be hidden from the user (use this for multi-tenant applications)
 		hideOrganization: false,
 		// Should users be able to create new organizations? Otherwise only admin users can create them
@@ -51,8 +51,8 @@ export const config = {
 	},
 	// Authentication
 	auth: {
-		// Whether users should be able to create accounts (otherwise users can only be by admins)
-		enableSignup: true,
+		// Whether users should be able to create accounts (otherwise users can only be invited by admins)
+		enableSignup: false,
 		// Whether users should be able to sign in with a magic link
 		enableMagicLink: true,
 		// Whether users should be able to sign in with a social provider
@@ -80,11 +80,11 @@ export const config = {
 		// the themes that should be available in the app
 		enabledThemes: ["light", "dark"],
 		// the default theme
-		defaultTheme: "dark",
+		defaultTheme: "light",
 		// the saas part of the application
 		saas: {
 			// whether the saas part should be enabled (otherwise all routes will be redirect to the marketing page)
-			enabled: false,
+			enabled: true,
 			// whether the sidebar layout should be used
 			useSidebarLayout: true,
 		},

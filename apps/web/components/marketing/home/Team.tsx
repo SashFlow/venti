@@ -7,7 +7,7 @@ function AnimatedTeam() {
 	return (
 		<section
 			id="team"
-			className="flex flex-col justify-center py-10 overflow-hidden bg-background"
+			className="flex flex-col justify-center py-10 overflow-hidden bg-[#1E1E1E]"
 		>
 			<div className="m-auto bg-secondary-foreground rounded-2xl p-4">
 				<motion.h2

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export function Footer() {
 	return (
-		<div className="bg-background text-white px-[15px] js-footer-bar [&amp;.is-grayed]:brightness-50 transition-all duration-1000 overflow-hidden">
+		<div className="bg-[#1E1E1E] text-white px-[15px] js-footer-bar [&amp;.is-grayed]:brightness-50 transition-all duration-1000 overflow-hidden">
 			<div className="py-[100px] md:py-[200px] grid grid-cols-12 gap-x-[15px] gap-y-[30px]">
 				<motion.div
 					initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}

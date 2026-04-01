@@ -1,6 +1,6 @@
 import { withContentCollections } from "@content-collections/next";
-// @ts-expect-error - PrismaPlugin is not typed
 import { PrismaPlugin } from "@prisma/nextjs-monorepo-workaround-plugin";
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import nextIntlPlugin from "next-intl/plugin";
 
@@ -71,4 +71,14 @@ const nextConfig: NextConfig = {
 	},
 };
 
-export default withContentCollections(withNextIntl(nextConfig));
+export default withContentCollections(
+	withNextIntl(
+		withSentryConfig(nextConfig, {
+			org: "sashflow",
+			project: "venti",
+			authToken: process.env.SENTRY_AUTH_TOKEN,
+			tunnelRoute: "/monitoring-tunnel",
+			silent: false,
+		}),
+	),
+);

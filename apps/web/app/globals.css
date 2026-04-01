@@ -153,8 +153,8 @@ input[cmdk-input] {
 	--popover-foreground: oklch(0.2046 0 0);
 	--primary: oklch(0.6200 0.2315 29.1176);
 	--primary-foreground: oklch(1.0000 0 0);
-	--secondary: oklch(0.2046 0 0);
-	--secondary-foreground: oklch(1.0000 0 0);
+	--secondary: oklch(1.0000 0 0);
+	--secondary-foreground: oklch(0.2046 0 0);
 	--muted: oklch(0.9056 0.0323 47.3385);
 	--muted-foreground: oklch(0.4640 0 0);
 	--accent: oklch(0.4576 0.0675 195.0538);

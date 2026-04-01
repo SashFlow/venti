@@ -71,7 +71,7 @@ export function Features() {
 	return (
 		<section
 			id="features"
-			className="py-32 px-8 bg-background overflow-hidden"
+			className="py-32 px-8 bg-[#1E1E1E] overflow-hidden"
 		>
 			<div
 				ref={containerRef}
@@ -106,11 +106,11 @@ export function Features() {
 							>
 								<AnimatedParagraph
 									text={item.title}
-									className="font-approachable text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-foreground"
+									className="font-approachable text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white"
 								/>
 								<AnimatedParagraph
 									text={item.subheading}
-									className="font-approachable text-xl md:text-2xl text-foreground/70"
+									className="font-approachable text-xl md:text-2xl text-white/70"
 								/>
 							</div>
 						);

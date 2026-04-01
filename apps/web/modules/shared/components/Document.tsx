@@ -9,7 +9,8 @@ import type { PropsWithChildren } from "react";
 export async function Document({
 	children,
 	locale,
-}: PropsWithChildren<{ locale: string }>) {
+	className,
+}: PropsWithChildren<{ locale: string; className?: string }>) {
 	const cookieStore = await cookies();
 	const consentCookie = cookieStore.get("consent");
 
@@ -22,6 +23,7 @@ export async function Document({
 			<body
 				className={cn(
 					"min-h-screen bg-background text-foreground antialiased",
+					className,
 				)}
 			>
 				<NuqsAdapter>

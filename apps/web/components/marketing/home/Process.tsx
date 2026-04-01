@@ -18,8 +18,8 @@ const Process = () => {
 	}, [activeStep]);
 
 	return (
-		<section className="bg-background">
-			<div className="bg-linear-to-b from-background via-accent to-background py-32 px-8 text-accent-foreground overflow-hidden rounded-3xl">
+		<section className="bg-[#1E1E1E]">
+			<div className="bg-linear-to-b from-[#1E1E1E] via-accent to-[#1E1E1E] py-32 px-8 text-accent-foreground overflow-hidden rounded-3xl">
 				<div className="max-w-7xl mx-auto">
 					<FadeUp className="mb-20">
 						<h2 className="editorial-headline text-5xl md:text-6xl mb-6 uppercase">

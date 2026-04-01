@@ -17,7 +17,7 @@ export function Hero() {
 				{/* Blur overlay */}
 				<div className="absolute inset-0 backdrop-blur-md bg-black/20" />
 				{/* Gradient to black transition at bottom */}
-				<div className="absolute bottom-0 left-0 right-0 h-48 bg-linear-to-t from-background to-transparent" />
+				<div className="absolute bottom-0 left-0 right-0 h-48 bg-linear-to-t from-[#1E1E1E] to-transparent" />
 			</div>
 
 			<section
