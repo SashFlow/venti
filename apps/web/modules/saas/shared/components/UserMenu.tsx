@@ -32,10 +32,12 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { useIsClient } from "usehooks-ts";
 
 export function UserMenu({ showUserName }: { showUserName?: boolean }) {
 	const t = useTranslations();
 	const { user } = useSession();
+	const isClient = useIsClient();
 	const { setTheme: setCurrentTheme, theme: currentTheme } = useTheme();
 	const [theme, setTheme] = useState<string>(currentTheme ?? "system");
 
@@ -112,36 +114,39 @@ export function UserMenu({ showUserName }: { showUserName?: boolean }) {
 
 				<DropdownMenuSeparator />
 
-				{/* Color mode selection */}
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>
-						<SunIcon className="mr-2 size-4" />
-						{t("app.userMenu.colorMode")}
-					</DropdownMenuSubTrigger>
-					<DropdownMenuPortal>
-						<DropdownMenuSubContent>
-							<DropdownMenuRadioGroup
-								value={theme}
-								onValueChange={(value) => {
-									setTheme(value);
-									setCurrentTheme(value);
-								}}
-							>
-								{colorModeOptions.map((option) => (
-									<DropdownMenuRadioItem
-										key={option.value}
-										value={option.value}
+				{isClient && (
+					<>
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>
+								<SunIcon className="mr-2 size-4" />
+								{t("app.userMenu.colorMode")}
+							</DropdownMenuSubTrigger>
+							<DropdownMenuPortal>
+								<DropdownMenuSubContent>
+									<DropdownMenuRadioGroup
+										value={theme}
+										onValueChange={(value) => {
+											setTheme(value);
+											setCurrentTheme(value);
+										}}
 									>
-										<option.icon className="mr-2 size-4 opacity-50" />
-										{option.label}
-									</DropdownMenuRadioItem>
-								))}
-							</DropdownMenuRadioGroup>
-						</DropdownMenuSubContent>
-					</DropdownMenuPortal>
-				</DropdownMenuSub>
+										{colorModeOptions.map((option) => (
+											<DropdownMenuRadioItem
+												key={option.value}
+												value={option.value}
+											>
+												<option.icon className="mr-2 size-4 opacity-50" />
+												{option.label}
+											</DropdownMenuRadioItem>
+										))}
+									</DropdownMenuRadioGroup>
+								</DropdownMenuSubContent>
+							</DropdownMenuPortal>
+						</DropdownMenuSub>
 
-				<DropdownMenuSeparator />
+						<DropdownMenuSeparator />
+					</>
+				)}
 
 				<DropdownMenuItem asChild>
 					<Link href="/app/settings/general">

@@ -12,10 +12,16 @@ export const NavigationSheet = () => {
 				<SheetTitle>Navigation Menu</SheetTitle>
 			</VisuallyHidden>
 
-			<SheetTrigger asChild>
-				<Button className="rounded-full" size="icon" variant="outline">
-					<Menu />
-				</Button>
+			<SheetTrigger
+				render={
+					<Button
+						className="rounded-full"
+						size="icon"
+						variant="outline"
+					/>
+				}
+			>
+				<Menu />
 			</SheetTrigger>
 			<SheetContent className="px-6 py-3">
 				<Logo />

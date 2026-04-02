@@ -162,7 +162,7 @@ export function OrganizationInvitationsList({
 						{canUserEditInvitations && (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button size="icon" variant="ghost">
+									<Button asChild size="icon" variant="ghost">
 										<MoreVerticalIcon className="size-4" />
 									</Button>
 								</DropdownMenuTrigger>

@@ -34,7 +34,12 @@ export function LocaleSwitch({
 	return (
 		<DropdownMenu modal={false}>
 			<DropdownMenuTrigger asChild>
-				<Button variant="ghost" size="icon" aria-label="Language">
+				<Button
+					asChild
+					variant="ghost"
+					size="icon"
+					aria-label="Language"
+				>
 					<LanguagesIcon className="size-4" />
 				</Button>
 			</DropdownMenuTrigger>

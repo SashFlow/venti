@@ -1,6 +1,7 @@
 "use client";
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import { Slot, Slottable } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "../utils";
@@ -46,14 +47,27 @@ function Button({
 	className,
 	variant = "default",
 	size = "default",
+	asChild = false,
+	loading = false,
+	children,
 	...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+	VariantProps<typeof buttonVariants> & {
+		asChild?: boolean;
+		loading?: boolean;
+	}) {
+	const Comp = asChild ? Slot : ButtonPrimitive;
+
 	return (
-		<ButtonPrimitive
+		<Comp
 			data-slot="button"
+			data-loading={loading ? "true" : undefined}
+			aria-busy={loading || undefined}
 			className={cn(buttonVariants({ variant, size, className }))}
 			{...props}
-		/>
+		>
+			<Slottable>{children}</Slottable>
+		</Comp>
 	);
 }
 
