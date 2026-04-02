@@ -1,8 +1,8 @@
+import { LocaleLink } from "@i18n/routing";
 import { slugifyHeadline } from "@shared/lib/content";
 import type { MDXComponents } from "mdx/types";
 import type { ImageProps } from "next/image";
 import Image from "next/image";
-import { LocaleLink } from "../../../../i18n/routing";
 
 export const mdxComponents = {
 	a: (props) => {

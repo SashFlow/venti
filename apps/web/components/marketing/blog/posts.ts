@@ -1,5 +1,5 @@
-import type { Post } from "@marketing/blog/types";
 import { allPosts } from "content-collections";
+import type { Post } from "./types";
 
 export async function getAllPosts(): Promise<Post[]> {
 	// ... add a custom loader here for your posts and map it to the post schema

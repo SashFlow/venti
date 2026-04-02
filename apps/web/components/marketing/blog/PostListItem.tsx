@@ -1,8 +1,8 @@
 "use client";
 
-import type { Post } from "@marketing/blog/types";
+import { LocaleLink } from "@i18n/routing";
 import Image from "next/image";
-import { LocaleLink } from "../../../../i18n/routing";
+import type { Post } from "./types";
 
 export function PostListItem({ post }: { post: Post }) {
 	const { title, excerpt, authorName, image, date, path, authorImage, tags } =

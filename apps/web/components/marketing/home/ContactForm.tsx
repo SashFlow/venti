@@ -51,7 +51,7 @@ export function ContactForm() {
 	return (
 		<div>
 			{form.formState.isSubmitSuccessful ? (
-				<Alert variant="success">
+				<Alert variant="default">
 					<MailCheckIcon />
 					<AlertTitle>
 						{t("contact.form.notifications.success")}

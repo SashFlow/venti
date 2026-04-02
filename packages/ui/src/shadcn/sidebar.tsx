@@ -2,23 +2,24 @@
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+import { Slot, Slottable } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 import * as React from "react";
-import { Input } from "~/ui/input";
-import { Separator } from "~/ui/separator";
+import { useIsMobile } from "../hooks/use-mobile";
+import { cn } from "../utils";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Separator } from "./separator";
 import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetHeader,
 	SheetTitle,
-} from "~/ui/sheet";
-import { Skeleton } from "~/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "~/ui/tooltip";
-import { useIsMobile } from "../hooks/use-mobile";
-import { cn } from "../utils";
-import { Button } from "./button";
+} from "./sheet";
+import { Skeleton } from "./skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -78,6 +79,7 @@ function SidebarProvider({
 			}
 
 			// This sets the cookie to keep the sidebar state.
+			// biome-ignore lint/suspicious/noDocumentCookie: Required for client-side sidebar state persistence
 			document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
 		},
 		[setOpenProp, open],
@@ -511,17 +513,22 @@ const sidebarMenuButtonVariants = cva(
 
 function SidebarMenuButton({
 	render,
+	asChild = false,
 	isActive = false,
 	variant = "default",
 	size = "default",
 	tooltip,
 	className,
+	children,
 	...props
 }: useRender.ComponentProps<"button"> &
 	React.ComponentProps<"button"> & {
+		asChild?: boolean;
 		isActive?: boolean;
 		tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 	} & VariantProps<typeof sidebarMenuButtonVariants>) {
+	const resolvedRender = asChild ? (render ?? <Slot />) : render;
+	const resolvedChildren = asChild ? <Slottable>{children}</Slottable> : children;
 	const { isMobile, state } = useSidebar();
 	const comp = useRender({
 		defaultTagName: "button",
@@ -531,10 +538,11 @@ function SidebarMenuButton({
 					sidebarMenuButtonVariants({ variant, size }),
 					className,
 				),
+				children: resolvedChildren,
 			},
 			props,
 		),
-		render: !tooltip ? render : <TooltipTrigger render={render} />,
+		render: !tooltip ? resolvedRender : <TooltipTrigger render={resolvedRender} />,
 		state: {
 			slot: "sidebar-menu-button",
 			sidebar: "menu-button",
@@ -684,15 +692,20 @@ function SidebarMenuSubItem({
 
 function SidebarMenuSubButton({
 	render,
+	asChild = false,
 	size = "md",
 	isActive = false,
 	className,
+	children,
 	...props
 }: useRender.ComponentProps<"a"> &
 	React.ComponentProps<"a"> & {
+		asChild?: boolean;
 		size?: "sm" | "md";
 		isActive?: boolean;
 	}) {
+	const resolvedRender = asChild ? (render ?? <Slot />) : render;
+	const resolvedChildren = asChild ? <Slottable>{children}</Slottable> : children;
 	return useRender({
 		defaultTagName: "a",
 		props: mergeProps<"a">(
@@ -701,10 +714,11 @@ function SidebarMenuSubButton({
 					"flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground ring-sidebar-ring outline-hidden group-data-[collapsible=icon]:hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[size=md]:text-sm data-[size=sm]:text-xs data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
 					className,
 				),
+				children: resolvedChildren,
 			},
 			props,
 		),
-		render,
+		render: resolvedRender,
 		state: {
 			slot: "sidebar-menu-sub-button",
 			sidebar: "menu-sub-button",

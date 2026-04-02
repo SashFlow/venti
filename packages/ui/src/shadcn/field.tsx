@@ -2,9 +2,9 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import { useMemo } from "react";
-import { Label } from "~/ui/label";
-import { Separator } from "~/ui/separator";
 import { cn } from "../utils";
+import { Label } from "./label";
+import { Separator } from "./separator";
 
 function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
 	return (
@@ -74,8 +74,7 @@ function Field({
 	...props
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
 	return (
-		<div
-			role="group"
+		<fieldset
 			data-slot="field"
 			data-orientation={orientation}
 			className={cn(fieldVariants({ orientation }), className)}
@@ -193,7 +192,7 @@ function FieldError({
 			...new Map(errors.map((error) => [error?.message, error])).values(),
 		];
 
-		if (uniqueErrors?.length == 1) {
+			if (uniqueErrors?.length === 1) {
 			return uniqueErrors[0]?.message;
 		}
 

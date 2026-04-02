@@ -65,7 +65,7 @@ export function NewsletterSignupContainer({
 
 			{status === "success" && (
 				<div>
-					<Alert variant="success">
+					<Alert variant="default">
 						<AlertTitle>Success!</AlertTitle>
 						<AlertDescription>{successMessage}</AlertDescription>
 					</Alert>

@@ -27,7 +27,15 @@ export function OrganizationRoleSelect({
 	);
 
 	return (
-		<Select value={value} onValueChange={onSelect} disabled={disabled}>
+		<Select
+			value={value}
+			onValueChange={(selectedRole) => {
+				if (selectedRole) {
+					onSelect(selectedRole);
+				}
+			}}
+			disabled={disabled}
+		>
 			<SelectTrigger>
 				<SelectValue />
 			</SelectTrigger>

@@ -49,11 +49,7 @@ export function FaqSection({ className }: { className?: string }) {
 						{t("faq.description")}
 					</p>
 				</div>
-				<Accordion
-					type="single"
-					collapsible
-					className="w-full space-y-2"
-				>
+				<Accordion className="w-full space-y-2">
 					{items.map((item, i) => (
 						<AccordionItem
 							key={`faq-item-${i}`}

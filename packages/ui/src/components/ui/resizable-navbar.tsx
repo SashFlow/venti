@@ -1,13 +1,13 @@
 "use client";
-import { IconMenu2, IconX } from "@tabler/icons-react";
+import { MenuIcon, XIcon } from "lucide-react";
 import {
 	AnimatePresence,
 	motion,
 	useMotionValueEvent,
 	useScroll,
-} from "motion/react";
+} from "framer-motion";
 import React, { useRef, useState } from "react";
-import { cn } from "../utils";
+import { cn } from "../../utils";
 
 interface NavbarProps {
 	children: React.ReactNode;
@@ -55,7 +55,7 @@ export const Navbar = ({ children, className }: NavbarProps) => {
 	});
 	const [visible, setVisible] = useState<boolean>(false);
 
-	useMotionValueEvent(scrollY, "change", (latest) => {
+	useMotionValueEvent(scrollY, "change", (latest: number) => {
 		if (latest > 100) {
 			setVisible(true);
 		} else {
@@ -193,7 +193,6 @@ export const MobileNavMenu = ({
 	children,
 	className,
 	isOpen,
-	onClose,
 }: MobileNavMenuProps) => {
 	return (
 		<AnimatePresence>
@@ -222,18 +221,19 @@ export const MobileNavToggle = ({
 	onClick: () => void;
 }) => {
 	return isOpen ? (
-		<IconX className="text-black dark:text-white" onClick={onClick} />
+		<XIcon className="text-black dark:text-white" onClick={onClick} />
 	) : (
-		<IconMenu2 className="text-black dark:text-white" onClick={onClick} />
+		<MenuIcon className="text-black dark:text-white" onClick={onClick} />
 	);
 };
 
 export const NavbarLogo = () => {
 	return (
 		<a
-			href="#"
+			href="/"
 			className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-normal text-black"
 		>
+			{/* biome-ignore lint/performance/noImgElement: required for library component optimization */}
 			<img
 				src="https://assets.aceternity.com/logo-dark.png"
 				alt="logo"

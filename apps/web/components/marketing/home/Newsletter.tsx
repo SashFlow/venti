@@ -1,40 +1,9 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { orpc } from "@shared/lib/orpc-query-utils";
-import { useMutation } from "@tanstack/react-query";
-
-import { useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 import Link from "next/link";
 import { FadeUp } from "../shared/Motion";
 
-const formSchema = z.object({
-	email: z.string().email(),
-});
-type FormValues = z.infer<typeof formSchema>;
-
 export function Newsletter() {
-	const t = useTranslations();
-	const newsletterSignupMutation = useMutation(
-		orpc.newsletter.subscribe.mutationOptions(),
-	);
-
-	const form = useForm<FormValues>({
-		resolver: zodResolver(formSchema),
-	});
-
-	const onSubmit = form.handleSubmit(async ({ email }) => {
-		try {
-			await newsletterSignupMutation.mutateAsync({ email });
-		} catch {
-			form.setError("email", {
-				message: t("newsletter.hints.error.message"),
-			});
-		}
-	});
-
 	return (
 		<section className="py-32 px-8" id="contact">
 			<FadeUp className="max-w-7xl mx-auto bg-primary p-16 md:p-32 relative overflow-hidden">

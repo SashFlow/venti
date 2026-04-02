@@ -1,3 +1,4 @@
+import { AppLayout } from "@components/saas/shared/layout";
 import { config } from "@repo/config";
 import { createPurchasesHelper } from "@repo/payments/lib/helper";
 import { getOrganizationList, getSession } from "@saas/auth/lib/server";
@@ -68,5 +69,5 @@ export default async function Layout({ children }: PropsWithChildren) {
 		}
 	}
 
-	return children;
+	return <AppLayout>{children}</AppLayout>;
 }

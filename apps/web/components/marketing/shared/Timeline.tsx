@@ -58,7 +58,7 @@ export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
 				))}
 				<div
 					style={{
-						height: height + "px",
+						height: `${height}px`,
 					}}
 					className="absolute left-8 md:left-8 top-0 overflow-hidden w-[2px] bg-linear-to-b from-transparent from-0% via-neutral-200 dark:via-neutral-700 to-transparent to-[99%] [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]"
 				>

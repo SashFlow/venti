@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { Button } from '@kit/ui/button';
-import { cn } from '@kit/ui/utils';
+import type { Button } from '../../shadcn/button';
+import { cn } from '../../utils';
 
 import { CtaButton } from './cta-button';
 import { GradientSecondaryText } from './gradient-secondary-text';

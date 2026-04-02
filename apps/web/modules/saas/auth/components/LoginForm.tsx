@@ -164,7 +164,7 @@ export function LoginForm() {
 
 			{form.formState.isSubmitSuccessful &&
 			signinMode === "magic-link" ? (
-				<Alert variant="success">
+				<Alert variant="default">
 					<MailboxIcon />
 					<AlertTitle>
 						{t("auth.login.hints.linkSent.title")}

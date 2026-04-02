@@ -6,6 +6,7 @@ import { cn } from "../utils";
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
 	return (
+		// biome-ignore lint/a11y/noLabelWithoutControl: This is a reusable wrapper component that can wrap multiple controls or be used with htmlFor
 		<label
 			data-slot="label"
 			className={cn(

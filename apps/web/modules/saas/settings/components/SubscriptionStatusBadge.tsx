@@ -1,11 +1,14 @@
 "use client";
 
-import type { BadgeProps } from "@repo/ui/badge";
 import { Badge } from "@repo/ui/badge";
 import { useTranslations } from "next-intl";
+import type { ComponentProps } from "react";
+
+type BadgeVariant = ComponentProps<typeof Badge>["variant"];
 
 export function SubscriptionStatusBadge({
 	status,
+	className,
 }: {
 	status: string;
 	className?: string;
@@ -23,16 +26,23 @@ export function SubscriptionStatusBadge({
 		unpaid: t("settings.billing.activePlan.status.unpaid"),
 	};
 
-	const badgeColors: Record<string, BadgeProps["variant"]> = {
-		active: "success",
+	const badgeColors: Record<string, NonNullable<BadgeVariant>> = {
+		active: "default",
 		canceled: "destructive",
 		expired: "destructive",
-		incomplete: "warning",
-		past_due: "warning",
-		paused: "warning",
-		trialing: "info",
+		incomplete: "outline",
+		past_due: "outline",
+		paused: "outline",
+		trialing: "secondary",
 		unpaid: "destructive",
 	};
 
-	return <Badge variant={badgeColors[status]}>{badgeLabels[status]}</Badge>;
+	return (
+		<Badge
+			className={className}
+			variant={badgeColors[status] ?? "secondary"}
+		>
+			{badgeLabels[status] ?? status}
+		</Badge>
+	);
 }

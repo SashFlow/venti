@@ -23,6 +23,7 @@
 	"include": [
 		"**/*.ts",
 		"**/*.tsx",
+		"**/*.d.ts",
 		"**/*.cjs",
 		"**/*.mjs",
 		".next/types/**/*.ts"

@@ -42,7 +42,7 @@ export const NavigationConfigSchema = z.object({
     .enum(['false', 'true'])
     .default('true')
     .optional()
-    .transform((value) => value === `true`),
+    .transform((value) => value === "true"),
   sidebarCollapsedStyle: z.enum(['offcanvas', 'icon', 'none']).default('icon'),
   routes: z.array(z.union([RouteGroup, Divider])),
 });

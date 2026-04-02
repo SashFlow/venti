@@ -80,7 +80,7 @@ export function ResetPasswordForm() {
 			</p>
 
 			{form.formState.isSubmitSuccessful ? (
-				<Alert variant="success">
+				<Alert variant="default">
 					<MailboxIcon />
 					<AlertTitle>
 						{t("auth.resetPassword.hints.success")}

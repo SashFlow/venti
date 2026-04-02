@@ -79,7 +79,7 @@ export function Features() {
 			>
 				<div
 					style={{
-						height: height + "px",
+						height: `${height}px`,
 					}}
 					className="absolute top-0 left-1/2 -translate-x-1/2 z-10 overflow-hidden w-[2px] bg-linear-to-b from-transparent from-0% via-neutral-200 dark:via-neutral-700 to-transparent to-[99%] [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]"
 				>

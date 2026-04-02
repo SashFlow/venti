@@ -1,5 +1,5 @@
 import { formatDate, formatDistance, parseISO } from "date-fns";
-import type { ChangelogItem } from "../types";
+import type { ChangelogItem } from "./types";
 
 export function ChangelogSection({ items }: { items: ChangelogItem[] }) {
 	return (

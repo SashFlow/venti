@@ -120,7 +120,7 @@ export function SignupForm({ prefillEmail }: { prefillEmail?: string }) {
 			</p>
 
 			{form.formState.isSubmitSuccessful && !invitationOnlyMode ? (
-				<Alert variant="success">
+				<Alert variant="default">
 					<MailboxIcon />
 					<AlertTitle>
 						{t("auth.signup.hints.verifyEmail")}

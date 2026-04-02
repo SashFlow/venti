@@ -73,7 +73,7 @@ export function ForgotPasswordForm() {
 			</p>
 
 			{form.formState.isSubmitSuccessful ? (
-				<Alert variant="success">
+				<Alert variant="default">
 					<MailboxIcon />
 					<AlertTitle>
 						{t("auth.forgotPassword.hints.linkSent.title")}

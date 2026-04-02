@@ -33,7 +33,11 @@ export function LanguageSelector({
   const [value, setValue] = useState(i18n.language);
 
   const languageChanged = useCallback(
-    async (locale: string) => {
+    async (locale: string | null) => {
+      if (!locale) {
+        return;
+      }
+
       setValue(locale);
 
       if (onChange) {

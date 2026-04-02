@@ -4,6 +4,7 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { Menubar as MenubarPrimitive } from "@base-ui/react/menubar";
 import { CheckIcon } from "lucide-react";
 import * as React from "react";
+import { cn } from "../utils";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -18,8 +19,7 @@ import {
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
-} from "~/ui/dropdown-menu";
-import { cn } from "../utils";
+} from "./dropdown-menu";
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {
 	return (
