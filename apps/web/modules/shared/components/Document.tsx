@@ -1,4 +1,5 @@
 import { headingFont, poppins } from "@app/fonts";
+import { TooltipProvider } from "@repo/ui/tooltip";
 import { cn } from "@repo/ui/utils";
 import { ClientProviders } from "@shared/components/ClientProviders";
 import { ConsentProvider } from "@shared/components/ConsentProvider";
@@ -26,13 +27,15 @@ export async function Document({
 					className,
 				)}
 			>
-				<NuqsAdapter>
-					<ConsentProvider
-						initialConsent={consentCookie?.value === "true"}
-					>
-						<ClientProviders>{children}</ClientProviders>
-					</ConsentProvider>
-				</NuqsAdapter>
+				<TooltipProvider>
+					<NuqsAdapter>
+						<ConsentProvider
+							initialConsent={consentCookie?.value === "true"}
+						>
+							<ClientProviders>{children}</ClientProviders>
+						</ConsentProvider>
+					</NuqsAdapter>
+				</TooltipProvider>
 			</body>
 		</html>
 	);

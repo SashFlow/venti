@@ -1,48 +1,34 @@
-import { config } from "@repo/config";
+import Placeholder from "@assets/svg/placeholder.svg";
+import Logo from "@components/shared/logo";
 import { cn } from "@repo/ui/utils";
 import { Footer } from "@saas/shared/components/Footer";
-import { ColorModeToggle } from "@shared/components/ColorModeToggle";
-import { LocaleSwitch } from "@shared/components/LocaleSwitch";
-import { Logo } from "@shared/components/Logo";
-import Link from "next/link";
-import { type PropsWithChildren, Suspense } from "react";
+import Image from "next/image";
+
+import type { PropsWithChildren } from "react";
 
 export function AuthWrapper({
 	children,
 	contentClass,
 }: PropsWithChildren<{ contentClass?: string }>) {
 	return (
-		<div className="flex min-h-screen w-full py-6">
-			<div className="flex w-full flex-col items-center justify-between gap-8">
-				<div className="container">
-					<div className="flex items-center justify-between">
-						<Link href="/" className="block">
-							<Logo />
-						</Link>
-
-						<div className="flex items-center justify-end gap-2">
-							{config.i18n.enabled && (
-								<Suspense>
-									<LocaleSwitch withLocaleInUrl={false} />
-								</Suspense>
-							)}
-							<ColorModeToggle />
-						</div>
+		<div className="grid min-h-svh lg:grid-cols-2">
+			<div className="flex flex-col gap-4 p-6 md:p-10">
+				<div className="flex justify-center gap-2 md:justify-start">
+					<Logo />
+				</div>
+				<div className="flex flex-1 items-center justify-center border border-border rounded-lg">
+					<div className={cn("w-full max-w-xs", contentClass)}>
+						{children}
 					</div>
 				</div>
-
-				<div className="container flex justify-center">
-					<main
-						className={cn(
-							"w-full max-w-md rounded-3xl bg-card p-6 border lg:p-8",
-							contentClass,
-						)}
-					>
-						{children}
-					</main>
-				</div>
-
 				<Footer />
+			</div>
+			<div className="relative hidden bg-accent lg:flex items-center p-16 border-l">
+				<Image
+					src={Placeholder}
+					alt="Image"
+					className="object-cover w-full "
+				/>
 			</div>
 		</div>
 	);

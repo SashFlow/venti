@@ -21,11 +21,11 @@ export default async function Home({
 
 	return (
 		<>
-			<Hero />
+			{/* <Hero />
 			<Industries />
 			<Process />
 			<Features />
-			<Team />
+			<Team /> */}
 		</>
 	);
 }

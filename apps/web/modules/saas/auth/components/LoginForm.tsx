@@ -285,7 +285,7 @@ export function LoginForm() {
 							<Button
 								className="w-full"
 								type="submit"
-								variant="outline"
+								variant="default"
 								loading={form.formState.isSubmitting}
 							>
 								{signinMode === "magic-link"

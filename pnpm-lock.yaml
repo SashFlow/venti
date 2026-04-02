@@ -71,6 +71,9 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.2
         version: 1.3.2(react@19.2.3)
+      '@radix-ui/react-visually-hidden':
+        specifier: ^1.2.4
+        version: 1.2.4(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@repo/api':
         specifier: workspace:*
         version: link:../../packages/api
@@ -357,19 +360,19 @@ importers:
     dependencies:
       '@orpc/client':
         specifier: ^1.9.0
-        version: 1.13.7(@opentelemetry/api@1.9.0)
+        version: 1.13.7(@opentelemetry/api@1.9.1)
       '@orpc/json-schema':
         specifier: ^1.9.0
-        version: 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
+        version: 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
       '@orpc/openapi':
         specifier: ^1.9.0
-        version: 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
+        version: 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
       '@orpc/server':
         specifier: ^1.9.0
-        version: 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
+        version: 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
       '@orpc/zod':
         specifier: ^1.9.0
-        version: 1.13.7(@opentelemetry/api@1.9.0)(@orpc/contract@1.13.7(@opentelemetry/api@1.9.0))(@orpc/server@1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3))(ws@8.18.3)(zod@4.3.6)
+        version: 1.13.7(@opentelemetry/api@1.9.1)(@orpc/contract@1.13.7(@opentelemetry/api@1.9.1))(@orpc/server@1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3))(ws@8.18.3)(zod@4.3.6)
       '@repo/ai':
         specifier: workspace:*
         version: link:../ai
@@ -578,7 +581,7 @@ importers:
         version: link:../logs
       next-intl:
         specifier: 4.3.9
-        version: 4.3.9(next@16.1.5(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
+        version: 4.3.9(next@16.1.5(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
       nodemailer:
         specifier: ^7.0.7
         version: 7.0.13
@@ -678,6 +681,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@base-ui/react':
+        specifier: ^1.3.0
+        version: 1.3.0(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.2(react@19.2.3))
@@ -750,21 +756,30 @@ importers:
       cmdk:
         specifier: 1.1.1
         version: 1.1.1(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      embla-carousel-react:
+        specifier: ^8.6.0
+        version: 8.6.0(react@19.2.3)
       input-otp:
         specifier: 1.4.2
         version: 1.4.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.3)
+      react-resizable-panels:
+        specifier: ^4.8.0
+        version: 4.8.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react-top-loading-bar:
         specifier: 3.0.2
         version: 3.0.2(react@19.2.3)
       recharts:
-        specifier: 2.15.3
-        version: 2.15.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: 3.8.0
+        version: 3.8.0(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react-is@18.3.1)(react@19.2.3)(redux@5.0.1)
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.5.0
+      vaul:
+        specifier: ^1.1.2
+        version: 1.1.2(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
     devDependencies:
       '@radix-ui/react-icons':
         specifier: ^1.3.2
@@ -792,7 +807,7 @@ importers:
         version: 4.1.0
       next:
         specifier: 15.5.9
-        version: 15.5.9(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 15.5.9(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       next-themes:
         specifier: 0.4.6
         version: 0.4.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -800,7 +815,7 @@ importers:
         specifier: ^3.6.2
         version: 3.6.2
       react-day-picker:
-        specifier: ^9.11.1
+        specifier: ^9.14.0
         version: 9.14.0(react@19.2.3)
       react-hook-form:
         specifier: ^7.65.0
@@ -1163,6 +1178,27 @@ packages:
   '@babel/types@7.29.0':
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
+
+  '@base-ui/react@1.3.0':
+    resolution: {integrity: sha512-FwpKqZbPz14AITp1CVgf4AjhKPe1OeeVKSBMdgD10zbFlj3QSWelmtCMLi2+/PFZZcIm3l87G7rwtCZJwHyXWA==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@types/react': 19.0.0
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@base-ui/utils@0.2.6':
+    resolution: {integrity: sha512-yQ+qeuqohwhsNpoYDqqXaLllYAkPCP4vYdDrVo8FQXaAPfHWm1pG/Vm+jmGTA5JFS0BAIjookyapuJFY8F9PIw==}
+    peerDependencies:
+      '@types/react': 19.0.0
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   '@better-auth/core@1.3.27':
     resolution: {integrity: sha512-3Sfdax6MQyronY+znx7bOsfQHI6m1SThvJWb0RDscFEAhfqLy95k1sl+/PgGyg0cwc2cUXoEiAOSqYdFYrg3vA==}
@@ -3448,6 +3484,19 @@ packages:
       '@types/react-dom':
         optional: true
 
+  '@radix-ui/react-visually-hidden@1.2.4':
+    resolution: {integrity: sha512-kaeiyGCe844dkb9AVF+rb4yTyb1LiLN/e3es3nLiRyN4dC8AduBYPMnnNlDjX2VDOcvDEiPnRNMJeWCfsX0txg==}
+    peerDependencies:
+      '@types/react': 19.0.0
+      '@types/react-dom': 19.0.0
+      react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
 
@@ -3575,6 +3624,17 @@ packages:
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
+
+  '@reduxjs/toolkit@2.11.2':
+    resolution: {integrity: sha512-Kd6kAHTA6/nUpp8mySPqj3en3dm0tdMIgbttnQ1xFMVpufoj+ADi8pXLBsd4xzTRHQa7t/Jv8W5UnCuW4kuWMQ==}
+    peerDependencies:
+      react: ^16.9.0 || ^17.0.0 || ^18 || ^19
+      react-redux: ^7.2.1 || ^8.1.3 || ^9.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-redux:
+        optional: true
 
   '@rollup/plugin-commonjs@28.0.1':
     resolution: {integrity: sha512-+tNWdlWKbpB3WgBN7ijjYkq9X5uhjmcvyjEght4NmH5fAU++zfQzAJ6wumLS+dNcvwEZhKx2Z+skY8m7v0wGSA==}
@@ -4498,6 +4558,9 @@ packages:
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
 
+  '@types/use-sync-external-store@0.0.6':
+    resolution: {integrity: sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==}
+
   '@types/uuid@11.0.0':
     resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
     deprecated: This is a stub types definition. uuid provides its own type definitions, so you do not need this installed.
@@ -5177,6 +5240,19 @@ packages:
   electron-to-chromium@1.5.313:
     resolution: {integrity: sha512-QBMrTWEf00GXZmJyx2lbYD45jpI3TUFnNIzJ5BBc8piGUDwMPa1GV6HJWTZVvY/eiN3fSopl7NRbgGp9sZ9LTA==}
 
+  embla-carousel-react@8.6.0:
+    resolution: {integrity: sha512-0/PjqU7geVmo6F734pmPqpyHqiM99olvyecY7zdweCw+6tKEXnrE90pBiBbMMU8s5tICemzpQ3hi5EpxzGW+JA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.1 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+
+  embla-carousel-reactive-utils@8.6.0:
+    resolution: {integrity: sha512-fMVUDUEx0/uIEDM0Mz3dHznDhfX+znCCDCeIophYb1QGVM7YThSWX+wz11zlYwWFOr74b4QLGg0hrGPJeG2s4A==}
+    peerDependencies:
+      embla-carousel: 8.6.0
+
+  embla-carousel@8.6.0:
+    resolution: {integrity: sha512-SjWyZBHJPbqxHOzckOfo8lHisEaJWmwd23XppYFYVh10bU66/Pn5tkVkbkCMZVdbUE5eTCI2nD8OyIP4Z+uwkA==}
+
   emoji-regex@10.6.0:
     resolution: {integrity: sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==}
 
@@ -5324,6 +5400,9 @@ packages:
 
   eventemitter3@4.0.7:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
+
+  eventemitter3@5.0.4:
+    resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
 
   events@3.3.0:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
@@ -5731,6 +5810,12 @@ packages:
     resolution: {integrity: sha512-IRqXKlaXwgSMAMtpNzZa1ZAe8m+Sa1770Dhk8VkSsP9LS+iHD62Zd8FQKs8fbPiagBE7BzoFX23cxFnwshpV6w==}
     engines: {node: '>=16.x'}
     hasBin: true
+
+  immer@10.2.0:
+    resolution: {integrity: sha512-d/+XTN3zfODyjr89gM3mPq1WNX2B8pYsu7eORitdwyA2sBubnTl3laYlBk4sXY5FUa5qTZGBDPJICVbvqzjlbw==}
+
+  immer@11.1.4:
+    resolution: {integrity: sha512-XREFCPo6ksxVzP4E0ekD5aMdf8WMwmdNaz6vuvxgI40UaEiu6q3p8X52aU6GdyvLY3XXX/8R7JOTXStz/nBbRw==}
 
   import-in-the-middle@2.0.6:
     resolution: {integrity: sha512-3vZV3jX0XRFW3EJDTwzWoZa+RH1b8eTTx6YOCjglrLyPuepwoBti1k3L2dKwdCUrnVEfc5CuRuGstaC/uQJJaw==}
@@ -6957,6 +7042,18 @@ packages:
     peerDependencies:
       react: '*'
 
+  react-redux@9.2.0:
+    resolution: {integrity: sha512-ROY9fvHhwOD9ySfrF0wmvu//bKCQ6AeZZq1nJNtbDC+kk5DuSuNX/n6YWYF/SYy7bSba4D4FSz8DJeKY/S/r+g==}
+    peerDependencies:
+      '@types/react': 19.0.0
+      react: ^18.0 || ^19
+      redux: ^5.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      redux:
+        optional: true
+
   react-remove-scroll-bar@2.3.8:
     resolution: {integrity: sha512-9r+yi9+mgU33AKcj6IbT9oRCO78WriSj6t/cF8DWBZJ9aOGPOTEDvdUDz1FwKim7QXWwmHqtdHnRJfhAxEG46Q==}
     engines: {node: '>=10'}
@@ -6976,6 +7073,12 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  react-resizable-panels@4.8.0:
+    resolution: {integrity: sha512-2uEABkewb3ky/ZgIlAUxWa1W/LjsK494fdV1QsXxst7CDRHCzo7h22tWWu3NNaBjmiuriOCt3CvhipnaYcpoIw==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
 
   react-smooth@4.0.4:
     resolution: {integrity: sha512-gnGKTpYwqL0Iii09gHobNolvX4Kiq4PKx6eWBCYYix+8cdw+cGo3do906l1NBPKkSWx1DghC1dlWG9L2uGd61Q==}
@@ -7038,6 +7141,14 @@ packages:
       react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  recharts@3.8.0:
+    resolution: {integrity: sha512-Z/m38DX3L73ExO4Tpc9/iZWHmHnlzWG4njQbxsF5aSjwqmHNDDIm0rdEBArkwsBvR8U6EirlEHiQNYWCVh9sGQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-is: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   recma-build-jsx@1.0.0:
     resolution: {integrity: sha512-8GtdyqaBcDfva+GUKDr3nev3VpKAhup1+RvkMvUxURHpW7QyIvk9F5wz7Vzo06CEMSilw6uArgRqhpiUcWp8ew==}
 
@@ -7055,6 +7166,14 @@ packages:
   redent@1.0.0:
     resolution: {integrity: sha512-qtW5hKzGQZqKoh6JNSD+4lfitfPKGz42e6QwiRmPM5mmKtR0N41AbJRYu0xJi7nhOJ4WDgRkKvAk6tw4WIwR4g==}
     engines: {node: '>=0.10.0'}
+
+  redux-thunk@3.1.0:
+    resolution: {integrity: sha512-NW2r5T6ksUKXCabzhL9z+h206HQw/NJkcLm1GPImRQ8IzfXwRGqjVhKJGauHirT0DAuyy6hjdnMZaRoAcy0Klw==}
+    peerDependencies:
+      redux: ^5.0.0
+
+  redux@5.0.1:
+    resolution: {integrity: sha512-M9/ELqF6fy8FwmkpnF0S3YKOqMyoWJ4+CS5Efg2ct3oY9daQvd/Pc71FpGZsVsbl3Cpb+IIcjBDUnnyBdQbq4w==}
 
   reflect-metadata@0.2.2:
     resolution: {integrity: sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==}
@@ -7109,6 +7228,9 @@ packages:
   require-in-the-middle@8.0.1:
     resolution: {integrity: sha512-QT7FVMXfWOYFbeRBF6nu+I6tr2Tf3u0q8RIEjNob/heKY/nh7drD/k7eeMFmSQgnTtCzLDcCu/XEnpW2wk4xCQ==}
     engines: {node: '>=9.3.0 || >=8.10.0 <9.0.0'}
+
+  reselect@5.1.1:
+    resolution: {integrity: sha512-K/BG6eIky/SBpzfHZv/dd+9JBFiS4SWV7FIujVyJRux6e45+73RaUHXLmIR1f7WOMaQ0U1km6qwklRQxpJJY0w==}
 
   resend@6.9.3:
     resolution: {integrity: sha512-GRXjH9XZBJA+daH7bBVDuTShr22iWCxXA8P7t495G4dM/RC+d+3gHBK/6bz9K6Vpcq11zRQKmD+B+jECwQlyGQ==}
@@ -7407,6 +7529,9 @@ packages:
     peerDependencies:
       react: ^16.11.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  tabbable@6.4.0:
+    resolution: {integrity: sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg==}
+
   tagged-tag@1.0.0:
     resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
     engines: {node: '>=20'}
@@ -7688,6 +7813,12 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
+  vaul@1.1.2:
+    resolution: {integrity: sha512-ZFkClGpWyI2WUQjdLJ/BaGuV6AVQiJ3uELGk3OYtP+B6yCO7Cmn9vPFXVJkRaGkOJu3m8bQMgtyzNHixULceQA==}
+    peerDependencies:
+      react: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
+
   vfile-location@5.0.3:
     resolution: {integrity: sha512-5yXvWDEgqeiYiBe1lbxYF7UMAIm/IcopxMHrMQDq3nvKcjPKIhZklUKL+AE7J7uApI4kwe2snsK+eI6UTj9EHg==}
 
@@ -7699,6 +7830,9 @@ packages:
 
   victory-vendor@36.9.2:
     resolution: {integrity: sha512-PnpQQMuxlwYdocC8fIJqVXvkeViHYzotI+NJrCuav0ZYFoq912ZHBk3mCeuj+5/VpodOjPe1z0Fk2ihgzlXqjQ==}
+
+  victory-vendor@37.3.6:
+    resolution: {integrity: sha512-SbPDPdDBYp+5MJHhBCAyI7wKM3d5ivekigc2Dk2s7pgbZ9wIgIBYGVw4zGHBml/qTFbexrofXW6Gu4noGxrOwQ==}
 
   void-elements@3.1.0:
     resolution: {integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==}
@@ -8419,6 +8553,30 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@base-ui/react@1.3.0(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      '@babel/runtime': 7.28.6
+      '@base-ui/utils': 0.2.6(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@floating-ui/react-dom': 2.1.8(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@floating-ui/utils': 0.2.11
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+      tabbable: 6.4.0
+      use-sync-external-store: 1.6.0(react@19.2.3)
+    optionalDependencies:
+      '@types/react': 19.0.0
+
+  '@base-ui/utils@0.2.6(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      '@babel/runtime': 7.28.6
+      '@floating-ui/utils': 0.2.11
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+      reselect: 5.1.1
+      use-sync-external-store: 1.6.0(react@19.2.3)
+    optionalDependencies:
+      '@types/react': 19.0.0
 
   '@better-auth/core@1.3.27':
     dependencies:
@@ -9630,19 +9788,19 @@ snapshots:
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/client@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/client@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fetch': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-peer': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-fetch': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-peer': 1.13.7(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/contract@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/contract@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/client': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/client': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
       '@standard-schema/spec': 1.1.0
       openapi-types: 12.1.3
     transitivePeerDependencies:
@@ -9650,13 +9808,13 @@ snapshots:
 
   '@orpc/interop@1.13.7': {}
 
-  '@orpc/json-schema@1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)':
+  '@orpc/json-schema@1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)':
     dependencies:
-      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.1)
       '@orpc/interop': 1.13.7
-      '@orpc/openapi': 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/server': 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/openapi': 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
+      '@orpc/server': 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
       json-schema-typed: 8.0.2
     transitivePeerDependencies:
       - '@opentelemetry/api'
@@ -9664,24 +9822,24 @@ snapshots:
       - fastify
       - ws
 
-  '@orpc/openapi-client@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/openapi-client@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/client': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/client': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/openapi@1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)':
+  '@orpc/openapi@1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)':
     dependencies:
-      '@orpc/client': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/client': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.1)
       '@orpc/interop': 1.13.7
-      '@orpc/openapi-client': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/server': 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/openapi-client': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/server': 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
       json-schema-typed: 8.0.2
       rou3: 0.7.12
     transitivePeerDependencies:
@@ -9690,18 +9848,18 @@ snapshots:
       - fastify
       - ws
 
-  '@orpc/server@1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)':
+  '@orpc/server@1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)':
     dependencies:
-      '@orpc/client': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/client': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.1)
       '@orpc/interop': 1.13.7
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-aws-lambda': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fastify': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fetch': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-node': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-peer': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-aws-lambda': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-fastify': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-fetch': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-node': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-peer': 1.13.7(@opentelemetry/api@1.9.1)
       cookie: 1.1.1
     optionalDependencies:
       ws: 8.18.3
@@ -9716,27 +9874,27 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
 
-  '@orpc/shared@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/shared@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
       radash: 12.1.1
       type-fest: 5.4.4
     optionalDependencies:
-      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api': 1.9.1
 
-  '@orpc/standard-server-aws-lambda@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-aws-lambda@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fetch': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-node': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-fetch': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-node': 1.13.7(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server-fastify@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-fastify@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-node': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-node': 1.13.7(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
@@ -9747,18 +9905,18 @@ snapshots:
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server-fetch@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-fetch@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server-node@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-node@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fetch': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server-fetch': 1.13.7(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
@@ -9769,10 +9927,10 @@ snapshots:
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server-peer@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-peer@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/standard-server': 1.13.7(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
@@ -9782,9 +9940,9 @@ snapshots:
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server@1.13.7(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server@1.13.7(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
@@ -9796,13 +9954,13 @@ snapshots:
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/zod@1.13.7(@opentelemetry/api@1.9.0)(@orpc/contract@1.13.7(@opentelemetry/api@1.9.0))(@orpc/server@1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3))(ws@8.18.3)(zod@4.3.6)':
+  '@orpc/zod@1.13.7(@opentelemetry/api@1.9.1)(@orpc/contract@1.13.7(@opentelemetry/api@1.9.1))(@orpc/server@1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3))(ws@8.18.3)(zod@4.3.6)':
     dependencies:
-      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.0)
-      '@orpc/json-schema': 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/openapi': 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/server': 1.13.7(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.0)
+      '@orpc/contract': 1.13.7(@opentelemetry/api@1.9.1)
+      '@orpc/json-schema': 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
+      '@orpc/openapi': 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
+      '@orpc/server': 1.13.7(@opentelemetry/api@1.9.1)(ws@8.18.3)
+      '@orpc/shared': 1.13.7(@opentelemetry/api@1.9.1)
       escape-string-regexp: 5.0.0
       wildcard-match: 5.1.4
       zod: 4.3.6
@@ -10677,6 +10835,15 @@ snapshots:
       '@types/react': 19.0.0
       '@types/react-dom': 19.0.0
 
+  '@radix-ui/react-visually-hidden@1.2.4(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      '@radix-ui/react-primitive': 2.1.4(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+    optionalDependencies:
+      '@types/react': 19.0.0
+      '@types/react-dom': 19.0.0
+
   '@radix-ui/rect@1.1.1': {}
 
   '@react-email/body@0.1.0(react@19.1.1)':
@@ -10790,6 +10957,18 @@ snapshots:
   '@react-email/text@0.1.5(react@19.1.1)':
     dependencies:
       react: 19.1.1
+
+  '@reduxjs/toolkit@2.11.2(react-redux@9.2.0(@types/react@19.0.0)(react@19.2.3)(redux@5.0.1))(react@19.2.3)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@standard-schema/utils': 0.3.0
+      immer: 11.1.4
+      redux: 5.0.1
+      redux-thunk: 3.1.0(redux@5.0.1)
+      reselect: 5.1.1
+    optionalDependencies:
+      react: 19.2.3
+      react-redux: 9.2.0(@types/react@19.0.0)(react@19.2.3)(redux@5.0.1)
 
   '@rollup/plugin-commonjs@28.0.1(rollup@4.60.1)':
     dependencies:
@@ -11836,6 +12015,8 @@ snapshots:
 
   '@types/unist@3.0.3': {}
 
+  '@types/use-sync-external-store@0.0.6': {}
+
   '@types/uuid@11.0.0':
     dependencies:
       uuid: 13.0.0
@@ -12447,6 +12628,18 @@ snapshots:
 
   electron-to-chromium@1.5.313: {}
 
+  embla-carousel-react@8.6.0(react@19.2.3):
+    dependencies:
+      embla-carousel: 8.6.0
+      embla-carousel-reactive-utils: 8.6.0(embla-carousel@8.6.0)
+      react: 19.2.3
+
+  embla-carousel-reactive-utils@8.6.0(embla-carousel@8.6.0):
+    dependencies:
+      embla-carousel: 8.6.0
+
+  embla-carousel@8.6.0: {}
+
   emoji-regex@10.6.0: {}
 
   empathic@2.0.0: {}
@@ -12655,6 +12848,8 @@ snapshots:
       through: 2.3.8
 
   eventemitter3@4.0.7: {}
+
+  eventemitter3@5.0.4: {}
 
   events@3.3.0: {}
 
@@ -13162,6 +13357,10 @@ snapshots:
       '@formatjs/icu-messageformat-parser': 3.5.2
 
   image-size@2.0.2: {}
+
+  immer@10.2.0: {}
+
+  immer@11.1.4: {}
 
   import-in-the-middle@2.0.6:
     dependencies:
@@ -13992,11 +14191,11 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next-intl@4.3.9(next@16.1.5(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)(typescript@5.9.3):
+  next-intl@4.3.9(next@16.1.5(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)(typescript@5.9.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.5.10
       negotiator: 1.0.0
-      next: 16.1.5(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      next: 16.1.5(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       react: 19.1.1
       use-intl: 4.8.3(react@19.1.1)
     optionalDependencies:
@@ -14027,7 +14226,7 @@ snapshots:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
 
-  next@15.5.9(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  next@15.5.9(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       '@next/env': 15.5.9
       '@swc/helpers': 0.5.15
@@ -14045,7 +14244,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 15.5.7
       '@next/swc-win32-arm64-msvc': 15.5.7
       '@next/swc-win32-x64-msvc': 15.5.7
-      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api': 1.9.1
       '@playwright/test': 1.58.2
       sharp: 0.34.5
     transitivePeerDependencies:
@@ -14078,7 +14277,7 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  next@16.1.5(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
+  next@16.1.5(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
     dependencies:
       '@next/env': 16.1.5
       '@swc/helpers': 0.5.15
@@ -14097,7 +14296,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.1.5
       '@next/swc-win32-arm64-msvc': 16.1.5
       '@next/swc-win32-x64-msvc': 16.1.5
-      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api': 1.9.1
       '@playwright/test': 1.58.2
       sharp: 0.34.5
     transitivePeerDependencies:
@@ -14610,6 +14809,15 @@ snapshots:
       qr.js: 0.0.0
       react: 19.2.3
 
+  react-redux@9.2.0(@types/react@19.0.0)(react@19.2.3)(redux@5.0.1):
+    dependencies:
+      '@types/use-sync-external-store': 0.0.6
+      react: 19.2.3
+      use-sync-external-store: 1.6.0(react@19.2.3)
+    optionalDependencies:
+      '@types/react': 19.0.0
+      redux: 5.0.1
+
   react-remove-scroll-bar@2.3.8(@types/react@19.0.0)(react@19.2.3):
     dependencies:
       react: 19.2.3
@@ -14628,6 +14836,11 @@ snapshots:
       use-sidecar: 1.1.3(@types/react@19.0.0)(react@19.2.3)
     optionalDependencies:
       '@types/react': 19.0.0
+
+  react-resizable-panels@4.8.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
   react-smooth@4.0.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
@@ -14694,6 +14907,26 @@ snapshots:
       tiny-invariant: 1.3.3
       victory-vendor: 36.9.2
 
+  recharts@3.8.0(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react-is@18.3.1)(react@19.2.3)(redux@5.0.1):
+    dependencies:
+      '@reduxjs/toolkit': 2.11.2(react-redux@9.2.0(@types/react@19.0.0)(react@19.2.3)(redux@5.0.1))(react@19.2.3)
+      clsx: 2.1.1
+      decimal.js-light: 2.5.1
+      es-toolkit: 1.45.1
+      eventemitter3: 5.0.4
+      immer: 10.2.0
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+      react-is: 18.3.1
+      react-redux: 9.2.0(@types/react@19.0.0)(react@19.2.3)(redux@5.0.1)
+      reselect: 5.1.1
+      tiny-invariant: 1.3.3
+      use-sync-external-store: 1.6.0(react@19.2.3)
+      victory-vendor: 37.3.6
+    transitivePeerDependencies:
+      - '@types/react'
+      - redux
+
   recma-build-jsx@1.0.0:
     dependencies:
       '@types/estree': 1.0.8
@@ -14727,6 +14960,12 @@ snapshots:
     dependencies:
       indent-string: 2.1.0
       strip-indent: 1.0.1
+
+  redux-thunk@3.1.0(redux@5.0.1):
+    dependencies:
+      redux: 5.0.1
+
+  redux@5.0.1: {}
 
   reflect-metadata@0.2.2: {}
 
@@ -14834,6 +15073,8 @@ snapshots:
       module-details-from-path: 1.0.4
     transitivePeerDependencies:
       - supports-color
+
+  reselect@5.1.1: {}
 
   resend@6.9.3(@react-email/render@1.4.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)):
     dependencies:
@@ -15241,6 +15482,8 @@ snapshots:
       react: 19.2.3
       use-sync-external-store: 1.6.0(react@19.2.3)
 
+  tabbable@6.4.0: {}
+
   tagged-tag@1.0.0: {}
 
   tailwind-merge@3.5.0: {}
@@ -15485,6 +15728,15 @@ snapshots:
 
   vary@1.1.2: {}
 
+  vaul@1.1.2(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+    dependencies:
+      '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+
   vfile-location@5.0.3:
     dependencies:
       '@types/unist': 3.0.3
@@ -15501,6 +15753,23 @@ snapshots:
       vfile-message: 4.0.3
 
   victory-vendor@36.9.2:
+    dependencies:
+      '@types/d3-array': 3.2.2
+      '@types/d3-ease': 3.0.2
+      '@types/d3-interpolate': 3.0.4
+      '@types/d3-scale': 4.0.9
+      '@types/d3-shape': 3.1.8
+      '@types/d3-time': 3.0.4
+      '@types/d3-timer': 3.0.2
+      d3-array: 3.2.4
+      d3-ease: 3.0.1
+      d3-interpolate: 3.0.1
+      d3-scale: 4.0.2
+      d3-shape: 3.2.0
+      d3-time: 3.1.0
+      d3-timer: 3.0.1
+
+  victory-vendor@37.3.6:
     dependencies:
       '@types/d3-array': 3.2.2
       '@types/d3-ease': 3.0.2
