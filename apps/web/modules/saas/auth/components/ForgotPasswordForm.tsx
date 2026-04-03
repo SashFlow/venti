@@ -116,7 +116,7 @@ export function ForgotPasswordForm() {
 							)}
 						/>
 
-						<Button loading={form.formState.isSubmitting}>
+						<Button disabled={form.formState.isSubmitting}>
 							{t("auth.forgotPassword.submit")}
 						</Button>
 					</form>

@@ -287,7 +287,7 @@ export function PricingTable({
 														price?.productId,
 													)
 												}
-												loading={loading === planId}
+												disabled={loading === planId}
 											>
 												{userId || organizationId
 													? t("pricing.choosePlan")

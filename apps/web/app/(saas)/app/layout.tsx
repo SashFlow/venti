@@ -1,7 +1,7 @@
-import { AppLayout } from "@components/saas/shared/layout";
 import { config } from "@repo/config";
 import { createPurchasesHelper } from "@repo/payments/lib/helper";
 import { getOrganizationList, getSession } from "@saas/auth/lib/server";
+import { AppLayout } from "@saas/shared/components/Layout";
 import { orpcClient } from "@shared/lib/orpc-client";
 import { attemptAsync } from "es-toolkit";
 import { redirect } from "next/navigation";

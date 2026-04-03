@@ -123,7 +123,7 @@ export function ContactForm() {
 						<Button
 							type="submit"
 							className="w-full"
-							loading={form.formState.isSubmitting}
+							disabled={form.formState.isSubmitting}
 						>
 							{t("contact.form.submit")}
 						</Button>

@@ -227,7 +227,7 @@ export function SignupForm({ prefillEmail }: { prefillEmail?: string }) {
 								/>
 							)}
 
-							<Button loading={form.formState.isSubmitting}>
+							<Button disabled={form.formState.isSubmitting}>
 								{t("auth.signup.submit")}
 							</Button>
 						</form>

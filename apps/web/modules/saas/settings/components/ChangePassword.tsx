@@ -110,7 +110,6 @@ export function ChangePasswordForm() {
 						<div className="flex justify-end">
 							<Button
 								type="submit"
-								loading={form.formState.isSubmitting}
 								disabled={
 									!(
 										form.formState.isValid &&

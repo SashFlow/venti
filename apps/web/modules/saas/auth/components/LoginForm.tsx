@@ -286,7 +286,7 @@ export function LoginForm() {
 								className="w-full"
 								type="submit"
 								variant="default"
-								loading={form.formState.isSubmitting}
+								disabled={form.formState.isSubmitting}
 							>
 								{signinMode === "magic-link"
 									? t("auth.login.sendMagicLink")

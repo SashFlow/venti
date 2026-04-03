@@ -1,6 +1,6 @@
-import { PostContent } from "@components/marketing/blog/PostContent";
-import { getPostBySlug } from "@components/marketing/blog/posts";
 import { LocaleLink, localeRedirect } from "@i18n/routing";
+import { PostContent } from "@marketing/blog/PostContent";
+import { getPostBySlug } from "@marketing/blog/posts";
 import { getBaseUrl } from "@repo/utils";
 import { getActivePathFromUrlParam } from "@shared/lib/content";
 import Image from "next/image";

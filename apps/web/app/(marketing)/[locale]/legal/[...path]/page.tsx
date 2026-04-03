@@ -1,4 +1,4 @@
-import { PostContent } from "@components/marketing/blog/PostContent";
+import { PostContent } from "@marketing/blog/PostContent";
 import {
 	getActivePathFromUrlParam,
 	getLocalizedDocumentWithFallback,

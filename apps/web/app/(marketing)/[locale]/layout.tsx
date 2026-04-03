@@ -1,7 +1,7 @@
-import { Footer } from "@components/marketing/shared/Footer";
-import Header from "@components/marketing/shared/header";
-import { SmoothScroll } from "@components/marketing/shared/SmoothScroll";
 import TransitionProvider from "@context/TransitionProvider";
+import { Footer } from "@marketing/shared/Footer";
+import Header from "@marketing/shared/header";
+import { SmoothScroll } from "@marketing/shared/SmoothScroll";
 import { config } from "@repo/config";
 import { SessionProvider } from "@saas/auth/components/SessionProvider";
 import { Document } from "@shared/components/Document";

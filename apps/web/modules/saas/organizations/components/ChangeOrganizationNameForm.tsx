@@ -82,7 +82,6 @@ export function ChangeOrganizationNameForm() {
 								form.formState.dirtyFields.name
 							)
 						}
-						loading={form.formState.isSubmitting}
 					>
 						{t("settings.save")}
 					</Button>

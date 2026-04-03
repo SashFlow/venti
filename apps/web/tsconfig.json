@@ -9,7 +9,6 @@
 			"@context/*": ["./context/*"],
 			"@constants": ["./constants/index.ts"],
 			"@constants/*": ["./constants/*"],
-			"@components/*": ["./components/*"],
 			"@marketing/*": ["./modules/marketing/*"],
 			"@saas/*": ["./modules/saas/*"],
 			"@i18n": ["./i18n"],

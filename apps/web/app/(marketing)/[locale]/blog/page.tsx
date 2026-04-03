@@ -1,5 +1,5 @@
-import { PostListItem } from "@components/marketing/blog/PostListItem";
-import { getAllPosts } from "@components/marketing/blog/posts";
+import { PostListItem } from "@marketing/blog/PostListItem";
+import { getAllPosts } from "@marketing/blog/posts";
 import { getLocale, getTranslations } from "next-intl/server";
 
 export async function generateMetadata() {

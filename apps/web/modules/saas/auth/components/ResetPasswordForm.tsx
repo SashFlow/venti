@@ -120,7 +120,7 @@ export function ResetPasswordForm() {
 							)}
 						/>
 
-						<Button loading={form.formState.isSubmitting}>
+						<Button disabled={form.formState.isSubmitting}>
 							{t("auth.resetPassword.submit")}
 						</Button>
 					</form>

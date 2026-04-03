@@ -224,7 +224,7 @@ export function TwoFactorBlock() {
 									type="submit"
 									variant="secondary"
 									className="w-full"
-									loading={
+									disabled={
 										enableTwoFactorMutation.isPending ||
 										disableTwoFactorMutation.isPending
 									}
@@ -275,7 +275,7 @@ export function TwoFactorBlock() {
 									type="submit"
 									variant="secondary"
 									className="w-full"
-									loading={verifyTwoFactorMutation.isPending}
+									disabled={verifyTwoFactorMutation.isPending}
 								>
 									<CheckIcon className="mr-1.5 size-4" />
 									{t("common.actions.verify")}

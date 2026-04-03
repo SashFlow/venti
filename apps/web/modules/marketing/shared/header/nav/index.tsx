@@ -1,5 +1,5 @@
-import Logo from "@components/shared/logo";
 import { Button } from "@repo/ui/button";
+import Logo from "@shared/components/Logo";
 import { useRouter } from "next/navigation";
 import { NavMenu } from "./Menu";
 import { NavigationSheet } from "./Sheet";

@@ -1,4 +1,4 @@
-import { getAllPosts } from "@components/marketing/blog/posts";
+import { getAllPosts } from "@marketing/blog/posts";
 import { config } from "@repo/config";
 import { getBaseUrl } from "@repo/utils";
 import { allLegalPages } from "content-collections";

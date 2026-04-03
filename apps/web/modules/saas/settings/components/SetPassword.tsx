@@ -52,7 +52,7 @@ export function SetPasswordForm() {
 			description={t("settings.account.security.setPassword.description")}
 		>
 			<div className="flex justify-end">
-				<Button type="submit" loading={submitting} onClick={onSubmit}>
+				<Button type="submit" disabled={submitting} onClick={onSubmit}>
 					{t("settings.account.security.setPassword.submit")}
 				</Button>
 			</div>

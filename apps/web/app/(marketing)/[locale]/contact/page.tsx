@@ -1,4 +1,4 @@
-import { ContactForm } from "@components/marketing/home/ContactForm";
+import { ContactForm } from "@marketing/home/ContactForm";
 import { config } from "@repo/config";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";

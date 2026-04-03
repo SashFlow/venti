@@ -178,7 +178,7 @@ export function AiChat({ organizationId }: { organizationId?: string }) {
 						variant="destructive"
 						size="sm"
 						className="mb-4 flex w-full items-center gap-2"
-						loading={createChatMutation.isPending}
+						disabled={createChatMutation.isPending}
 						onClick={createNewChat}
 					>
 						<PlusIcon className="size-4" />

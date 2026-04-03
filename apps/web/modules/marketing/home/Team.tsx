@@ -1,5 +1,5 @@
 "use client";
-import { AnimatedTestimonials } from "@components/marketing/shared/animated-testimonials";
+import { AnimatedTestimonials } from "@marketing/shared/animated-testimonials";
 import { motion } from "framer-motion";
 import { teamMembers } from "../../../constants";
 

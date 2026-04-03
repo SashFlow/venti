@@ -1,7 +1,7 @@
 import Placeholder from "@assets/svg/placeholder.svg";
-import Logo from "@components/shared/logo";
 import { cn } from "@repo/ui/utils";
 import { Footer } from "@saas/shared/components/Footer";
+import Logo from "@shared/components/Logo";
 import Image from "next/image";
 
 import type { PropsWithChildren } from "react";

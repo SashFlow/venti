@@ -128,7 +128,7 @@ export function OrganizationForm({
 							<div className="flex justify-end">
 								<Button
 									type="submit"
-									loading={
+									disabled={
 										updateOrganizationMutation.isPending ||
 										createOrganizationMutation.isPending
 									}

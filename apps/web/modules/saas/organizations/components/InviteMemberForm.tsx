@@ -133,7 +133,7 @@ export function InviteMemberForm({
 					<div className="mt-4 flex justify-end">
 						<Button
 							type="submit"
-							loading={form.formState.isSubmitting}
+							disabled={form.formState.isSubmitting}
 						>
 							{t(
 								"organizations.settings.members.inviteMember.submit",

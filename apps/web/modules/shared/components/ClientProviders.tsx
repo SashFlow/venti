@@ -1,13 +1,13 @@
 "use client";
 
 import { ProgressProvider } from "@bprogress/next/app";
-import { AnalyticsScript } from "@components/analytics";
 import { config } from "@repo/config";
 import { Toaster } from "@repo/ui/sonner";
 import { ApiClientProvider } from "@shared/components/ApiClientProvider";
 import { ConsentBanner } from "@shared/components/ConsentBanner";
 import { ThemeProvider } from "next-themes";
 import type { PropsWithChildren } from "react";
+import { AnalyticsScript } from "../../analytics";
 
 export function ClientProviders({ children }: PropsWithChildren) {
 	return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Carousel } from "@components/marketing/shared/cards-carousel";
+import { Card, Carousel } from "@marketing/shared/cards-carousel";
 import Image from "next/image";
 import React from "react";
 import { industryDomainData } from "../../../constants";

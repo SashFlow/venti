@@ -36,7 +36,7 @@ export function CustomerPortalButton({ purchaseId }: { purchaseId: string }) {
 			variant="destructive"
 			size="sm"
 			onClick={() => createCustomerPortal()}
-			loading={createCustomerPortalMutation.isPending}
+			disabled={createCustomerPortalMutation.isPending}
 		>
 			<CreditCardIcon className="mr-2 size-4" />
 			{t("settings.billing.createCustomerPortal.label")}

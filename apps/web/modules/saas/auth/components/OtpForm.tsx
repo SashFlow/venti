@@ -151,7 +151,7 @@ export function OtpForm() {
 						)}
 					/>
 
-					<Button loading={form.formState.isSubmitting}>
+					<Button disabled={form.formState.isSubmitting}>
 						{t("auth.verify.submit")}
 					</Button>
 				</form>

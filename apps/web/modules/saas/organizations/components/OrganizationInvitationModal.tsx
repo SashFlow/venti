@@ -95,7 +95,6 @@ export function OrganizationInvitationModal({
 					variant="destructive"
 					onClick={() => onSelectAnswer(false)}
 					disabled={!!submitting}
-					loading={submitting === "reject"}
 				>
 					<XIcon className="mr-1.5 size-4" />
 					{t("organizations.invitationModal.decline")}
@@ -104,7 +103,6 @@ export function OrganizationInvitationModal({
 					className="flex-1"
 					onClick={() => onSelectAnswer(true)}
 					disabled={!!submitting}
-					loading={submitting === "accept"}
 				>
 					<CheckIcon className="mr-1.5 size-4" />
 					{t("organizations.invitationModal.accept")}

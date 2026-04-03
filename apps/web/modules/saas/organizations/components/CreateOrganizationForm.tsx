@@ -99,7 +99,7 @@ export function CreateOrganizationForm({
 					<Button
 						className="mt-6 w-full"
 						type="submit"
-						loading={form.formState.isSubmitting}
+						disabled={form.formState.isSubmitting}
 					>
 						{t("organizations.createForm.submit")}
 					</Button>
