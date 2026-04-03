@@ -12,20 +12,24 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@repo/ui/sidebar";
+import { cookies } from "next/headers";
 import type { PropsWithChildren } from "react";
 import { AppSidebar } from "./sidebar";
 
-export function AppLayout({ children }: PropsWithChildren) {
+export async function AppLayout({ children }: PropsWithChildren) {
+	const cookieStore = await cookies();
+	const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+
 	return (
-		<SidebarProvider>
+		<SidebarProvider defaultOpen={defaultOpen}>
 			<AppSidebar />
-			<SidebarInset>
-				<header className="flex h-16 shrink-0 items-center gap-2">
+			<SidebarInset id="inset">
+				<header className="flex h-[57px] shrink-0 items-center gap-2 border-b border-black/20">
 					<div className="flex items-center gap-2 px-4">
-						<SidebarTrigger className="-ml-1" />
+						<SidebarTrigger className="-ml-1 hidden md:flex lg:hidden justify-center items-center" />
 						<Separator
 							orientation="vertical"
-							className="mr-2 data-[orientation=vertical]:h-4"
+							className="mr-2 data-[orientation=vertical]:h-4 hidden md:block lg:hidden"
 						/>
 						<Breadcrumb>
 							<BreadcrumbList>

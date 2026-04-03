@@ -1,6 +1,5 @@
 "use client";
 
-import Logo from "@components/shared/logo";
 import {
 	Sidebar,
 	SidebarContent,
@@ -13,9 +12,10 @@ import {
 import {
 	BookOpen,
 	Bot,
+	Command,
 	Frame,
 	LifeBuoy,
-	Map as MapIcon,
+	Map,
 	PieChart,
 	Send,
 	Settings2,
@@ -23,8 +23,6 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { NavMain } from "./main";
-// import NavProjects from "@/components/nav-projects";
-// import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "./user";
 
 const data = {
@@ -146,29 +144,43 @@ const data = {
 		{
 			name: "Travel",
 			url: "#",
-			icon: MapIcon,
+			icon: Map,
 		},
 	],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	return (
-		<Sidebar variant="inset" {...props}>
-			<SidebarHeader>
+		<Sidebar
+			variant="inset"
+			className="border-r border-black/20"
+			{...props}
+		>
+			<SidebarHeader className="border-b border-black/20">
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>
-							<Logo />
+							<div>
+								<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+									<Command className="size-4" />
+								</div>
+								<div className="grid flex-1 text-left text-sm leading-tight">
+									<span className="truncate font-medium">
+										Acme Inc
+									</span>
+									<span className="truncate text-xs">
+										Enterprise
+									</span>
+								</div>
+							</div>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
 				<NavMain items={data.navMain} />
-				{/* <NavProjects projects={data.projects} /> */}
-				{/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
 			</SidebarContent>
-			<SidebarFooter>
+			<SidebarFooter className="border-t border-black/20">
 				<NavUser user={data.user} />
 			</SidebarFooter>
 		</Sidebar>
