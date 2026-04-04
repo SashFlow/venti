@@ -153,10 +153,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	return (
 		<Sidebar
 			variant="inset"
-			className="border-r border-black/20"
+			className="border-r border-foreground/20"
 			{...props}
 		>
-			<SidebarHeader className="border-b border-black/20">
+			<SidebarHeader className="border-b border-foreground/20">
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>
@@ -180,7 +180,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<SidebarContent>
 				<NavMain items={data.navMain} />
 			</SidebarContent>
-			<SidebarFooter className="border-t border-black/20">
+			<SidebarFooter className="border-t border-foreground/20">
 				<NavUser user={data.user} />
 			</SidebarFooter>
 		</Sidebar>

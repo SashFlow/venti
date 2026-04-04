@@ -72,6 +72,7 @@
 		"./command": "./src/shadcn/command.tsx",
 		"./data-table": "./src/shadcn/data-table.tsx",
 		"./dialog": "./src/shadcn/dialog.tsx",
+		"./drawer": "./src/shadcn/drawer.tsx",
 		"./dropdown-menu": "./src/shadcn/dropdown-menu.tsx",
 		"./navigation-menu": "./src/shadcn/navigation-menu.tsx",
 		"./form": "./src/shadcn/form.tsx",
