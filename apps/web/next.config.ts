@@ -7,7 +7,12 @@ import nextIntlPlugin from "next-intl/plugin";
 const withNextIntl = nextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
-	transpilePackages: ["@repo/api", "@repo/auth", "@repo/database", "@repo/ui"],
+	transpilePackages: [
+		"@repo/api",
+		"@repo/auth",
+		"@repo/database",
+		"@repo/ui",
+	],
 	images: {
 		remotePatterns: [
 			{
@@ -42,11 +47,6 @@ const nextConfig: NextConfig = {
 			{
 				source: "/app/settings",
 				destination: "/app/settings/general",
-				permanent: true,
-			},
-			{
-				source: "/app/:organizationSlug/settings",
-				destination: "/app/:organizationSlug/settings/general",
 				permanent: true,
 			},
 			{

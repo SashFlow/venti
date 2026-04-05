@@ -56,7 +56,7 @@ export function OrganizationInvitationModal({
 					throw error;
 				}
 
-				router.replace("/app");
+				router.replace("/app/home");
 			}
 		} catch {
 			// TODO: handle error

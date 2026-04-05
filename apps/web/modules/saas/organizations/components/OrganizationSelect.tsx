@@ -85,7 +85,7 @@ export function OrganzationSelect({ className }: { className?: string }) {
 								onValueChange={async (value: string) => {
 									if (value === user.id) {
 										await clearCache();
-										router.replace("/app");
+										router.replace("/app/home");
 									}
 								}}
 							>

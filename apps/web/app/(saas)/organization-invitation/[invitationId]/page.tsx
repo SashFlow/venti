@@ -20,7 +20,7 @@ export default async function OrganizationInvitationPage({
 	});
 
 	if (!invitation) {
-		redirect("/app");
+		redirect("/app/home");
 	}
 
 	const organization = await getOrganizationById(invitation.organizationId);

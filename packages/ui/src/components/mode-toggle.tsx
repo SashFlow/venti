@@ -128,7 +128,9 @@ export function SubMenuModeToggle() {
 
 function setCookeTheme(theme: string) {
 	// biome-ignore lint/suspicious/noDocumentCookie: Required for client-side theme persistence
-	document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+	if (typeof document !== "undefined") {
+		document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+	}
 }
 
 function Icon({ theme }: { theme: string | undefined }) {

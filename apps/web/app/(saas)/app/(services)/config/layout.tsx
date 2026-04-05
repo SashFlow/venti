@@ -27,7 +27,7 @@ export default async function SettingsLayout({
 	const organization = await getActiveOrganization(organizationSlug);
 
 	if (!organization) {
-		redirect("/app");
+		redirect("/app/home");
 	}
 
 	const userIsOrganizationAdmin = isOrganizationAdmin(

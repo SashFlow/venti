@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: PropsWithChildren) {
 	}
 
 	if (session.user?.role !== "admin") {
-		redirect("/app");
+		redirect("/app/home");
 	}
 
 	return (

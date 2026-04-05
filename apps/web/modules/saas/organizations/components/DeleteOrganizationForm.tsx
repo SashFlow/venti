@@ -50,7 +50,7 @@ export function DeleteOrganizationForm() {
 				);
 				await setActiveOrganization(null);
 				await reloadOrganizations();
-				router.replace("/app");
+				router.replace("/app/home");
 			},
 		});
 	};

@@ -15,7 +15,7 @@ export default async function NewOrganizationPage() {
 			(!config.organizations.requireOrganization ||
 				organizations.length > 0))
 	) {
-		redirect("/app");
+		redirect("/app/home");
 	}
 
 	return (

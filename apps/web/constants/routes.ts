@@ -19,6 +19,11 @@ import {
 } from "lucide-react";
 
 export const NAV_ROUTES = {
+	default: {
+		title: "Home",
+		url: "/app/home",
+		icon: TrendingUp,
+	},
 	modules: [
 		{
 			title: "Finance & Accounting",
