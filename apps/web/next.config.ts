@@ -50,6 +50,11 @@ const nextConfig: NextConfig = {
 				permanent: true,
 			},
 			{
+				source: "/app",
+				destination: "/app/home",
+				permanent: true,
+			},
+			{
 				source: "/app/admin",
 				destination: "/app/admin/users",
 				permanent: true,
