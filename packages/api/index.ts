@@ -80,6 +80,14 @@ export const app = new Hono()
 	.post("/webhooks/payments", (c) => paymentsWebhookHandler(c.req.raw))
 	// Health check
 	.get("/health", (c) => c.text("OK"))
+	// Data portability (GDPR)
+	.get("/user/data-export", async (c) => {
+		return c.json({
+			message:
+				"This endpoint will generate and send a JSON export of all your data.",
+			status: "WIP",
+		});
+	})
 	// oRPC handlers (for RPC and OpenAPI)
 	.use("*", async (c, next) => {
 		const context = {

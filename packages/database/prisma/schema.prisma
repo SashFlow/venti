@@ -31,6 +31,7 @@ model User {
     paymentsCustomerId String?
     locale             String?
     twoFactorEnabled   Boolean?
+    aiOptOut           Boolean      @default(false)
     sessions           Session[]
     accounts           Account[]
     passkeys           Passkey[]
@@ -39,6 +40,7 @@ model User {
     members            Member[]
     twofactors         TwoFactor[]
     aiChats            AiChat[]
+    auditLogs          AuditLog[]
 
     @@unique([email])
     @@unique([username])
@@ -229,6 +231,21 @@ model Note {
     updatedAt   DateTime @updatedAt
 
     @@map("note")
+}
+
+model AuditLog {
+    id         String   @id @default(cuid())
+    userId     String?
+    user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+    action     String
+    resource   String
+    resourceId String?
+    metadata   Json?
+    ipAddress  String?
+    userAgent  String?
+    createdAt  DateTime @default(now())
+
+    @@map("audit_log")
 }
 
 model Fell {

@@ -2,11 +2,12 @@ import { ORPCError, streamToEventIterator } from "@orpc/client";
 import { type } from "@orpc/server";
 import {
 	convertToModelMessages,
+	redactPII,
 	streamText,
 	textModel,
 	type UIMessage,
 } from "@repo/ai";
-import { getAiChatById, updateAiChat } from "@repo/database";
+import { getAiChatById, getUserById, updateAiChat } from "@repo/database";
 import { protectedProcedure } from "../../../orpc/procedures";
 import { verifyOrganizationMembership } from "../../organizations/lib/membership";
 
@@ -23,6 +24,15 @@ export const addMessageToChat = protectedProcedure
 	.handler(async ({ input, context }) => {
 		const { chatId, messages } = input;
 		const user = context.user;
+
+		// GDPR AI Opt-out Check
+		const fullUser = await getUserById(user.id);
+		if (fullUser?.aiOptOut) {
+			throw new ORPCError(
+				"FORBIDDEN",
+				"AI processing is disabled for this account.",
+			);
+		}
 
 		const chat = await getAiChatById(chatId);
 
@@ -43,9 +53,17 @@ export const addMessageToChat = protectedProcedure
 			throw new ORPCError("FORBIDDEN");
 		}
 
+		// HIPAA/GDPR PII Redaction
+		const redactedMessages = messages.map((m) => ({
+			...m,
+			parts: m.parts.map((p) =>
+				p.type === "text" ? { ...p, text: redactPII(p.text) } : p,
+			),
+		}));
+
 		const response = streamText({
 			model: textModel,
-			messages: convertToModelMessages(messages),
+			messages: convertToModelMessages(redactedMessages),
 			async onFinish({ text }) {
 				await updateAiChat({
 					id: chatId,

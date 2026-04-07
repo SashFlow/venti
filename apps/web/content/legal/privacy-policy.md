@@ -4,37 +4,72 @@ title: Privacy Policy
 
 # Privacy Policy
 
-Last updated: March 22, 2026
+Last updated: April 8, 2026
 
-This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your information when You use the Service and tells You about Your privacy rights and how the law protects You.
+This Privacy Policy describes Our policies and procedures on the collection, use, and disclosure of Your information when You use the Service and tells You about Your privacy rights and how the law protects You. We are committed to complying with the General Data Protection Regulation (GDPR), the California Consumer Privacy Act (CCPA), the Health Insurance Portability and Accountability Act (HIPAA), and SOC 2 security standards.
 
-We use Your Personal data to provide and improve the Service. By using the Service, You agree to the collection and use of information in accordance with this Privacy Policy.
-
-## Interpretation and Definitions
+## 1. Interpretation and Definitions
 
 ### Interpretation
 The words of which the initial letter is capitalized have meanings defined under the following conditions. The following definitions shall have the same meaning regardless of whether they appear in singular or in plural.
 
 ### Definitions
-For the purposes of this Privacy Policy:
-* **Company** (referred to as either "the Company", "We", "Us" or "Our" in this Agreement) refers to Sashflow.
-* **Service** refers to the Website.
-* **You** means the individual accessing or using the Service, or the company, or other legal entity on behalf of which such individual is accessing or using the Service, as applicable.
+* **Company** (referred to as "the Company", "We", "Us" or "Our") refers to Sashflow.
+* **Service** refers to the Sashflow platform and website.
+- **Sub-processor** refers to any third-party data processor engaged by Us (e.g., OpenAI, Vercel).
+* **You** means the individual or legal entity accessing the Service.
 
-## Collecting and Using Your Personal Data
+## 2. Collecting and Using Your Personal Data
 
 ### Types of Data Collected
 
 #### Personal Data
-While using Our Service, We may ask You to provide Us with certain personally identifiable information that can be used to contact or identify You. Personally identifiable information may include, but is not limited to:
+We collect personally identifiable information such as:
 * Email address
 * First name and last name
-* Usage Data
+* Organization and billing details
+* IP address and device identifiers (Usage Data)
 
-#### Usage Data
-Usage Data is collected automatically when using the Service.
-Usage Data may include information such as Your Device's Internet Protocol address (e.g. IP address), browser type, browser version, the pages of our Service that You visit, the time and date of Your visit, the time spent on those pages, unique device identifiers and other diagnostic data.
+#### Audit Logging (SOC 2 & HIPAA)
+To maintain security and compliance, We record an administrative audit trail of sensitive actions, including login attempts, role changes, and data deletions. These logs include Your userId, action, timestamp, and IP address.
 
-## Contact Us
+### AI Data Processing
+We use Artificial Intelligence (AI) models provided by third parties (e.g., OpenAI) to provide certain features.
+* **PII Redaction**: We use automated tools to detect and redact sensitive Personal Data (PII) before it is processed by external AI models.
+* **Opt-out**: You may opt-out of AI-based data processing at any time through Your profile settings ("AI Opt-Out").
+* **Training**: We do not use Your Personal Data to train external AI models unless explicitly authorized.
+
+## 3. Cookies and Tracking (GDPR & CCPA)
+We use a granular consent management system. You can manage Your preferences for:
+- **Essential Cookies**: Necessary for the Service to function.
+- **Analytics Cookies**: Used to understand usage and improve performance.
+- **Marketing Cookies**: Used for personalized content and communications.
+
+You may update Your consent preferences or opt-out of "selling" or "sharing" Your data at any time via our Consent Banner.
+
+## 4. Sub-processors
+We engage a limited number of trusted Sub-processors to help us provide the Service. A complete list of our current Sub-processors and their locations can be found in our [Sub-processor List](./sub-processors.md).
+
+## 5. Your Privacy Rights
+
+### GDPR Rights (EEA/UK)
+If You are in the EEA or UK, You have the right to:
+* **Access and Portability**: Request a copy of Your data in a machine-readable format via `/api/user/data-export`.
+* **Correction and Deletion**: Request that We update or delete Your Personal Data.
+* **Objection**: Object to our processing of Your data.
+
+### CCPA/CPRA Rights (California)
+California residents have the right to:
+* Know what personal information is collected and shared.
+* Opt-out of the "sale" or "sharing" of personal information.
+* Non-discrimination for exercising these rights.
+
+## 6. Security and HIPAA Compliance
+We implement high-standard security measures, including encryption at rest and in transit (TLS 1.3). For healthcare providers, We enter into Business Associate Agreements (BAAs) to ensure HIPAA-compliant handling of Protected Health Information (PHI).
+
+## 7. Data Retention
+We retain Your Personal Data only for as long as necessary for the purposes set out in this Privacy Policy, or as required by law (e.g., for audit or financial reporting).
+
+## 8. Contact Us
 If you have any questions about this Privacy Policy, You can contact us:
-* By email: contact@sashflow.com
+* By email: privacy@sashflow.com
