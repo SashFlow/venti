@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
 			},
 			{
 				source: "/app",
-				destination: "/app/home",
+				destination: "/home",
 				permanent: true,
 			},
 			{

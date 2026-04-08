@@ -46,6 +46,7 @@ export default async function proxy(req: NextRequest) {
 		"/new-organization",
 		"/choose-plan",
 		"/organization-invitation",
+		"/home",
 	];
 
 	if (pathsWithoutLocale.some((path) => pathname.startsWith(path))) {

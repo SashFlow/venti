@@ -34,7 +34,7 @@ export function OnboardingForm() {
 		});
 
 		await clearCache();
-		router.replace(redirectTo ?? "/app/home");
+		router.replace(redirectTo ?? "/home");
 	};
 
 	const steps = [

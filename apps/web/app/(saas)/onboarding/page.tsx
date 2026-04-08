@@ -24,7 +24,7 @@ export default async function OnboardingPage() {
 	}
 
 	if (!config.users.enableOnboarding || session.user.onboardingComplete) {
-		redirect("/app/home");
+		redirect("/home");
 	}
 
 	return (

@@ -49,7 +49,7 @@ export default async function ChoosePlanPage() {
 	const { activePlan } = createPurchasesHelper(purchases);
 
 	if (activePlan) {
-		redirect("/app/home");
+		redirect("/home");
 	}
 
 	return (

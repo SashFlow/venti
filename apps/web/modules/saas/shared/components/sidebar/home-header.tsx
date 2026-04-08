@@ -24,7 +24,6 @@ import {
 	DropdownMenuTrigger,
 } from "@repo/ui/dropdown-menu";
 import { Input } from "@repo/ui/input";
-import { SidebarTrigger } from "@repo/ui/sidebar";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
 import { NavUser } from "@saas/shared/components/sidebar/user";
@@ -210,11 +209,8 @@ const SideBarHeader = () => {
 	}, [isSearchOpen]);
 
 	return (
-		<header className="flex h-16 shrink-0 items-center justify-center gap-2 border-b border-foreground/20 bg-primary px-4 text-primary-foreground">
-			<div className="absolute left-[16px] items-center hidden md:flex lg:hidden gap-1 sm:gap-2">
-				<SidebarTrigger />
-			</div>
-			<div className="absolute left-[16px] items-center flex md:hidden gap-1 sm:gap-2">
+		<header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-foreground/20 bg-primary px-4 text-primary-foreground">
+			<div className="flex items-center gap-2 overflow-hidden">
 				<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white text-primary">
 					<Command className="size-4" />
 				</div>
@@ -430,7 +426,7 @@ const SideBarHeader = () => {
 				</Drawer>
 			</div>
 
-			<div className="flex items-center gap-1 sm:gap-2 absolute right-[16px]">
+			<div className="flex items-center gap-1 sm:gap-2">
 				<Button
 					variant="ghost"
 					size="icon"

@@ -12,7 +12,7 @@ export const NavigationSheet = () => {
 				<SheetTitle>Navigation Menu</SheetTitle>
 			</VisuallyHidden>
 
-			<SheetTrigger>
+			<SheetTrigger asChild>
 				<Button className="rounded-full" size="icon" variant="outline">
 					<Menu />
 				</Button>

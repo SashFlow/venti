@@ -131,7 +131,7 @@ export default function HomeClient() {
 					<h1 className="text-2xl font-bold tracking-tight">
 						Console home
 					</h1>
-					<Info className="size-4 text-muted-foreground cursor-help" />
+					<Info className="size-4 text-secondary cursor-help" />
 				</div>
 				<div className="flex items-center gap-2">
 					<Button
@@ -140,16 +140,16 @@ export default function HomeClient() {
 						className="h-9 gap-2"
 						onClick={resetLayout}
 					>
-						<RotateCcw className="size-4" />
+						<RotateCcw className="size-4 text-primary" />
 						Reset to default layout
 					</Button>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
 								size="sm"
-								className="h-9 gap-2 bg-orange-500 hover:bg-orange-600 text-white border-none"
+								className="h-9 gap-2 bg-secondary hover:bg-secondary/80 text-background border-none cursor-pointer"
 							>
-								<Plus className="size-4" />
+								<Plus className="size-4 text-secondary-foreground" />
 								Add widgets
 							</Button>
 						</DropdownMenuTrigger>
@@ -186,15 +186,15 @@ export default function HomeClient() {
 								onClick={() => toggleWidget("recent")}
 								className="absolute top-2 right-2 size-7 opacity-0 group-hover:opacity-100 transition-all"
 							>
-								<X className="size-4 text-muted-foreground" />
+								<X className="size-4 text-secondary/80" />
 							</Button>
 							<CardHeader className="flex flex-row items-center justify-between py-3 space-y-0">
 								<div className="flex items-center gap-2">
-									<GripVertical className="size-4 text-muted-foreground cursor-move" />
+									<GripVertical className="size-4 text-secondary/80 cursor-move" />
 									<CardTitle className="text-base font-semibold">
 										Recently visited
 									</CardTitle>
-									<span className="text-xs text-blue-500 font-medium cursor-pointer hover:underline">
+									<span className="text-xs text-primary font-medium cursor-pointer hover:underline">
 										Info
 									</span>
 								</div>
@@ -203,7 +203,7 @@ export default function HomeClient() {
 									size="icon"
 									className="size-8"
 								>
-									<ChevronRight className="size-4" />
+									<ChevronRight className="size-4 text-secondary" />
 								</Button>
 							</CardHeader>
 							<CardContent className="pt-0">
@@ -218,10 +218,10 @@ export default function HomeClient() {
 												onClick={() =>
 													addToRecent(module.title)
 												}
-												className="flex items-center gap-3 hover:text-blue-600 transition-colors"
+												className="flex items-center gap-3 hover:text-primary transition-colors"
 											>
-												<div className="size-8 rounded bg-muted flex items-center justify-center">
-													<module.icon className="size-4" />
+												<div className="size-8 rounded bg-primary/10 flex items-center justify-center">
+													<module.icon className="size-4 text-primary" />
 												</div>
 												<span className="text-sm font-medium">
 													{module.title}
@@ -250,10 +250,10 @@ export default function HomeClient() {
 																module.title,
 															)
 														}
-														className="flex items-center gap-3 hover:text-blue-600 transition-colors"
+														className="flex items-center gap-3 hover:text-primary transition-colors"
 													>
-														<div className="size-8 rounded bg-muted flex items-center justify-center text-muted-foreground group-hover:text-foreground">
-															<module.icon className="size-4" />
+														<div className="size-8 rounded bg-secondary/15 flex items-center justify-center text-secondary group-hover:text-secondary">
+															<module.icon className="size-4 text-secondary" />
 														</div>
 														<span className="text-sm font-medium">
 															{module.title}
@@ -265,7 +265,7 @@ export default function HomeClient() {
 								<div className="mt-6 pt-4 border-t flex justify-center">
 									<Button
 										variant="link"
-										className="text-blue-600 hover:underline h-auto p-0 text-sm"
+										className="text-primary hover:underline h-auto p-0 text-sm"
 									>
 										View all services
 									</Button>
@@ -283,11 +283,11 @@ export default function HomeClient() {
 								onClick={() => toggleWidget("favorites")}
 								className="absolute top-2 right-2 size-7 opacity-0 group-hover:opacity-100 transition-all"
 							>
-								<X className="size-4 text-muted-foreground" />
+								<X className="size-4 text-secondary/80" />
 							</Button>
 							<CardHeader className="flex flex-row items-center justify-between py-3 space-y-0">
 								<div className="flex items-center gap-2">
-									<GripVertical className="size-4 text-muted-foreground cursor-move" />
+									<GripVertical className="size-4 text-secondary/80 cursor-move" />
 									<CardTitle className="text-base font-semibold">
 										Favorites
 									</CardTitle>
@@ -296,7 +296,7 @@ export default function HomeClient() {
 							<CardContent className="pt-0">
 								{favorites.length === 0 ? (
 									<div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg bg-muted/30">
-										<Star className="size-8 text-muted-foreground mb-4" />
+										<Star className="size-8 text-secondary mb-4" />
 										<p className="text-sm font-medium">
 											No favorite modules yet
 										</p>
@@ -314,9 +314,9 @@ export default function HomeClient() {
 												onClick={() =>
 													addToRecent(module.title)
 												}
-												className="flex items-center p-3 rounded-lg border hover:border-blue-500 hover:bg-blue-50/30 transition-all group"
+												className="flex items-center p-3 rounded-lg border hover:border-primary/40 hover:bg-accent/50 transition-all group"
 											>
-												<div className="size-10 rounded bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
+												<div className="size-10 rounded bg-primary/10 flex items-center justify-center text-primary mr-3">
 													<module.icon className="size-5" />
 												</div>
 												<div className="flex-1 min-w-0">
@@ -328,7 +328,7 @@ export default function HomeClient() {
 													</p>
 												</div>
 												<Star
-													className="size-4 text-yellow-500 fill-yellow-500 ml-2"
+													className="size-4 text-primary fill-primary ml-2"
 													onClick={(e) => {
 														e.preventDefault();
 														e.stopPropagation();
@@ -354,11 +354,11 @@ export default function HomeClient() {
 								onClick={() => toggleWidget("explore")}
 								className="absolute top-2 right-2 size-7 opacity-0 group-hover:opacity-100 transition-all"
 							>
-								<X className="size-4 text-muted-foreground" />
+								<X className="size-4 text-secondary/80" />
 							</Button>
 							<CardHeader className="flex flex-row items-center justify-between py-3 space-y-0">
 								<div className="flex items-center gap-2">
-									<GripVertical className="size-4 text-muted-foreground cursor-move" />
+									<GripVertical className="size-4 text-secondary/80 cursor-move" />
 									<CardTitle className="text-base font-semibold">
 										Explore all modules
 									</CardTitle>
@@ -375,8 +375,8 @@ export default function HomeClient() {
 											}
 											className="relative group p-4 flex flex-col items-center justify-center text-center rounded-xl border border-transparent hover:border-muted-foreground/20 hover:bg-muted/50 transition-all"
 										>
-											<div className="size-12 rounded-2xl bg-muted flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-												<module.icon className="size-6" />
+											<div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+												<module.icon className="size-6 text-primary" />
 											</div>
 											<span className="text-xs font-semibold leading-tight line-clamp-2">
 												{module.title}
@@ -406,8 +406,8 @@ export default function HomeClient() {
 														favorites.includes(
 															module.title,
 														)
-															? "fill-yellow-500 text-yellow-500"
-															: "text-muted-foreground",
+															? "fill-primary text-primary"
+															: "text-secondary/80",
 													)}
 												/>
 											</Button>
@@ -430,11 +430,11 @@ export default function HomeClient() {
 								onClick={() => toggleWidget("welcome")}
 								className="absolute top-2 right-2 size-7 opacity-0 group-hover:opacity-100 transition-all"
 							>
-								<X className="size-4 text-muted-foreground" />
+								<X className="size-4 text-secondary/80" />
 							</Button>
 							<CardHeader className="flex flex-row items-center justify-between py-3 space-y-0">
 								<div className="flex items-center gap-2">
-									<GripVertical className="size-4 text-muted-foreground cursor-move" />
+									<GripVertical className="size-4 text-secondary/80 cursor-move" />
 									<CardTitle className="text-base font-semibold">
 										Welcome to Sashflow
 									</CardTitle>
@@ -444,18 +444,18 @@ export default function HomeClient() {
 									size="icon"
 									className="size-8"
 								>
-									<ChevronRight className="size-4" />
+									<ChevronRight className="size-4 text-secondary" />
 								</Button>
 							</CardHeader>
 							<CardContent className="pt-0 space-y-4">
 								<div className="flex items-start gap-4">
-									<div className="p-2 rounded bg-blue-50">
-										<BookOpen className="size-6 text-blue-600" />
+									<div className="p-2 rounded bg-primary/10">
+										<BookOpen className="size-6 text-primary" />
 									</div>
 									<div>
-										<h4 className="text-sm font-semibold text-blue-600 hover:underline cursor-pointer flex items-center gap-1">
+										<h4 className="text-sm font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1">
 											Getting started with Sashflow{" "}
-											<ExternalLink className="size-3" />
+											<ExternalLink className="size-3 text-secondary" />
 										</h4>
 										<p className="text-xs text-muted-foreground mt-1">
 											Find out the fundamentals of
@@ -465,13 +465,13 @@ export default function HomeClient() {
 									</div>
 								</div>
 								<div className="flex items-start gap-4">
-									<div className="p-2 rounded bg-green-50">
-										<HelpCircle className="size-6 text-green-600" />
+									<div className="p-2 rounded bg-secondary/15">
+										<HelpCircle className="size-6 text-secondary" />
 									</div>
 									<div>
-										<h4 className="text-sm font-semibold text-blue-600 hover:underline cursor-pointer flex items-center gap-1">
+										<h4 className="text-sm font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1">
 											User manual & Guides{" "}
-											<ExternalLink className="size-3" />
+											<ExternalLink className="size-3 text-secondary" />
 										</h4>
 										<p className="text-xs text-muted-foreground mt-1">
 											Explore detailed documentation for
@@ -493,15 +493,15 @@ export default function HomeClient() {
 								onClick={() => toggleWidget("health")}
 								className="absolute top-2 right-2 size-7 opacity-0 group-hover:opacity-100 transition-all"
 							>
-								<X className="size-4 text-muted-foreground" />
+								<X className="size-4 text-secondary/80" />
 							</Button>
 							<CardHeader className="flex flex-row items-center justify-between py-3 space-y-0">
 								<div className="flex items-center gap-2">
-									<GripVertical className="size-4 text-muted-foreground cursor-move" />
+									<GripVertical className="size-4 text-secondary/80 cursor-move" />
 									<CardTitle className="text-base font-semibold">
 										Sashflow Health
 									</CardTitle>
-									<span className="text-xs text-blue-500 font-medium cursor-pointer hover:underline">
+									<span className="text-xs text-primary font-medium cursor-pointer hover:underline">
 										Info
 									</span>
 								</div>
@@ -541,15 +541,15 @@ export default function HomeClient() {
 								onClick={() => toggleWidget("cost")}
 								className="absolute top-2 right-2 size-7 opacity-0 group-hover:opacity-100 transition-all"
 							>
-								<X className="size-4 text-muted-foreground" />
+								<X className="size-4 text-secondary/80" />
 							</Button>
 							<CardHeader className="flex flex-row items-center justify-between py-3 space-y-0">
 								<div className="flex items-center gap-2">
-									<GripVertical className="size-4 text-muted-foreground cursor-move" />
+									<GripVertical className="size-4 text-secondary/80 cursor-move" />
 									<CardTitle className="text-base font-semibold">
 										Cost and usage
 									</CardTitle>
-									<span className="text-xs text-blue-500 font-medium cursor-pointer hover:underline">
+									<span className="text-xs text-primary font-medium cursor-pointer hover:underline">
 										Info
 									</span>
 								</div>
@@ -561,7 +561,7 @@ export default function HomeClient() {
 											Current month
 										</p>
 										<div className="flex items-baseline gap-1">
-											<span className="text-2xl font-bold text-blue-600">
+											<span className="text-2xl font-bold text-primary">
 												$206.95
 											</span>
 											<span className="text-[10px] text-muted-foreground">
@@ -579,7 +579,7 @@ export default function HomeClient() {
 											</span>
 											<div className="w-full bg-muted h-1 rounded-full flex-1 ml-2">
 												<div
-													className="bg-blue-500 h-1 rounded-full"
+													className="bg-primary h-1 rounded-full"
 													style={{ width: "40%" }}
 												/>
 											</div>
@@ -589,7 +589,7 @@ export default function HomeClient() {
 								<div className="pt-4 border-t">
 									<Button
 										variant="link"
-										className="text-blue-600 hover:underline h-auto p-0 text-sm"
+										className="text-primary hover:underline h-auto p-0 text-sm"
 									>
 										Go to billing dashboard
 									</Button>

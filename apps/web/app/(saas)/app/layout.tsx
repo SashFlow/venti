@@ -69,5 +69,9 @@ export default async function Layout({ children }: PropsWithChildren) {
 		}
 	}
 
-	return <AppLayout>{children}</AppLayout>;
+	return (
+		<AppLayout>
+			<div className="container py-8 max-w-7xl mx-auto"> {children}</div>
+		</AppLayout>
+	);
 }

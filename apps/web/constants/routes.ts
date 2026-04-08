@@ -21,12 +21,12 @@ import {
 export const NAV_ROUTES = {
 	default: {
 		title: "Home",
-		url: "/app/home",
+		url: "/home",
 		icon: TrendingUp,
 	},
 	modules: [
 		{
-			title: "Finance & Accounting",
+			title: "Finance",
 			short_form: "F&A",
 			url: "/app/finance",
 			icon: Calculator,
@@ -42,7 +42,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Procurement & Purchase Management",
+			title: "Procurement",
 			short_form: "PPM",
 			url: "/app/procurement",
 			icon: ShoppingCart,
@@ -55,7 +55,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Sales & Order Management",
+			title: "Sales",
 			short_form: "SOM",
 			url: "/app/sales",
 			icon: TrendingUp,
@@ -68,7 +68,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Customer Relationship Management",
+			title: "CRM",
 			short_form: "CRM",
 			url: "/app/crm",
 			icon: Users,
@@ -81,7 +81,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Human Resource Management System",
+			title: "Human Resources",
 			short_form: "HRMS",
 			url: "/app/hr",
 			icon: UserCog,
@@ -94,7 +94,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Manufacturing & Operations",
+			title: "Manufacturing",
 			short_form: "M&O",
 			url: "/app/manufacturing",
 			icon: Factory,
@@ -107,7 +107,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Inventory & Warehouse",
+			title: "Inventory",
 			short_form: "INV",
 			url: "/app/inventory",
 			icon: Boxes,
@@ -132,7 +132,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Project & Service",
+			title: "Projects",
 			short_form: "P&S",
 			url: "/app/projects",
 			icon: Briefcase,
@@ -145,7 +145,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Analytics & BI",
+			title: "Analytics",
 			short_form: "BI",
 			url: "/app/analytics",
 			icon: TrendingUp,
@@ -230,7 +230,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Master Data Management",
+			title: "Master Data",
 			short_form: "MDM",
 			url: "/app/master-data",
 			icon: Database,
@@ -243,7 +243,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Document & Content Management",
+			title: "Documents",
 			short_form: "DCM",
 			url: "/app/documents",
 			icon: FileText,
@@ -256,7 +256,7 @@ export const NAV_ROUTES = {
 			],
 		},
 		{
-			title: "Workflows & Automations",
+			title: "Workflows",
 			short_form: "W&A",
 			url: "/app/workflows",
 			icon: GitBranch,
@@ -277,8 +277,8 @@ export const NAV_ROUTES = {
 			icon: Settings,
 			sub_modules: [
 				{ title: "Users", url: "/users" },
+				{ title: "Organizations", url: "/organizations" },
 				{ title: "Roles & Permissions", url: "/roles" },
-				{ title: "Organizations", url: "/orgs" },
 				{ title: "Subscriptions", url: "/subscriptions" },
 			],
 		},

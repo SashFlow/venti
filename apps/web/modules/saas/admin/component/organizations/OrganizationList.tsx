@@ -162,7 +162,7 @@ export function OrganizationList() {
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button asChild size="icon" variant="ghost">
-										<MoreVerticalIcon className="size-4" />
+										<MoreVerticalIcon className="w-[20px] h-[20px]" />
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent>
