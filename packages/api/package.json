@@ -15,6 +15,7 @@
 		"@repo/payments": "workspace:*",
 		"@repo/storage": "workspace:*",
 		"@repo/utils": "workspace:*",
+		"@repo/wms-auth": "workspace:*",
 		"@scalar/hono-api-reference": "^0.9.19",
 		"@sindresorhus/slugify": "^3.0.0",
 		"cookie": "^1.0.2",

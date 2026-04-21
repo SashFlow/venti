@@ -1,0 +1,13 @@
+{
+	"name": "@repo/wms-auth",
+	"version": "0.0.0",
+	"main": "./index.ts",
+	"dependencies": {
+		"@repo/database": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.4",
+		"@repo/tsconfig": "workspace:*",
+		"typescript": "5.9.2"
+	}
+}

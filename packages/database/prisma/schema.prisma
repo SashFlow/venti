@@ -14,6 +14,10 @@ generator zod {
     config   = "./zod-generator.config.json"
 }
 
+// ============================================================
+// CORE PLATFORM MODELS
+// ============================================================
+
 model User {
     id                 String       @id @default(cuid())
     name               String
@@ -41,6 +45,17 @@ model User {
     twofactors         TwoFactor[]
     aiChats            AiChat[]
     auditLogs          AuditLog[]
+
+    // WMS back-relations
+    qcInspections             QCInspection[]     @relation("QCInspector")
+    inspectionRecords         InspectionRecord[] @relation("Inspector")
+    workOrders                WorkOrder[]        @relation("Technician")
+    cycleCounts               CycleCount[]       @relation("CycleCountBy")
+    pickJobs                  PickJob[]          @relation("Picker")
+    batchPicks                BatchPick[]        @relation("BatchPicker")
+    packingSlips              PackingSlip[]      @relation("PackedBy")
+    stockAdjustmentsRequested StockAdjustment[]  @relation("AdjustmentRequested")
+    stockAdjustmentsApproved  StockAdjustment[]  @relation("AdjustmentApproved")
 
     @@unique([email])
     @@unique([username])
@@ -139,6 +154,55 @@ model Organization {
     purchases          Purchase[]
     aiChats            AiChat[]
 
+    // WMS back-relations
+    wmsTenantConfig           WmsTenantConfig?
+    warehouses                Warehouse[]
+    suppliers                 Supplier[]
+    customers                 Customer[]
+    productFamilies           ProductFamily[]
+    products                  Product[]
+    uoms                      UnitOfMeasure[]
+    stockLevels               StockLevel[]
+    replenishmentRules        ReplenishmentRule[]
+    seasonalDemandPlans       SeasonalDemandPlan[]
+    weatherDemandSignals      WeatherDemandSignal[]
+    tierReplenishmentRules    TierReplenishmentRule[]
+    purchaseOrders            PurchaseOrder[]
+    grns                      GRN[]
+    qcInspections             QCInspection[]              @relation("OrgQCInspections")
+    inboundQCHolds            InboundQCHold[]
+    stockAdjustments          StockAdjustment[]
+    cycleCounts               CycleCount[]
+    pickingWaves              PickingWave[]
+    batchPicks                BatchPick[]
+    pickJobs                  PickJob[]
+    dispatchRules             DispatchRule[]
+    salesReturnNotes          SalesReturnNote[]
+    defectiveHoldRecords      DefectiveHoldRecord[]
+    inspectionRecords         InspectionRecord[]          @relation("OrgInspectionRecords")
+    scrapRecords              ScrapRecord[]
+    vendorReturns             VendorReturn[]
+    productCosts              ProductCost[]
+    inventoryValuationLedgers InventoryValuationLedger[]
+    deadStockFlags            DeadStockFlag[]
+    liquidationWorkflows      LiquidationWorkflow[]
+    aspProviders              AuthorizedServiceProvider[]
+    aspInventory              ASPInventory[]
+    aspReplenishmentTriggers  ASPReplenishmentTrigger[]
+    workOrders                WorkOrder[]                 @relation("OrgWorkOrders")
+    productVariants           ProductVariant[]
+    serialNumbers             SerialNumber[]
+    batchLots                 BatchLot[]
+    refrigerantRecords        RefrigerantRecord[]
+    consignmentStocks         ConsignmentStock[]
+    warrantyRecords           WarrantyRecord[]
+    installationRecords       InstallationRecord[]
+    creditNotes               CreditNote[]
+
+    // RBAC back-relations
+    wmsRoles    WmsRole[]
+    wmsPolicies WmsPolicy[]
+
     @@unique([slug])
     @@map("organization")
 }
@@ -151,6 +215,10 @@ model Member {
     user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
     role           String
     createdAt      DateTime
+
+    // WMS RBAC back-relations
+    wmsRoles    WmsMemberRole[]
+    wmsPolicies WmsMemberPolicyAttachment[]
 
     @@unique([organizationId, userId])
     @@map("member")
@@ -253,8 +321,8 @@ model Fell {
     name      String
     weather   String
     content   Json
-    imageUrl  String?
     published Boolean  @default(false)
+    imageUrl  String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -274,4 +342,1722 @@ model Picture {
     updatedAt   DateTime @updatedAt
 
     @@map("picture")
+}
+
+// ============================================================
+// WMS ENUMS
+// ============================================================
+
+enum WarehouseLevelType {
+    GROUND_FLOOR
+    MEZZANINE
+    BASEMENT
+    ROOF
+    ROOFTOP
+}
+
+enum BinType {
+    BIN
+    PALLET_SLOT
+    MEZZANINE_SHELF
+    DOCK
+    STAGING
+}
+
+enum ZoneType {
+    BULK
+    RACKING
+    RETURNS
+    QC_HOLD
+    CONSIGNMENT
+    STAGING
+    DOCK
+    REFRIGERANT
+    DEFECTIVE
+    DISPATCH
+}
+
+enum WeightClass {
+    LIGHT
+    HEAVY
+}
+
+enum ProductStatus {
+    ACTIVE
+    INACTIVE
+    DISCONTINUED
+}
+
+enum ReorderType {
+    MIN_MAX
+    MTO
+    SEASONAL
+    MULTI_TIER
+}
+
+enum DistributionTierType {
+    NATIONAL_DC
+    REGIONAL_DC
+    LOCAL_DC
+}
+
+enum ReceivingWorkflowType {
+    ONE_STEP
+    TWO_STEP
+    THREE_STEP
+}
+
+enum ShipmentWorkflowType {
+    ONE_STEP
+    TWO_STEP
+    THREE_STEP
+}
+
+enum QCDecision {
+    ACCEPT
+    REJECT
+    CONDITIONAL_ACCEPT
+}
+
+enum DispatchMethod {
+    FIFO
+    FEFO
+    DATE_BASED
+    LIFO
+}
+
+enum ReturnCategory {
+    WARRANTY
+    DOA
+    COMMERCIAL
+    DEFECTIVE
+}
+
+enum InspectionDecision {
+    REPAIR
+    REFURBISH
+    SCRAP
+    RETURN_TO_STOCK
+    RETURN_TO_VENDOR
+}
+
+enum LiquidationType {
+    WRITE_OFF
+    CLEARANCE_SALE
+    RETURN_TO_SUPPLIER
+}
+
+enum WorkOrderType {
+    INSTALL
+    SERVICE
+    DELIVERY
+}
+
+enum SeasonalPhase {
+    PRE_SEASON
+    PEAK
+    POST_SEASON
+}
+
+enum RefrigerantStatus {
+    FULL
+    PARTIAL
+    EMPTY
+    IN_USE
+    DISPOSED
+}
+
+enum POType {
+    STANDARD
+    MTO
+    REPLENISHMENT
+}
+
+enum POStatus {
+    DRAFT
+    SUBMITTED
+    APPROVED
+    PARTIAL
+    RECEIVED
+    CANCELLED
+}
+
+enum GRNStatus {
+    DRAFT
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+enum LandedCostAllocationMethod {
+    BY_QTY
+    BY_WEIGHT
+    BY_VALUE
+}
+
+enum PickJobStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    EXCEPTION
+    CANCELLED
+}
+
+enum WaveStatus {
+    DRAFT
+    ACTIVE
+    COMPLETED
+    CANCELLED
+}
+
+enum SRNStatus {
+    DRAFT
+    PENDING_APPROVAL
+    APPROVED
+    REJECTED
+    COMPLETED
+}
+
+enum DefectiveHoldStatus {
+    PENDING_INSPECTION
+    REPAIR
+    REFURBISH
+    SCRAP
+    RESOLVED
+}
+
+enum VendorReturnStatus {
+    DRAFT
+    SUBMITTED
+    CONFIRMED
+    RESOLVED
+    CANCELLED
+}
+
+enum CycleCountStatus {
+    SCHEDULED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+enum StockAdjustmentStatus {
+    DRAFT
+    PENDING_APPROVAL
+    APPROVED
+    REJECTED
+}
+
+enum ASPStockStatus {
+    ACTIVE
+    LOW
+    DEPLETED
+}
+
+enum CostMethod {
+    FIFO
+    AVCO
+}
+
+// ============================================================
+// SPRINT 0 — TENANT CONFIGURATION
+// Feature flags + workflow defaults per organization/industry
+// ============================================================
+
+model WmsTenantConfig {
+    id             String       @id @default(cuid())
+    organizationId String       @unique
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    // Industry identity — drives default flag sets
+    industryType String? // hvac | pharma | food | electronics | general
+
+    // Feature flags — toggle modules per client/industry
+    enableMezzanine         Boolean @default(false)
+    enableRefrigerantModule Boolean @default(false)
+    enableASPChannel        Boolean @default(false)
+    enableWeatherDemand     Boolean @default(false)
+    enableMultiTierDC       Boolean @default(false)
+    enableSerialTracking    Boolean @default(true)
+    enableBatchTracking     Boolean @default(true)
+    enableLandedCost        Boolean @default(true)
+    enableCycleCount        Boolean @default(true)
+    enableDeadStockAnalysis Boolean @default(true)
+    enableLastMile          Boolean @default(false)
+    enableConsignment       Boolean @default(false)
+    enableWarranty          Boolean @default(false)
+    enableQCInspection      Boolean @default(false)
+
+    // Default workflow configurations
+    defaultReceivingWorkflow ReceivingWorkflowType @default(TWO_STEP)
+    defaultShippingWorkflow  ShipmentWorkflowType  @default(TWO_STEP)
+    defaultDispatchMethod    DispatchMethod        @default(FIFO)
+    defaultCostMethod        CostMethod            @default(FIFO)
+
+    // Dead stock thresholds (days)
+    deadStockThreshold30  Boolean @default(true)
+    deadStockThreshold60  Boolean @default(true)
+    deadStockThreshold90  Boolean @default(true)
+    deadStockThreshold180 Boolean @default(true)
+
+    // Extensible industry-specific config (e.g. refrigerant gas types allowed, custom reason codes)
+    metadata Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("wms_tenant_config")
+}
+
+// ============================================================
+// SPRINT 0 — SHARED ENTITIES (Supplier, Customer)
+// ============================================================
+
+model Supplier {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    code           String
+    name           String
+    contactName    String?
+    email          String?
+    phone          String?
+    address        String?
+    active         Boolean      @default(true)
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    purchaseOrders     PurchaseOrder[]
+    vendorReturns      VendorReturn[]
+    consignmentStocks  ConsignmentStock[]
+    replenishmentRules ReplenishmentRule[]
+
+    @@unique([organizationId, code])
+    @@map("supplier")
+}
+
+model Customer {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    code           String
+    name           String
+    contactName    String?
+    email          String?
+    phone          String?
+    address        String?
+    active         Boolean      @default(true)
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    salesReturnNotes SalesReturnNote[]
+    workOrders       WorkOrder[]       @relation("CustomerWorkOrders")
+
+    @@unique([organizationId, code])
+    @@map("customer")
+}
+
+// ============================================================
+// SPRINT 1 — STORAGE HIERARCHY
+// Warehouse → Level → Zone → Aisle → Bin
+// ============================================================
+
+model Warehouse {
+    id             String               @id @default(cuid())
+    organizationId String
+    organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    code           String
+    name           String
+    address        String?
+    tierType       DistributionTierType @default(LOCAL_DC)
+
+    // DC hierarchy (self-referential for National → Regional → Local)
+    parentWarehouseId String?
+    parentWarehouse   Warehouse?  @relation("WarehouseHierarchy", fields: [parentWarehouseId], references: [id])
+    childWarehouses   Warehouse[] @relation("WarehouseHierarchy")
+
+    active   Boolean @default(true)
+    metadata Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    levels                  WarehouseLevel[]
+    stockLevels             StockLevel[]
+    replenishmentRules      ReplenishmentRule[]
+    purchaseOrders          PurchaseOrder[]
+    grns                    GRN[]
+    pickingWaves            PickingWave[]
+    batchPicks              BatchPick[]
+    pickJobs                PickJob[]
+    cycleCountsW            CycleCount[]              @relation("WarehouseCycleCounts")
+    stockAdjustments        StockAdjustment[]
+    tierReplenishUpstream   TierReplenishmentRule[]   @relation("UpstreamWarehouse")
+    tierReplenishDownstream TierReplenishmentRule[]   @relation("DownstreamWarehouse")
+    aspReplenishments       ASPReplenishmentTrigger[]
+
+    @@unique([organizationId, code])
+    @@map("warehouse")
+}
+
+model WarehouseLevel {
+    id          String             @id @default(cuid())
+    warehouseId String
+    warehouse   Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+    type        WarehouseLevelType
+    name        String
+    sequence    Int
+    active      Boolean            @default(true)
+
+    zones WarehouseZone[]
+
+    @@map("warehouse_level")
+}
+
+model WarehouseZone {
+    id       String         @id @default(cuid())
+    levelId  String
+    level    WarehouseLevel @relation(fields: [levelId], references: [id], onDelete: Cascade)
+    code     String
+    name     String
+    type     ZoneType       @default(BULK)
+    active   Boolean        @default(true)
+    metadata Json?
+
+    aisles WarehouseAisle[]
+
+    @@map("warehouse_zone")
+}
+
+model WarehouseAisle {
+    id     String        @id @default(cuid())
+    zoneId String
+    zone   WarehouseZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+    code   String
+    name   String
+
+    bins WarehouseBin[]
+
+    @@map("warehouse_aisle")
+}
+
+model WarehouseBin {
+    id               String         @id @default(cuid())
+    aisleId          String
+    aisle            WarehouseAisle @relation(fields: [aisleId], references: [id], onDelete: Cascade)
+    code             String // barcode-addressable (e.g. A-01-R2-L3-B04)
+    name             String
+    type             BinType        @default(BIN)
+    rack             String?
+    rackLevel        String? // shelf level within rack (A, B, C, ...)
+    sequence         Int? // pick sequence for route optimization
+    forkliftRequired Boolean        @default(false)
+    maxWeightKg      Decimal?
+    maxVolumeM3      Decimal?
+    active           Boolean        @default(true)
+    metadata         Json?
+
+    stockLevels   StockLevel[]
+    palletRecords PalletRecord[]
+
+    @@map("warehouse_bin")
+}
+
+// ============================================================
+// SPRINT 2 — PRODUCT MASTER
+// Family → Model → Product → Variant + Attributes + UoM
+// ============================================================
+
+model ProductFamily {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    name           String
+    description    String?
+    active         Boolean      @default(true)
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+
+    models ProductModel[]
+
+    @@unique([organizationId, name])
+    @@map("product_family")
+}
+
+model ProductModel {
+    id           String        @id @default(cuid())
+    familyId     String
+    family       ProductFamily @relation(fields: [familyId], references: [id], onDelete: Cascade)
+    name         String
+    manufacturer String?
+    description  String?
+    active       Boolean       @default(true)
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+
+    products Product[]
+
+    @@map("product_model")
+}
+
+model Product {
+    id             String        @id @default(cuid())
+    organizationId String
+    organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    modelId        String?
+    model          ProductModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+    sku            String
+    name           String
+    description    String?
+    category       String?
+    brand          String?
+    status         ProductStatus @default(ACTIVE)
+    defaultUomId   String
+    defaultUom     UnitOfMeasure @relation("ProductDefaultUom", fields: [defaultUomId], references: [id])
+    reorderType    ReorderType   @default(MIN_MAX)
+
+    // Traceability flags
+    isRefrigerant  Boolean @default(false)
+    isSerialized   Boolean @default(false)
+    isBatchTracked Boolean @default(false)
+    hasExpiry      Boolean @default(false)
+
+    // Industry-agnostic extensible config
+    metadata Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    variants       ProductVariant[]
+    attributes     ProductAttribute[]
+    uomConversions UoMConversion[]
+    dispatchRules  DispatchRule[]
+
+    @@unique([organizationId, sku])
+    @@index([organizationId, brand])
+    @@index([organizationId, category])
+    @@map("product")
+}
+
+model ProductVariant {
+    id             String        @id @default(cuid())
+    organizationId String
+    organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    productId      String
+    product        Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+    sku            String // variant-level SKU (unique per org)
+    name           String
+    status         ProductStatus @default(ACTIVE)
+
+    // HVAC-specific (nullable — other industries may not use these)
+    capacityKw      Decimal?
+    capacityBtu     Decimal?
+    starRating      Int?
+    region          String? // single_phase | three_phase | climate_zone
+    refrigerantType String? // R32 | R410A | R22
+    componentType   String? // compressor | pcb | coil | valve (for parts)
+
+    // Storage routing
+    weightClass       WeightClass @default(LIGHT)
+    weightKg          Decimal?
+    storageConditions String?
+
+    // Extensible attributes for other industries (pharma: shelf_life, food: temperature_range, etc.)
+    metadata Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    attributes    VariantAttribute[]
+    stockLevels   StockLevel[]
+    serialNumbers SerialNumber[]
+    batchLots     BatchLot[]
+
+    @@unique([organizationId, sku])
+    @@index([organizationId, productId])
+    @@map("product_variant")
+}
+
+// Flexible product-level attributes (EER, SEER, noise_db, pipe_diameter, etc.)
+model ProductAttribute {
+    id        String  @id @default(cuid())
+    productId String
+    product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+    key       String
+    value     String
+    unit      String?
+
+    @@unique([productId, key])
+    @@map("product_attribute")
+}
+
+// Variant-level attributes (override or extend product attributes)
+model VariantAttribute {
+    id        String         @id @default(cuid())
+    variantId String
+    variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+    key       String
+    value     String
+    unit      String?
+
+    @@unique([variantId, key])
+    @@map("variant_attribute")
+}
+
+model UnitOfMeasure {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    code           String // EA | PACK | PALLET | KG | L | CYLINDER
+    name           String
+    active         Boolean      @default(true)
+
+    conversionsFrom UoMConversion[] @relation("UomFrom")
+    conversionsTo   UoMConversion[] @relation("UomTo")
+    defaultProducts Product[]       @relation("ProductDefaultUom")
+
+    @@unique([organizationId, code])
+    @@map("unit_of_measure")
+}
+
+// Conversion ratios between UoMs per product (e.g. 1 PACK = 6 EA)
+model UoMConversion {
+    id        String        @id @default(cuid())
+    productId String
+    product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+    fromUomId String
+    fromUom   UnitOfMeasure @relation("UomFrom", fields: [fromUomId], references: [id])
+    toUomId   String
+    toUom     UnitOfMeasure @relation("UomTo", fields: [toUomId], references: [id])
+    factor    Decimal // e.g. 1 PACK → 6 EA: factor = 6
+
+    @@unique([productId, fromUomId, toUomId])
+    @@map("uom_conversion")
+}
+
+// ============================================================
+// SPRINT 3 — INVENTORY CORE
+// StockLevel, StockLedger, PalletRecord, ConsignmentStock
+// ============================================================
+
+model StockLevel {
+    id             String         @id @default(cuid())
+    organizationId String
+    organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    warehouseId    String
+    warehouse      Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+    binId          String
+    bin            WarehouseBin   @relation(fields: [binId], references: [id], onDelete: Cascade)
+    variantId      String
+    variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+    qtyOnHand      Decimal        @default(0)
+    qtyReserved    Decimal        @default(0)
+    qtyAvailable   Decimal        @default(0) // updated by trigger: onHand - reserved
+
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, warehouseId, binId, variantId])
+    @@index([organizationId, warehouseId])
+    @@index([organizationId, variantId])
+    @@map("stock_level")
+}
+
+// Immutable movement log — scalar organizationId (high-volume, no back-relation to Org)
+model StockLedger {
+    id             String   @id @default(cuid())
+    organizationId String
+    warehouseId    String
+    variantId      String
+    binId          String?
+    movementType   String // RECEIPT | ISSUE | TRANSFER_IN | TRANSFER_OUT | ADJUSTMENT | RETURN | SCRAP
+    qty            Decimal
+    costPerUnit    Decimal?
+    totalCost      Decimal?
+    referenceType  String? // GRN | PICK_JOB | TRANSFER | ADJUSTMENT | SRN | SCRAP
+    referenceId    String?
+    batchLotId     String?
+    serialNumberId String?
+    palletId       String?
+    performedById  String?
+    note           String?
+    createdAt      DateTime @default(now())
+
+    @@index([organizationId, variantId, createdAt])
+    @@index([organizationId, warehouseId, createdAt])
+    @@index([organizationId, referenceType, referenceId])
+    @@map("stock_ledger")
+}
+
+model PalletRecord {
+    id               String        @id @default(cuid())
+    organizationId   String
+    palletCode       String
+    warehouseId      String
+    binId            String?
+    bin              WarehouseBin? @relation(fields: [binId], references: [id], onDelete: SetNull)
+    variantId        String?
+    batchLotId       String?
+    qty              Decimal
+    weightKg         Decimal?
+    mfgDate          DateTime? // FIFO key for manufacturing-date ordering
+    forkliftRequired Boolean       @default(false)
+    status           String // ACTIVE | MOVED | CONSUMED | SCRAPPED
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, palletCode])
+    @@index([organizationId, warehouseId])
+    @@map("pallet_record")
+}
+
+model ConsignmentStock {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    supplierId     String
+    supplier       Supplier     @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+    variantId      String
+    warehouseId    String
+    binId          String?
+    qty            Decimal
+    terms          String? // consignment agreement terms
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([organizationId, supplierId])
+    @@index([organizationId, variantId])
+    @@map("consignment_stock")
+}
+
+// ============================================================
+// SPRINT 4 — TRACEABILITY STACK
+// SerialNumber, BatchLot, RefrigerantRecord, WarrantyRecord
+// ============================================================
+
+model SerialNumber {
+    id             String         @id @default(cuid())
+    organizationId String
+    organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    variantId      String
+    variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+    serial         String
+    mfgDate        DateTime?
+    warrantyExpiry DateTime?
+    // AVAILABLE | RESERVED | DISPATCHED | INSTALLED | RETURNED | SCRAPPED
+    status         String         @default("AVAILABLE")
+    warehouseId    String?
+    binId          String?
+
+    warrantyRecord     WarrantyRecord?
+    installationRecord InstallationRecord?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, variantId, serial])
+    @@index([organizationId, status])
+    @@map("serial_number")
+}
+
+model BatchLot {
+    id             String         @id @default(cuid())
+    organizationId String
+    organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    variantId      String
+    variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+    lotNumber      String
+    mfgDate        DateTime?
+    expiryDate     DateTime?
+    supplierId     String?
+    qtyReceived    Decimal
+    qtyRemaining   Decimal
+    // ACTIVE | DEPLETED | EXPIRED | QUARANTINED
+    status         String         @default("ACTIVE")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, variantId, lotNumber])
+    @@index([organizationId, expiryDate])
+    @@map("batch_lot")
+}
+
+model RefrigerantRecord {
+    id             String            @id @default(cuid())
+    organizationId String
+    organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    cylinderId     String // unique cylinder barcode
+    gasType        String // R32 | R410A | R22 | configurable via metadata
+    grossWeightKg  Decimal
+    tareWeightKg   Decimal
+    netWeightKg    Decimal // gross - tare
+    fillDate       DateTime?
+    status         RefrigerantStatus @default(FULL)
+    warehouseId    String?
+    binId          String?
+    supplierId     String?
+    complianceNote String?
+    metadata       Json? // regulatory fields, certification numbers
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, cylinderId])
+    @@index([organizationId, status])
+    @@map("refrigerant_record")
+}
+
+model WarrantyRecord {
+    id              String       @id @default(cuid())
+    organizationId  String
+    organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    serialNumberId  String       @unique
+    serialNumber    SerialNumber @relation(fields: [serialNumberId], references: [id], onDelete: Cascade)
+    mfgDate         DateTime?
+    saleDate        DateTime?
+    warrantyEndDate DateTime?
+    customerId      String?
+    claimHistory    Json? // [{claimDate, reason, resolution, srnId}]
+
+    @@map("warranty_record")
+}
+
+// ============================================================
+// SPRINT 5 — REPLENISHMENT & PLANNING
+// ============================================================
+
+model ReplenishmentRule {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    variantId      String
+    warehouseId    String
+    warehouse      Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+    supplierId     String?
+    supplier       Supplier?    @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+    ruleType       ReorderType  @default(MIN_MAX)
+    minQty         Decimal?
+    maxQty         Decimal?
+    reorderPoint   Decimal?
+    reorderQty     Decimal?
+    leadTimeDays   Int?
+    active         Boolean      @default(true)
+    metadata       Json?
+
+    @@unique([organizationId, variantId, warehouseId])
+    @@map("replenishment_rule")
+}
+
+model SeasonalDemandPlan {
+    id             String        @id @default(cuid())
+    organizationId String
+    organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    variantId      String
+    warehouseId    String?
+    year           Int
+    phase          SeasonalPhase
+    targetQty      Decimal
+    startDate      DateTime
+    endDate        DateTime
+
+    @@index([organizationId, variantId, year])
+    @@map("seasonal_demand_plan")
+}
+
+model WeatherDemandSignal {
+    id                   String       @id @default(cuid())
+    organizationId       String
+    organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    region               String
+    temperatureThreshold Decimal // °C trigger point
+    signalType           String // COOLING_SURGE | HEATING_SURGE | NORMAL
+    adjustmentFactor     Decimal // e.g. 1.3 = +30% demand
+    active               Boolean      @default(true)
+    metadata             Json?
+
+    @@map("weather_demand_signal")
+}
+
+model TierReplenishmentRule {
+    id                    String       @id @default(cuid())
+    organizationId        String
+    organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    upstreamWarehouseId   String
+    upstreamWarehouse     Warehouse    @relation("UpstreamWarehouse", fields: [upstreamWarehouseId], references: [id])
+    downstreamWarehouseId String
+    downstreamWarehouse   Warehouse    @relation("DownstreamWarehouse", fields: [downstreamWarehouseId], references: [id])
+    variantId             String? // null = applies to all variants
+    triggerQty            Decimal? // replenish when downstream drops below this
+    replenishQty          Decimal?
+    autoApprove           Boolean      @default(false)
+    active                Boolean      @default(true)
+
+    @@map("tier_replenishment_rule")
+}
+
+// ============================================================
+// SPRINT 6 — PROCUREMENT & RECEIVING
+// ============================================================
+
+model PurchaseOrder {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    poNumber       String
+    supplierId     String
+    supplier       Supplier     @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+    warehouseId    String
+    warehouse      Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+    poType         POType       @default(STANDARD)
+    status         POStatus     @default(DRAFT)
+    orderDate      DateTime     @default(now())
+    expectedDate   DateTime?
+    notes          String?
+    metadata       Json? // industry-specific fields (e.g. customs ref, import license)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    lines       POLine[]
+    landedCosts LandedCost[]
+    grns        GRN[]
+
+    @@unique([organizationId, poNumber])
+    @@index([organizationId, status])
+    @@map("purchase_order")
+}
+
+model POLine {
+    id        String        @id @default(cuid())
+    poId      String
+    po        PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+    variantId String
+    uomId     String
+    qty       Decimal
+    unitCost  Decimal
+    metadata  Json?
+
+    grnLines GRNLine[]
+
+    @@map("po_line")
+}
+
+model LandedCost {
+    id         String                     @id @default(cuid())
+    poId       String
+    po         PurchaseOrder              @relation(fields: [poId], references: [id], onDelete: Cascade)
+    freight    Decimal                    @default(0)
+    insurance  Decimal                    @default(0)
+    customs    Decimal                    @default(0)
+    other      Decimal                    @default(0)
+    totalCost  Decimal                    @default(0)
+    allocation LandedCostAllocationMethod @default(BY_QTY)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("landed_cost")
+}
+
+model GRN {
+    id             String                @id @default(cuid())
+    organizationId String
+    organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    grnNumber      String
+    poId           String
+    po             PurchaseOrder         @relation(fields: [poId], references: [id], onDelete: Restrict)
+    warehouseId    String
+    warehouse      Warehouse             @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+    workflowType   ReceivingWorkflowType
+    status         GRNStatus             @default(DRAFT)
+    receivedById   String?
+    receivedAt     DateTime?
+    notes          String?
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    lines        GRNLine[]
+    qcInspection QCInspection?
+
+    @@unique([organizationId, grnNumber])
+    @@index([organizationId, status])
+    @@map("grn")
+}
+
+model GRNLine {
+    id          String  @id @default(cuid())
+    grnId       String
+    grn         GRN     @relation(fields: [grnId], references: [id], onDelete: Cascade)
+    poLineId    String?
+    poLine      POLine? @relation(fields: [poLineId], references: [id], onDelete: SetNull)
+    variantId   String
+    uomId       String
+    expectedQty Decimal
+    receivedQty Decimal @default(0)
+    acceptedQty Decimal @default(0)
+    rejectedQty Decimal @default(0)
+    // PENDING | PASS | FAIL | CONDITIONAL
+    qcStatus    String? @default("PENDING")
+    batchLotId  String?
+    metadata    Json?
+
+    @@map("grn_line")
+}
+
+// ============================================================
+// SPRINT 7 — QC & INVENTORY HYGIENE
+// ============================================================
+
+model QCInspection {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation("OrgQCInspections", fields: [organizationId], references: [id], onDelete: Cascade)
+    grnId          String       @unique
+    grn            GRN          @relation(fields: [grnId], references: [id], onDelete: Cascade)
+    inspectorId    String?
+    inspector      User?        @relation("QCInspector", fields: [inspectorId], references: [id], onDelete: SetNull)
+    sampleSize     Int?
+    decision       QCDecision?
+    findings       String?
+    inspectedAt    DateTime?
+    metadata       Json?
+
+    holdRecords InboundQCHold[]
+
+    @@map("qc_inspection")
+}
+
+model InboundQCHold {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    qcInspectionId String
+    qcInspection   QCInspection @relation(fields: [qcInspectionId], references: [id], onDelete: Cascade)
+    variantId      String
+    qty            Decimal
+    holdZoneBinId  String? // bin within QC_HOLD zone
+    // HELD | ACCEPTED | REJECTED | CONDITIONAL_RELEASED
+    status         String       @default("HELD")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("inbound_qc_hold")
+}
+
+model StockAdjustment {
+    id             String                @id @default(cuid())
+    organizationId String
+    organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    warehouseId    String
+    warehouse      Warehouse             @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+    variantId      String
+    binId          String?
+    adjNumber      String
+    qty            Decimal // positive = add stock, negative = remove
+    reasonCode     String
+    costImpact     Decimal?
+    status         StockAdjustmentStatus @default(DRAFT)
+    requestedById  String?
+    requestedBy    User?                 @relation("AdjustmentRequested", fields: [requestedById], references: [id], onDelete: SetNull)
+    approvedById   String?
+    approvedBy     User?                 @relation("AdjustmentApproved", fields: [approvedById], references: [id], onDelete: SetNull)
+    approvedAt     DateTime?
+    notes          String?
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, adjNumber])
+    @@map("stock_adjustment")
+}
+
+model CycleCount {
+    id             String           @id @default(cuid())
+    organizationId String
+    organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    warehouseId    String
+    warehouse      Warehouse        @relation("WarehouseCycleCounts", fields: [warehouseId], references: [id], onDelete: Restrict)
+    zoneId         String?
+    binId          String?
+    countNumber    String
+    status         CycleCountStatus @default(SCHEDULED)
+    scheduledDate  DateTime?
+    startedAt      DateTime?
+    completedAt    DateTime?
+    countedById    String?
+    countedBy      User?            @relation("CycleCountBy", fields: [countedById], references: [id], onDelete: SetNull)
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    lines CycleCountLine[]
+
+    @@unique([organizationId, countNumber])
+    @@map("cycle_count")
+}
+
+model CycleCountLine {
+    id           String     @id @default(cuid())
+    cycleCountId String
+    cycleCount   CycleCount @relation(fields: [cycleCountId], references: [id], onDelete: Cascade)
+    variantId    String
+    binId        String
+    expectedQty  Decimal
+    countedQty   Decimal?
+    variance     Decimal? // countedQty - expectedQty
+    // ACCEPTED | ADJUSTED | RECOUNT_REQUIRED
+    disposition  String?
+
+    @@map("cycle_count_line")
+}
+
+// ============================================================
+// SPRINT 8 — PICKING, PACKING & DISPATCH
+// ============================================================
+
+model PickingWave {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    warehouseId    String
+    warehouse      Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+    waveNumber     String
+    // ZONE | PRODUCT_TYPE | DESTINATION | TIME
+    criteria       String?
+    status         WaveStatus   @default(DRAFT)
+    assignedAt     DateTime?
+    completedAt    DateTime?
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    pickJobs PickJob[]
+
+    @@unique([organizationId, waveNumber])
+    @@map("picking_wave")
+}
+
+model BatchPick {
+    id             String        @id @default(cuid())
+    organizationId String
+    organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    warehouseId    String
+    warehouse      Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+    batchNumber    String
+    pickerId       String?
+    picker         User?         @relation("BatchPicker", fields: [pickerId], references: [id], onDelete: SetNull)
+    status         PickJobStatus @default(PENDING)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    pickJobs PickJob[]
+
+    @@unique([organizationId, batchNumber])
+    @@map("batch_pick")
+}
+
+model PickJob {
+    id             String        @id @default(cuid())
+    organizationId String
+    organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    warehouseId    String
+    warehouse      Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+    pickJobNumber  String
+    waveId         String?
+    wave           PickingWave?  @relation(fields: [waveId], references: [id], onDelete: SetNull)
+    batchPickId    String?
+    batchPick      BatchPick?    @relation(fields: [batchPickId], references: [id], onDelete: SetNull)
+    pickerId       String?
+    picker         User?         @relation("Picker", fields: [pickerId], references: [id], onDelete: SetNull)
+    status         PickJobStatus @default(PENDING)
+    startedAt      DateTime?
+    completedAt    DateTime?
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    lines       PickJobLine[]
+    packingSlip PackingSlip?
+
+    @@unique([organizationId, pickJobNumber])
+    @@index([organizationId, status])
+    @@map("pick_job")
+}
+
+model PickJobLine {
+    id              String  @id @default(cuid())
+    pickJobId       String
+    pickJob         PickJob @relation(fields: [pickJobId], references: [id], onDelete: Cascade)
+    variantId       String
+    binId           String
+    qtyToPick       Decimal
+    qtyPicked       Decimal @default(0)
+    exceptionReason String?
+    batchLotId      String?
+    serialNumberId  String?
+
+    @@map("pick_job_line")
+}
+
+model PackingSlip {
+    id         String    @id @default(cuid())
+    pickJobId  String    @unique
+    pickJob    PickJob   @relation(fields: [pickJobId], references: [id], onDelete: Cascade)
+    slipNumber String
+    packedAt   DateTime?
+    packedById String?
+    packedBy   User?     @relation("PackedBy", fields: [packedById], references: [id], onDelete: SetNull)
+    notes      String?
+    metadata   Json?
+
+    shipmentLines ShipmentLine[]
+
+    @@map("packing_slip")
+}
+
+model ShipmentLine {
+    id             String      @id @default(cuid())
+    packingSlipId  String
+    packingSlip    PackingSlip @relation(fields: [packingSlipId], references: [id], onDelete: Cascade)
+    variantId      String
+    qty            Decimal
+    batchLotId     String?
+    serialNumberId String?
+
+    @@map("shipment_line")
+}
+
+// Per product/category dispatch ordering rule
+model DispatchRule {
+    id             String         @id @default(cuid())
+    organizationId String
+    organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    productId      String?
+    product        Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
+    category       String? // applies to all products in this category if productId is null
+    method         DispatchMethod @default(FIFO)
+    active         Boolean        @default(true)
+    metadata       Json?
+
+    @@map("dispatch_rule")
+}
+
+// ============================================================
+// SPRINT 9 — REVERSE SUPPLY CHAIN
+// ============================================================
+
+model SalesReturnNote {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    srnNumber      String
+    customerId     String
+    customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+    orderRef       String?
+    returnDate     DateTime     @default(now())
+    status         SRNStatus    @default(DRAFT)
+    approvedById   String?
+    notes          String?
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    lines      SRNLine[]
+    creditNote CreditNote?
+
+    @@unique([organizationId, srnNumber])
+    @@index([organizationId, status])
+    @@map("sales_return_note")
+}
+
+model SRNLine {
+    id             String          @id @default(cuid())
+    srnId          String
+    srn            SalesReturnNote @relation(fields: [srnId], references: [id], onDelete: Cascade)
+    variantId      String
+    serialNumberId String?
+    batchLotId     String?
+    qty            Decimal
+    reasonCode     String
+    // GOOD | DEFECTIVE | DOA | DAMAGED
+    condition      String
+    returnCategory ReturnCategory
+    metadata       Json?
+
+    defectiveHold DefectiveHoldRecord?
+
+    @@map("srn_line")
+}
+
+model DefectiveHoldRecord {
+    id             String              @id @default(cuid())
+    organizationId String
+    organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    srnLineId      String              @unique
+    srnLine        SRNLine             @relation(fields: [srnLineId], references: [id], onDelete: Cascade)
+    holdZoneBinId  String?
+    status         DefectiveHoldStatus @default(PENDING_INSPECTION)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    inspectionRecord InspectionRecord?
+
+    @@map("defective_hold_record")
+}
+
+model InspectionRecord {
+    id              String              @id @default(cuid())
+    organizationId  String
+    organization    Organization        @relation("OrgInspectionRecords", fields: [organizationId], references: [id], onDelete: Cascade)
+    defectiveHoldId String              @unique
+    defectiveHold   DefectiveHoldRecord @relation(fields: [defectiveHoldId], references: [id], onDelete: Cascade)
+    inspectorId     String?
+    inspector       User?               @relation("Inspector", fields: [inspectorId], references: [id], onDelete: SetNull)
+    findings        String?
+    decision        InspectionDecision
+    inspectedAt     DateTime            @default(now())
+    metadata        Json?
+
+    scrapRecord ScrapRecord?
+
+    @@map("inspection_record")
+}
+
+model ScrapRecord {
+    id             String           @id @default(cuid())
+    organizationId String
+    organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    inspectionId   String           @unique
+    inspection     InspectionRecord @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+    variantId      String
+    qty            Decimal
+    // {compressor: bool, pcb: bool, copper_kg: number, refrigerant_recovered_kg: number}
+    salvageDetails Json?
+    writeOffValue  Decimal?
+    scrappedById   String?
+    scrappedAt     DateTime         @default(now())
+
+    @@map("scrap_record")
+}
+
+model VendorReturn {
+    id             String             @id @default(cuid())
+    organizationId String
+    organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    supplierId     String
+    supplier       Supplier           @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+    variantId      String
+    qty            Decimal
+    reasonCode     String
+    debitNoteRef   String?
+    status         VendorReturnStatus @default(DRAFT)
+    notes          String?
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([organizationId, status])
+    @@map("vendor_return")
+}
+
+model CreditNote {
+    id               String          @id @default(cuid())
+    organizationId   String
+    organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    srnId            String          @unique
+    srn              SalesReturnNote @relation(fields: [srnId], references: [id], onDelete: Restrict)
+    creditNoteNumber String
+    amount           Decimal
+    issuedAt         DateTime        @default(now())
+    // DRAFT | ISSUED | APPLIED | VOID
+    status           String          @default("DRAFT")
+
+    @@unique([organizationId, creditNoteNumber])
+    @@map("credit_note")
+}
+
+// ============================================================
+// SPRINT 10 — VALUATION & COSTING
+// ============================================================
+
+// FIFO/AVCO cost layers — scalar org FK (high-volume, no back-relation to Org)
+model CostLayer {
+    id             String   @id @default(cuid())
+    organizationId String
+    variantId      String
+    warehouseId    String
+    qty            Decimal
+    costPerUnit    Decimal
+    landedCost     Decimal  @default(0)
+    totalCost      Decimal
+    grnId          String?
+    createdAt      DateTime @default(now())
+    depleted       Boolean  @default(false)
+
+    @@index([organizationId, variantId, depleted, createdAt])
+    @@index([organizationId, warehouseId, variantId])
+    @@map("cost_layer")
+}
+
+model ProductCost {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    variantId      String
+    warehouseId    String
+    costPerUnit    Decimal
+    landedCost     Decimal      @default(0)
+    sellingPrice   Decimal?
+    marginPct      Decimal? // (sellingPrice - costPerUnit) / sellingPrice * 100
+
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, variantId, warehouseId])
+    @@map("product_cost")
+}
+
+model InventoryValuationLedger {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    warehouseId    String?
+    snapshotDate   DateTime
+    totalValue     Decimal
+    details        Json? // per-product breakdown [{variantId, qty, costPerUnit, totalValue}]
+
+    createdAt DateTime @default(now())
+
+    @@index([organizationId, snapshotDate])
+    @@map("inventory_valuation_ledger")
+}
+
+// ============================================================
+// SPRINT 11 — DEAD STOCK MANAGEMENT & ASP CHANNEL
+// ============================================================
+
+model DeadStockFlag {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    variantId      String
+    warehouseId    String
+    flaggedDate    DateTime     @default(now())
+    daysNoMovement Int
+    // 30D | 60D | 90D | 180D_PLUS
+    agingBucket    String
+    stockValue     Decimal?
+    qtyOnHand      Decimal?
+    // FLAGGED | UNDER_REVIEW | LIQUIDATION | RESOLVED
+    status         String       @default("FLAGGED")
+
+    liquidation LiquidationWorkflow?
+
+    @@index([organizationId, status])
+    @@index([organizationId, agingBucket])
+    @@map("dead_stock_flag")
+}
+
+model LiquidationWorkflow {
+    id              String          @id @default(cuid())
+    organizationId  String
+    organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    deadStockFlagId String          @unique
+    deadStockFlag   DeadStockFlag   @relation(fields: [deadStockFlagId], references: [id], onDelete: Cascade)
+    liquidationType LiquidationType
+    qty             Decimal?
+    discountPct     Decimal? // for CLEARANCE_SALE
+    writeOffValue   Decimal?
+    // DRAFT | PENDING_APPROVAL | APPROVED | COMPLETED
+    status          String          @default("DRAFT")
+    approvedById    String?
+    notes           String?
+    metadata        Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("liquidation_workflow")
+}
+
+model AuthorizedServiceProvider {
+    id               String       @id @default(cuid())
+    organizationId   String
+    organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    code             String
+    name             String
+    region           String?
+    contactName      String?
+    email            String?
+    phone            String?
+    consignmentTerms String?
+    active           Boolean      @default(true)
+    metadata         Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    inventory             ASPInventory[]
+    replenishmentTriggers ASPReplenishmentTrigger[]
+
+    @@unique([organizationId, code])
+    @@map("authorized_service_provider")
+}
+
+model ASPInventory {
+    id                String                    @id @default(cuid())
+    organizationId    String
+    organization      Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    aspId             String
+    asp               AuthorizedServiceProvider @relation(fields: [aspId], references: [id], onDelete: Cascade)
+    variantId         String
+    qtyOnConsignment  Decimal                   @default(0)
+    minStockLevel     Decimal
+    status            ASPStockStatus            @default(ACTIVE)
+    lastReplenishedAt DateTime?
+
+    updatedAt DateTime @updatedAt
+
+    @@unique([aspId, variantId])
+    @@index([organizationId, status])
+    @@map("asp_inventory")
+}
+
+model ASPReplenishmentTrigger {
+    id             String                    @id @default(cuid())
+    organizationId String
+    organization   Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    aspId          String
+    asp            AuthorizedServiceProvider @relation(fields: [aspId], references: [id], onDelete: Cascade)
+    variantId      String
+    triggerQty     Decimal
+    replenishQty   Decimal
+    warehouseId    String
+    warehouse      Warehouse                 @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+    autoApprove    Boolean                   @default(false)
+    active         Boolean                   @default(true)
+
+    @@map("asp_replenishment_trigger")
+}
+
+// ============================================================
+// SPRINT 12 — LAST MILE & FIELD SERVICE
+// ============================================================
+
+model WorkOrder {
+    id             String        @id @default(cuid())
+    organizationId String
+    organization   Organization  @relation("OrgWorkOrders", fields: [organizationId], references: [id], onDelete: Cascade)
+    woNumber       String
+    technicianId   String?
+    technician     User?         @relation("Technician", fields: [technicianId], references: [id], onDelete: SetNull)
+    customerId     String?
+    customer       Customer?     @relation("CustomerWorkOrders", fields: [customerId], references: [id], onDelete: SetNull)
+    siteAddress    String?
+    workOrderType  WorkOrderType @default(SERVICE)
+    // DRAFT | SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED
+    status         String        @default("DRAFT")
+    scheduledAt    DateTime?
+    completedAt    DateTime?
+    notes          String?
+    metadata       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    parts               WorkOrderPart[]
+    installationRecords InstallationRecord[]
+    deliveryRoute       DeliveryRoute?
+
+    @@unique([organizationId, woNumber])
+    @@index([organizationId, status])
+    @@map("work_order")
+}
+
+model WorkOrderPart {
+    id             String    @id @default(cuid())
+    workOrderId    String
+    workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+    variantId      String
+    qtyPreStaged   Decimal   @default(0)
+    qtyConsumed    Decimal   @default(0)
+    qtyReturned    Decimal   @default(0)
+    serialNumberId String?
+
+    @@map("work_order_part")
+}
+
+model DeliveryRoute {
+    id           String    @id @default(cuid())
+    workOrderId  String    @unique
+    workOrder    WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+    vehicleId    String?
+    // [{stop: number, address: string, customerId: string}]
+    routeDetails Json?
+    // [{variantId, qty, serialNumbers: []}]
+    vehicleStock Json?
+    startedAt    DateTime?
+    completedAt  DateTime?
+
+    @@map("delivery_route")
+}
+
+model InstallationRecord {
+    id                 String        @id @default(cuid())
+    organizationId     String
+    organization       Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    workOrderId        String
+    workOrder          WorkOrder     @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+    serialNumberId     String?       @unique
+    serialNumber       SerialNumber? @relation(fields: [serialNumberId], references: [id], onDelete: SetNull)
+    installedAt        DateTime      @default(now())
+    siteAddress        String?
+    commissioningNotes String?
+    installedById      String?
+    metadata           Json?
+
+    @@map("installation_record")
+}
+
+// ============================================================
+// WMS RBAC — IAM-Style Permission System
+// ============================================================
+
+enum WmsPolicyEffect {
+    ALLOW
+    DENY
+}
+
+// Named role — either a built-in (organizationId = null, isBuiltIn = true)
+// or a custom org role (organizationId set, clonedFromId optionally set)
+model WmsRole {
+    id             String        @id @default(cuid())
+    organizationId String?
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    // Globally unique stable code for built-ins (null for custom roles).
+    // Used as upsert key during seeding.
+    code String? @unique
+
+    name        String
+    description String?
+    isBuiltIn   Boolean @default(false)
+
+    // Clone lineage (org admins clone built-ins to customize them)
+    clonedFromId String?
+    clonedFrom   WmsRole?  @relation("WmsRoleClone", fields: [clonedFromId], references: [id], onDelete: SetNull)
+    clones       WmsRole[] @relation("WmsRoleClone")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    policyAttachments WmsRolePolicyAttachment[]
+    memberRoles       WmsMemberRole[]
+
+    @@index([organizationId])
+    @@map("wms_role")
+}
+
+// Named policy — holds a set of permission statements.
+// isManaged = true → platform-owned, immutable via API (built-in policies)
+model WmsPolicy {
+    id             String        @id @default(cuid())
+    organizationId String?
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    code        String? @unique // set only for managed/built-in policies
+    name        String
+    description String?
+    isManaged   Boolean @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    statements        WmsPolicyStatement[]
+    roleAttachments   WmsRolePolicyAttachment[]
+    memberAttachments WmsMemberPolicyAttachment[]
+
+    @@index([organizationId])
+    @@map("wms_policy")
+}
+
+// Individual permission statement — the atom of the IAM system.
+// resources: ARN-style patterns e.g. ["wms:warehouse:*", "wms:warehouse:wh_abc123"]
+// actions:   e.g. ["read", "create"] or ["*"]
+// conditions: reserved for v2 (time-of-day, IP, resource tag conditions)
+model WmsPolicyStatement {
+    id         String          @id @default(cuid())
+    policyId   String
+    policy     WmsPolicy       @relation(fields: [policyId], references: [id], onDelete: Cascade)
+    effect     WmsPolicyEffect @default(ALLOW)
+    actions    String[]
+    resources  String[]
+    conditions Json?
+
+    @@index([policyId])
+    @@map("wms_policy_statement")
+}
+
+// Many-to-many: role → policies
+model WmsRolePolicyAttachment {
+    id         String    @id @default(cuid())
+    roleId     String
+    role       WmsRole   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+    policyId   String
+    policy     WmsPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+    attachedAt DateTime  @default(now())
+
+    @@unique([roleId, policyId])
+    @@map("wms_role_policy_attachment")
+}
+
+// Member → role assignment (a member can hold multiple WMS roles)
+// organizationId is denormalized for efficient org-scoped queries
+model WmsMemberRole {
+    id             String   @id @default(cuid())
+    memberId       String
+    member         Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+    organizationId String
+    wmsRoleId      String
+    wmsRole        WmsRole  @relation(fields: [wmsRoleId], references: [id], onDelete: Cascade)
+    assignedAt     DateTime @default(now())
+    assignedById   String? // userId of admin who assigned this role
+
+    @@unique([memberId, wmsRoleId])
+    @@index([organizationId])
+    @@map("wms_member_role")
+}
+
+// Member → inline policy attachment (like IAM user inline policies)
+// Used for DENY boundary policies attached directly to a member
+model WmsMemberPolicyAttachment {
+    id             String    @id @default(cuid())
+    memberId       String
+    member         Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+    organizationId String
+    policyId       String
+    policy         WmsPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+    attachedAt     DateTime  @default(now())
+    attachedById   String?
+
+    @@unique([memberId, policyId])
+    @@index([organizationId])
+    @@map("wms_member_policy_attachment")
 }
