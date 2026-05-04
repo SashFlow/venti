@@ -1,3 +1,5 @@
+"use client";
+
 import { cn } from "@repo/ui/utils";
 import { useCookieConsent } from "@shared/hooks/cookie-consent";
 import { LocaleLink } from "../../../../i18n/routing";

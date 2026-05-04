@@ -23,6 +23,7 @@ export type Config = {
 		enableSignup: boolean;
 		enableMagicLink: boolean;
 		enableSocialLogin: boolean;
+		enableSSO: boolean;
 		enablePasskeys: boolean;
 		enablePasswordLogin: boolean;
 		enableTwoFactor: boolean;

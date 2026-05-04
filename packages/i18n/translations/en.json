@@ -154,7 +154,8 @@
 			"submit": "Sign in",
 			"subtitle": "Please enter your credentials to sign in.",
 			"title": "Welcome back",
-			"sendMagicLink": "Send magic link"
+			"sendMagicLink": "Send magic link",
+			"loginWithSSO": "Login with SSO"
 		},
 		"resetPassword": {
 			"backToSignin": "Back to signin",

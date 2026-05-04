@@ -151,6 +151,8 @@ export function LoginForm() {
 		}
 	};
 
+	const signInWithSSO = async () => {};
+
 	const signinMode = form.watch("mode");
 
 	return (
@@ -319,7 +321,15 @@ export function LoginForm() {
 											/>
 										),
 									)}
-
+								{config.auth.enableSSO && (
+									<Button
+										variant="secondary"
+										className="w-full sm:col-span-2"
+										onClick={() => signInWithSSO()}
+									>
+										{t("auth.login.loginWithSSO")}
+									</Button>
+								)}
 								{config.auth.enablePasskeys && (
 									<Button
 										variant="destructive"

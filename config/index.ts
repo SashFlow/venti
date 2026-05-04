@@ -57,8 +57,10 @@ export const config = {
 		enableMagicLink: false,
 		// Whether users should be able to sign in with a social provider
 		enableSocialLogin: false,
+		// Whether users should be able to sign in with SSO (this will enable the SSO tab in the login form
+		enableSSO: true,
 		// Whether users should be able to sign in with a passkey
-		enablePasskeys: true,
+		enablePasskeys: false,
 		// Whether users should be able to sign in with a password
 		enablePasswordLogin: true,
 		// Whether users should be activate two factor authentication
