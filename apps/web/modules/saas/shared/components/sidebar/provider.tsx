@@ -75,11 +75,6 @@ export function NavigationProvider({ children }: PropsWithChildren) {
 		if (!foundModule && pathname === NAV_ROUTES.default.url) {
 			foundModule = NAV_ROUTES.default;
 		}
-		if (pathname === "/app/home") {
-			setOpen(false);
-		} else {
-			setOpen(true);
-		}
 		return { currentModule: foundModule, currentRoute: foundRoute };
 	}, [pathname]);
 

@@ -7,7 +7,7 @@ import { NavigationProvider } from "./sidebar/provider";
 
 export async function AppLayout({ children }: PropsWithChildren) {
 	return (
-		<SidebarProvider defaultOpen={false}>
+		<SidebarProvider defaultOpen={true}>
 			<NavigationProvider>
 				<AppSidebar />
 				<SidebarInset id="inset">
