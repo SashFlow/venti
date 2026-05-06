@@ -1,5 +1,7 @@
 "use client";
 
+import { authClient } from "@repo/auth/client";
+import { config } from "@repo/config";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
 import {
 	DropdownMenu,
@@ -16,14 +18,8 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@repo/ui/sidebar";
-import {
-	BadgeCheck,
-	Bell,
-	ChevronsUpDown,
-	CreditCard,
-	LogOut,
-	Sparkles,
-} from "lucide-react";
+import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function NavUser({
 	user,
@@ -35,7 +31,20 @@ export function NavUser({
 	};
 }) {
 	const { isMobile } = useSidebar();
+	const router = useRouter();
 
+	const onLogout = () => {
+		authClient.signOut({
+			fetchOptions: {
+				onSuccess: async () => {
+					window.location.href = new URL(
+						config.auth.redirectAfterLogout,
+						window.location.origin,
+					).toString();
+				},
+			},
+		});
+	};
 	return (
 		<SidebarMenu>
 			<SidebarMenuItem>
@@ -94,28 +103,15 @@ export function NavUser({
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem>
-								<Sparkles />
-								Upgrade to Pro
-							</DropdownMenuItem>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
-						<DropdownMenuGroup>
-							<DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => router.push("/app/settings")}
+							>
 								<BadgeCheck />
 								Account
 							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<CreditCard />
-								Billing
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<Bell />
-								Notifications
-							</DropdownMenuItem>
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem>
+						<DropdownMenuItem onClick={onLogout}>
 							<LogOut />
 							Log out
 						</DropdownMenuItem>

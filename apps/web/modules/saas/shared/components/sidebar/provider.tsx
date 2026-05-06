@@ -2,6 +2,7 @@
 
 import { NAV_ROUTES } from "@constants/routes";
 import { useSidebar } from "@repo/ui/sidebar";
+import type { LucideIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import {
 	createContext,
@@ -13,9 +14,14 @@ import {
 type NavRoute = {
 	title: string;
 	url: string;
-	icon: any;
+	icon: LucideIcon;
 	short_form?: string;
 	sub_modules?: { title: string; url: string }[];
+};
+
+type ProfileRoute = {
+	title: string;
+	url: string;
 };
 
 type NavigationContextType = {
@@ -23,8 +29,8 @@ type NavigationContextType = {
 	setSidebarOpen: (value: boolean) => void;
 	routes: typeof NAV_ROUTES;
 	currentModule: NavRoute | null;
-	currentRoute: { title: string; url: string } | null;
-	setCurrentRoute: (route: any) => void;
+	currentRoute: ProfileRoute | null;
+	setCurrentRoute: (route: ProfileRoute | null) => void;
 	routeTo: (url: string) => void;
 };
 
@@ -45,16 +51,16 @@ export function NavigationProvider({ children }: PropsWithChildren) {
 
 	const { currentModule, currentRoute } = useMemo(() => {
 		let foundModule: NavRoute | null = null;
-		let foundRoute: { title: string; url: string } | null = null;
+		let foundRoute: ProfileRoute | null = null;
 
-		const allGroups = [
+		const navigableGroups: NavRoute[] = [
+			NAV_ROUTES.default,
 			...NAV_ROUTES.modules,
-			...NAV_ROUTES.services,
 			...NAV_ROUTES.management,
-			...NAV_ROUTES.profile,
+			...NAV_ROUTES.admin,
 		];
 
-		for (const module of allGroups) {
+		for (const module of navigableGroups) {
 			if (pathname.startsWith(module.url)) {
 				foundModule = module;
 
@@ -86,8 +92,10 @@ export function NavigationProvider({ children }: PropsWithChildren) {
 				routes: NAV_ROUTES,
 				currentModule,
 				currentRoute,
-				setCurrentRoute: (route: any) => {
-					if (route?.url) router.push(route.url);
+				setCurrentRoute: (route: ProfileRoute | null) => {
+					if (route?.url) {
+						router.push(route.url);
+					}
 				},
 				routeTo: (url: string) => {
 					router.push(url);

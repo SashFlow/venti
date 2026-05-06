@@ -73,3 +73,18 @@ export const getInvitation = cache(async (id: string) => {
 		return null;
 	}
 });
+
+export const getActiveOrganizationById = cache(async (id: string) => {
+	try {
+		const activeOrganization = await auth.api.getFullOrganization({
+			query: {
+				organizationId: id,
+			},
+			headers: await headers(),
+		});
+
+		return activeOrganization;
+	} catch {
+		return null;
+	}
+});

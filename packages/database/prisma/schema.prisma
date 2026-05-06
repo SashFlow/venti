@@ -275,3 +275,5 @@ model Picture {
 
     @@map("picture")
 }
+
+// Functional Models.

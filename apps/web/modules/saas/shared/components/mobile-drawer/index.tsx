@@ -66,7 +66,7 @@ export function MobileDrawer() {
 
 	return (
 		<Drawer>
-			<DrawerTrigger asChild className="absolute w-full bottom-0">
+			<DrawerTrigger asChild className="fixed w-full bottom-0 z-99999">
 				<div className="h-16 items-center justify-center flex md:hidden from-background to-transparent bg-linear-to-t">
 					<Button variant="outline">Open Drawer</Button>
 				</div>

@@ -55,9 +55,10 @@ export function NavMain({
 									asChild
 									tooltip={item.title}
 									isActive={isModuleActive}
+									className="h-10"
 								>
 									<a href={item.url}>
-										<item.icon />
+										<item.icon className="w-[24px] h-[24px]" />
 										<span>{item.title}</span>
 									</a>
 								</SidebarMenuButton>

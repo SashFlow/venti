@@ -53,7 +53,7 @@ const SideBarHeader = () => {
 	return (
 		<header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-foreground/20 bg-primary px-4 text-primary-foreground">
 			<div className="flex items-center gap-2 overflow-hidden">
-				<SidebarTrigger className="text-primary-foreground md:flex lg:hidden" />
+				<SidebarTrigger className="text-primary-foreground hidden md:flex lg:hidden" />
 				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem className="hidden sm:inline-flex">

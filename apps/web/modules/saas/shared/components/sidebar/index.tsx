@@ -9,22 +9,16 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@repo/ui/sidebar";
+import { useSession } from "@saas/auth/hooks/use-session";
 import { Command } from "lucide-react";
 import * as React from "react";
 import { NavMain } from "./main";
 import { useNavigation } from "./provider";
 import { NavUser } from "./user";
 
-const data = {
-	user: {
-		name: "shadcn",
-		email: "m@example.com",
-		avatar: "/avatars/shadcn.jpg",
-	},
-};
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { routes } = useNavigation();
+	const { user, organization } = useSession();
 
 	return (
 		<Sidebar
@@ -42,10 +36,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">
-										Acme Inc
+										{organization?.name || "Acme Inc"}
 									</span>
 									<span className="truncate text-xs">
-										Enterprise
+										{organization?.slug || "Enterprise"}
 									</span>
 								</div>
 							</div>
@@ -54,15 +48,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
-				<NavMain
-					label="Platform"
-					items={[routes.default, ...routes.modules]}
-				/>
-				<NavMain label="Services" items={routes.services} />
+				<NavMain items={[routes.default, ...routes.modules]} />
 				<NavMain label="Management" items={routes.management} />
+				<NavMain label="Admin" items={routes.admin} />
 			</SidebarContent>
 			<SidebarFooter className="border-t border-foreground/20">
-				<NavUser user={data.user} />
+				<NavUser
+					user={{
+						email: user?.email || "",
+						name: user?.name || "",
+						avatar: user?.image || "",
+					}}
+				/>
 			</SidebarFooter>
 		</Sidebar>
 	);
