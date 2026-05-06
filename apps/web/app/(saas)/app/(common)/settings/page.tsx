@@ -35,7 +35,9 @@ import {
 	TableRow,
 } from "@repo/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
+import { useSession } from "@saas/auth/hooks/use-session";
 import { CopyIcon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useState } from "react";
 
 type NotificationRule = {
@@ -89,10 +91,11 @@ function getOptionLabel(
 }
 
 export default function SettingsPage() {
+	const { user } = useSession();
 	const [activeTab, setActiveTab] = useState("account");
-	const [fullName, setFullName] = useState("Sahil");
-	const [email, setEmail] = useState("sahil@company.com");
-	const [theme, setTheme] = useState("system");
+	const [fullName, setFullName] = useState(user?.name);
+	const [email, setEmail] = useState(user?.email);
+	const { theme, setTheme } = useTheme();
 	const [mfaEmailEnabled, setMfaEmailEnabled] = useState(true);
 	const [mfaAppEnabled, setMfaAppEnabled] = useState(false);
 
@@ -312,10 +315,14 @@ export default function SettingsPage() {
 					</p>
 				</div>
 
-				<Tabs value={activeTab} onValueChange={setActiveTab}>
+				<Tabs
+					value={activeTab}
+					onValueChange={setActiveTab}
+					className="flex flex-col"
+				>
 					<TabsList
 						variant="line"
-						className="mb-6 w-full justify-start gap-2 overflow-x-auto p-0"
+						className="justify-start gap-2 overflow-x-auto p-0"
 					>
 						<TabsTrigger
 							value="account"
@@ -479,10 +486,6 @@ export default function SettingsPage() {
 						value="notification-settings"
 						className="space-y-4"
 					>
-						<h2 className="font-semibold text-3xl">
-							Lot Notifications
-						</h2>
-
 						<Card className="rounded-2xl border">
 							<CardHeader className="border-b">
 								<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -629,8 +632,7 @@ export default function SettingsPage() {
 					</TabsContent>
 
 					<TabsContent value="api-token" className="space-y-4">
-						<div className="flex flex-wrap items-center justify-between gap-3">
-							<h2 className="font-semibold text-3xl">Tokens</h2>
+						<div className="flex flex-wrap items-center justify-end gap-3">
 							<Button onClick={handleCreateApiToken}>
 								Create Token
 							</Button>
@@ -712,8 +714,7 @@ export default function SettingsPage() {
 					</TabsContent>
 
 					<TabsContent value="webhook" className="space-y-4">
-						<div className="flex flex-wrap items-center justify-between gap-3">
-							<h2 className="font-semibold text-3xl">Webhooks</h2>
+						<div className="flex flex-wrap items-center justify-end gap-3">
 							<Button onClick={handleCreateWebhook}>
 								Create
 							</Button>

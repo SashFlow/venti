@@ -35,6 +35,7 @@ import { Input } from "@repo/ui/input";
 import { SidebarTrigger } from "@repo/ui/sidebar";
 import {
 	Bell,
+	Bot,
 	Bug,
 	HelpCircle,
 	MessageSquare,
@@ -51,7 +52,7 @@ const SideBarHeader = () => {
 	const [isTicketsDialogOpen, setIsTicketsDialogOpen] = useState(false);
 
 	return (
-		<header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-foreground/20 bg-primary px-4 text-primary-foreground">
+		<header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-primary border-foreground/20 px-4 text-primary-foreground">
 			<div className="flex items-center gap-2 overflow-hidden">
 				<SidebarTrigger className="text-primary-foreground hidden md:flex lg:hidden" />
 				<Breadcrumb>
@@ -179,6 +180,15 @@ const SideBarHeader = () => {
 			</div>
 
 			<div className="flex items-center gap-1 sm:gap-2">
+				<Button
+					variant="ghost"
+					size="icon"
+					className="rounded-full text-primary-foreground hover:bg-white/10"
+				>
+					<Bot className="h-5 w-5" />
+					<span className="sr-only">Chatbot</span>
+				</Button>
+
 				<Button
 					variant="ghost"
 					size="icon"

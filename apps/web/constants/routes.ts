@@ -82,8 +82,8 @@ export const NAV_ROUTES = {
 			icon: Building2,
 		},
 		{
-			title: "Users",
-			url: "/app/users",
+			title: "Master",
+			url: "/app/master",
 			icon: Users2,
 		},
 		{
