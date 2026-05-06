@@ -7,16 +7,11 @@ import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { cn } from "@repo/ui/utils";
+import { useSession } from "@saas/auth/hooks/use-session";
 import { InviteMemberForm } from "@saas/organizations/components/InviteMemberForm";
 import { OrganizationInvitationsList } from "@saas/organizations/components/OrganizationInvitationsList";
 import { OrganizationMembersList } from "@saas/organizations/components/OrganizationMembersList";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
-import {
-	Building2Icon,
-	ChevronDownIcon,
-	ChevronUpIcon,
-	SearchIcon,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, SearchIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -488,8 +483,7 @@ function RoleGroupBuilder() {
 }
 
 export default function WorkforcePage() {
-	const { activeOrganization, loaded } = useActiveOrganization();
-
+	const { organization } = useSession();
 	return (
 		<div className="container mx-auto max-w-7xl py-8">
 			<h1 className="text-2xl font-semibold tracking-tight">Workforce</h1>
@@ -498,23 +492,17 @@ export default function WorkforcePage() {
 				organization.
 			</p>
 
-			{!loaded ? (
+			{!organization ? (
 				<Card className="mt-6 rounded-2xl border">
 					<CardContent className="p-6 text-sm text-muted-foreground">
 						Loading active organization...
 					</CardContent>
 				</Card>
-			) : !activeOrganization ? (
-				<Card className="mt-6 rounded-2xl border">
-					<CardContent className="flex items-center gap-3 p-6 text-muted-foreground text-sm">
-						<Building2Icon className="size-4" />
-						<span>
-							Select an organization to manage workforce settings.
-						</span>
-					</CardContent>
-				</Card>
 			) : (
-				<Tabs defaultValue="workers" className="mt-6 gap-4">
+				<Tabs
+					defaultValue="workers"
+					className="mt-6 gap-4 flex flex-col"
+				>
 					<TabsList
 						variant="line"
 						className="w-full justify-start gap-1 overflow-x-auto p-0"
@@ -534,23 +522,21 @@ export default function WorkforcePage() {
 						<Card className="rounded-2xl border">
 							<CardContent className="p-0">
 								<OrganizationMembersList
-									organizationId={activeOrganization.id}
+									organizationId={organization.id}
 								/>
 							</CardContent>
 						</Card>
 					</TabsContent>
 
 					<TabsContent value="invite" className="space-y-4">
-						<InviteMemberForm
-							organizationId={activeOrganization.id}
-						/>
+						<InviteMemberForm organizationId={organization.id} />
 					</TabsContent>
 
 					<TabsContent value="invited" className="space-y-4">
 						<Card className="rounded-2xl border">
 							<CardContent className="p-4 md:p-6">
 								<OrganizationInvitationsList
-									organizationId={activeOrganization.id}
+									organizationId={organization.id}
 								/>
 							</CardContent>
 						</Card>

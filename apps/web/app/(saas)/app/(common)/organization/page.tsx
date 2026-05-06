@@ -29,9 +29,12 @@ import {
 	BoxIcon,
 	ChevronDownIcon,
 	ChevronRightIcon,
+	Edit,
 	InfoIcon,
+	Plus,
 	ScanLineIcon,
 	TagIcon,
+	Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -39,6 +42,14 @@ import { useState } from "react";
 type Option = {
 	value: string;
 	label: string;
+};
+
+type MetafieldSchema = {
+	id: string;
+	name: string;
+	namespace: string;
+	type: string;
+	required: boolean;
 };
 
 const TAB_ITEMS = [
@@ -49,6 +60,7 @@ const TAB_ITEMS = [
 	{ value: "po", label: "Purchase Orders" },
 	{ value: "transfers", label: "Transfers" },
 	{ value: "cycle_counts", label: "Cycle Counts" },
+	{ value: "metafield_schemas", label: "Metafield Schemas" },
 	{ value: "etc", label: "Data Retention" },
 ];
 
@@ -335,9 +347,102 @@ export default function OrganizationPage() {
 	const [displayCurrency, setDisplayCurrency] = useState("usd");
 	const [abcValuationMethod, setAbcValuationMethod] =
 		useState("retail_value");
+	const [metafieldSchemas, setMetafieldSchemas] = useState<MetafieldSchema[]>(
+		[
+			{
+				id: "1",
+				name: "Color",
+				namespace: "custom",
+				type: "single_line_text_field",
+				required: true,
+			},
+			{
+				id: "2",
+				name: "Size",
+				namespace: "custom",
+				type: "single_line_text_field",
+				required: false,
+			},
+		],
+	);
+	const [editingSchema, setEditingSchema] = useState<MetafieldSchema | null>(
+		null,
+	);
+	const [newSchemaName, setNewSchemaName] = useState("");
+	const [newSchemaNamespace, setNewSchemaNamespace] = useState("");
+	const [newSchemaType, setNewSchemaType] = useState(
+		"single_line_text_field",
+	);
+	const [newSchemaRequired, setNewSchemaRequired] = useState(false);
 
 	const updateToggle = (key: string, checked: boolean) => {
 		setToggles((previous) => ({ ...previous, [key]: checked }));
+	};
+
+	const addMetafieldSchema = () => {
+		if (newSchemaName.trim() && newSchemaNamespace.trim()) {
+			const newSchema: MetafieldSchema = {
+				id: Date.now().toString(),
+				name: newSchemaName,
+				namespace: newSchemaNamespace,
+				type: newSchemaType,
+				required: newSchemaRequired,
+			};
+			setMetafieldSchemas([...metafieldSchemas, newSchema]);
+			setNewSchemaName("");
+			setNewSchemaNamespace("");
+			setNewSchemaType("single_line_text_field");
+			setNewSchemaRequired(false);
+		}
+	};
+
+	const deleteMetafieldSchema = (id: string) => {
+		setMetafieldSchemas(
+			metafieldSchemas.filter((schema) => schema.id !== id),
+		);
+	};
+
+	const startEditingSchema = (schema: MetafieldSchema) => {
+		setEditingSchema(schema);
+		setNewSchemaName(schema.name);
+		setNewSchemaNamespace(schema.namespace);
+		setNewSchemaType(schema.type);
+		setNewSchemaRequired(schema.required);
+	};
+
+	const saveEditedSchema = () => {
+		if (
+			editingSchema &&
+			newSchemaName.trim() &&
+			newSchemaNamespace.trim()
+		) {
+			setMetafieldSchemas(
+				metafieldSchemas.map((schema) =>
+					schema.id === editingSchema.id
+						? {
+								...schema,
+								name: newSchemaName,
+								namespace: newSchemaNamespace,
+								type: newSchemaType,
+								required: newSchemaRequired,
+							}
+						: schema,
+				),
+			);
+			setEditingSchema(null);
+			setNewSchemaName("");
+			setNewSchemaNamespace("");
+			setNewSchemaType("single_line_text_field");
+			setNewSchemaRequired(false);
+		}
+	};
+
+	const cancelEditingSchema = () => {
+		setEditingSchema(null);
+		setNewSchemaName("");
+		setNewSchemaNamespace("");
+		setNewSchemaType("single_line_text_field");
+		setNewSchemaRequired(false);
 	};
 
 	return (
@@ -1056,6 +1161,238 @@ export default function OrganizationPage() {
 									updateToggle("cycleCounts_showQty", checked)
 								}
 							/>
+						</SectionCard>
+					</TabsContent>
+
+					<TabsContent
+						value="metafield_schemas"
+						className="space-y-4"
+					>
+						<SectionCard
+							id="metafield_schemas"
+							title="Metafield Schemas"
+							actions={
+								<Button
+									size="sm"
+									onClick={() => {
+										if (editingSchema) {
+											cancelEditingSchema();
+										}
+									}}
+									disabled={!editingSchema}
+								>
+									Cancel
+								</Button>
+							}
+						>
+							{metafieldSchemas.length === 0 ? (
+								<div className="rounded-lg border border-dashed p-6 text-center">
+									<p className="font-semibold text-sm mb-2">
+										YOU DON'T HAVE ANY METAFIELD SCHEMAS
+										SETUP YET
+									</p>
+									<p className="text-muted-foreground text-xs">
+										Metafield schemas let you define custom
+										fields with validation rules, required
+										field enforcement, and type constraints.
+										Use them to ensure consistent data entry
+										across your team when adding metadata to
+										records like inbound orders. This will
+										enforce that when creating a purchase
+										order, for example, the metafields will
+										be prepopulated.
+									</p>
+								</div>
+							) : (
+								<div className="space-y-3">
+									<div className="overflow-hidden rounded-lg border">
+										<table className="w-full text-sm">
+											<thead>
+												<tr className="border-b bg-muted/50">
+													<th className="px-4 py-3 text-left font-semibold">
+														Name
+													</th>
+													<th className="px-4 py-3 text-left font-semibold">
+														Namespace
+													</th>
+													<th className="px-4 py-3 text-left font-semibold">
+														Type
+													</th>
+													<th className="px-4 py-3 text-left font-semibold">
+														Required
+													</th>
+													<th className="px-4 py-3 text-right font-semibold">
+														Actions
+													</th>
+												</tr>
+											</thead>
+											<tbody>
+												{metafieldSchemas.map(
+													(schema) => (
+														<tr
+															key={schema.id}
+															className="border-b hover:bg-muted/30"
+														>
+															<td className="px-4 py-3">
+																{schema.name}
+															</td>
+															<td className="px-4 py-3 text-muted-foreground">
+																{
+																	schema.namespace
+																}
+															</td>
+															<td className="px-4 py-3 text-muted-foreground text-xs">
+																{schema.type.replace(
+																	/_/g,
+																	" ",
+																)}
+															</td>
+															<td className="px-4 py-3">
+																<span
+																	className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+																		schema.required
+																			? "bg-blue-100 text-blue-800"
+																			: "bg-gray-100 text-gray-800"
+																	}`}
+																>
+																	{schema.required
+																		? "Yes"
+																		: "No"}
+																</span>
+															</td>
+															<td className="px-4 py-3 text-right">
+																<div className="flex justify-end gap-2">
+																	<Button
+																		size="sm"
+																		variant="ghost"
+																		onClick={() =>
+																			startEditingSchema(
+																				schema,
+																			)
+																		}
+																	>
+																		<Edit className="w-4 h-4" />
+																	</Button>
+																	<Button
+																		size="sm"
+																		variant="ghost"
+																		onClick={() =>
+																			deleteMetafieldSchema(
+																				schema.id,
+																			)
+																		}
+																	>
+																		<Trash2 className="w-4 h-4 text-red-600" />
+																	</Button>
+																</div>
+															</td>
+														</tr>
+													),
+												)}
+											</tbody>
+										</table>
+									</div>
+								</div>
+							)}
+
+							<div className="mt-6 pt-6 border-t">
+								<h4 className="font-semibold text-sm mb-4">
+									{editingSchema
+										? "Edit Schema"
+										: "Add New Schema"}
+								</h4>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+									<InputRow
+										label="Field Name"
+										value={newSchemaName}
+										onChange={setNewSchemaName}
+										placeholder="e.g., Color"
+									/>
+									<InputRow
+										label="Namespace"
+										value={newSchemaNamespace}
+										onChange={setNewSchemaNamespace}
+										placeholder="e.g., custom"
+									/>
+								</div>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+									<SelectRow
+										label="Field Type"
+										value={newSchemaType}
+										onValueChange={setNewSchemaType}
+										options={[
+											{
+												value: "single_line_text_field",
+												label: "Single Line Text",
+											},
+											{
+												value: "multi_line_text_field",
+												label: "Multi Line Text",
+											},
+											{
+												value: "number_integer",
+												label: "Integer",
+											},
+											{
+												value: "number_decimal",
+												label: "Decimal",
+											},
+											{
+												value: "boolean",
+												label: "Boolean",
+											},
+											{
+												value: "date",
+												label: "Date",
+											},
+										]}
+									/>
+									<div className="flex items-end">
+										<div className="flex items-center gap-3 rounded-lg border p-3 w-full">
+											<input
+												type="checkbox"
+												checked={newSchemaRequired}
+												onChange={(e) =>
+													setNewSchemaRequired(
+														e.target.checked,
+													)
+												}
+												className="w-4 h-4"
+											/>
+											<Label className="text-sm font-medium cursor-pointer">
+												Required Field
+											</Label>
+										</div>
+									</div>
+								</div>
+								<div className="flex gap-2">
+									{editingSchema ? (
+										<>
+											<Button
+												onClick={saveEditedSchema}
+												size="sm"
+											>
+												Save Changes
+											</Button>
+											<Button
+												onClick={cancelEditingSchema}
+												variant="outline"
+												size="sm"
+											>
+												Cancel
+											</Button>
+										</>
+									) : (
+										<Button
+											onClick={addMetafieldSchema}
+											size="sm"
+										>
+											<Plus className="w-4 h-4 mr-2" />
+											Add Schema
+										</Button>
+									)}
+								</div>
+							</div>
 						</SectionCard>
 					</TabsContent>
 

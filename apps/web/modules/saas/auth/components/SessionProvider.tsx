@@ -1,4 +1,5 @@
 "use client";
+
 import type { Organization } from "@repo/auth";
 import { authClient } from "@repo/auth/client";
 import { sessionQueryKey, useSessionQuery } from "@saas/auth/lib/api";
@@ -8,18 +9,26 @@ import { SessionContext } from "../lib/session-context";
 
 export function SessionProvider({ children }: { children: ReactNode }) {
 	const queryClient = useQueryClient();
+
+	const { data: session, isLoading: sessionLoading } = useSessionQuery();
+
 	const [organization, setOrganization] = useState<Organization | null>(null);
-	const { data: session } = useSessionQuery();
-	const [loaded, setLoaded] = useState(!!session);
+
+	const [organizationLoaded, setOrganizationLoaded] = useState(false);
 
 	useEffect(() => {
 		const activeOrganizationId = session?.session.activeOrganizationId;
 
-		if (!session || loaded || !activeOrganizationId) {
+		if (!activeOrganizationId) {
+			setOrganizationLoaded(true);
 			return;
 		}
 
+		let cancelled = false;
+
 		const loadOrganization = async () => {
+			setOrganizationLoaded(false);
+
 			const { data, error } =
 				await authClient.organization.getFullOrganization({
 					query: {
@@ -27,28 +36,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 					},
 				});
 
-			if (error) {
-				setLoaded(true);
-				return;
-			}
+			if (cancelled) return;
 
-			if (data) {
+			if (!error && data) {
 				setOrganization(data);
 			}
 
-			setLoaded(true);
+			setOrganizationLoaded(true);
 		};
 
 		void loadOrganization();
-	}, [loaded, session]);
+
+		return () => {
+			cancelled = true;
+		};
+	}, [session?.session.activeOrganizationId]);
 
 	return (
 		<SessionContext.Provider
 			value={{
-				loaded,
+				loaded: !sessionLoading && organizationLoaded,
+
 				session: session?.session ?? null,
+
 				user: session?.user ?? null,
+
 				organization,
+
 				reloadSession: async () => {
 					const { data: newSession, error } =
 						await authClient.getSession({
@@ -63,7 +77,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 						);
 					}
 
-					queryClient.setQueryData(sessionQueryKey, () => newSession);
+					queryClient.setQueryData(sessionQueryKey, newSession);
 				},
 			}}
 		>
