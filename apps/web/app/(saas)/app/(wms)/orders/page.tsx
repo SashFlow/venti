@@ -91,7 +91,9 @@ function GuideActions({
 	return (
 		<div className="space-y-4 rounded-2xl bg-muted/30 p-6">
 			<div className="space-y-1 text-center">
-				<h3 className="text-4xl font-semibold tracking-tight">{title}</h3>
+				<h3 className="text-4xl font-semibold tracking-tight">
+					{title}
+				</h3>
 				<Link
 					href={primaryActionHref}
 					className="inline-flex items-center gap-2 text-xl font-semibold text-primary"
@@ -128,25 +130,23 @@ function GuideActions({
 				</Card>
 			</div>
 
-			<Card className="overflow-hidden rounded-2xl border">
-				<CardContent className="relative flex min-h-80 items-center justify-center bg-linear-to-r from-slate-950 via-slate-900 to-slate-800 p-8 text-center text-white">
-					<div className="space-y-3">
-						<p className="text-5xl font-semibold tracking-tight md:text-6xl">
-							{heroTitle}
-						</p>
-						<p className="text-base text-slate-200">
-							Quick operation walkthrough for your warehouse team.
-						</p>
-					</div>
-					<button
-						type="button"
-						className="absolute rounded-full bg-black/40 p-3 text-white backdrop-blur hover:bg-black/60"
-						aria-label="Play guide video"
-					>
-						<PlayIcon className="size-8 fill-current" />
-					</button>
-				</CardContent>
-			</Card>
+			<div className="relative flex min-h-80 items-center justify-center bg-linear-to-r from-slate-950 via-slate-900 to-slate-800 p-8 text-center text-white">
+				<div className="space-y-3">
+					<p className="text-5xl font-semibold tracking-tight md:text-6xl">
+						{heroTitle}
+					</p>
+					<p className="text-base text-slate-200">
+						Quick operation walkthrough for your warehouse team.
+					</p>
+				</div>
+				<button
+					type="button"
+					className="absolute rounded-full bg-black/40 p-3 text-white backdrop-blur hover:bg-black/60"
+					aria-label="Play guide video"
+				>
+					<PlayIcon className="size-8 fill-current" />
+				</button>
+			</div>
 		</div>
 	);
 }
@@ -158,25 +158,33 @@ function InboundTab() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between gap-3">
-				<h2 className="text-3xl font-semibold tracking-tight">Purchase Orders</h2>
+				<h2 className="text-3xl font-semibold tracking-tight">
+					Purchase Orders
+				</h2>
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="icon" aria-label="Import">
 						<UploadIcon className="size-4" />
 					</Button>
-					<Button variant="outline" size="sm">Discrepancies</Button>
+					<Button variant="outline" size="sm">
+						Discrepancies
+					</Button>
 					<Button size="sm">Create</Button>
 				</div>
 			</div>
 
 			<Card className="rounded-2xl border">
 				<CardContent className="p-0">
-					<div className="border-b px-4 py-2 text-xs font-semibold">No Filters</div>
+					<div className="border-b px-4 py-2 text-xs font-semibold">
+						No Filters
+					</div>
 					<div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
 						<div className="relative w-full max-w-md">
 							<SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
 								value={search}
-								onChange={(event) => setSearch(event.target.value)}
+								onChange={(event) =>
+									setSearch(event.target.value)
+								}
 								placeholder="Search"
 								className="h-8 pl-9"
 							/>
@@ -189,12 +197,20 @@ function InboundTab() {
 							<TagIcon className="mr-1.5 size-3.5" />
 							Order Tags
 						</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Order Status</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Any Vendor</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Any Warehouse</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Order Status
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Any Vendor
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Any Warehouse
+						</Button>
 						<CompactPager
 							page={page}
-							onPrev={() => setPage((current) => Math.max(1, current - 1))}
+							onPrev={() =>
+								setPage((current) => Math.max(1, current - 1))
+							}
 							onNext={() => setPage((current) => current + 1)}
 						/>
 					</div>
@@ -247,25 +263,33 @@ function OutboundTab() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between gap-3">
-				<h2 className="text-3xl font-semibold tracking-tight">Outbound Orders</h2>
+				<h2 className="text-3xl font-semibold tracking-tight">
+					Outbound Orders
+				</h2>
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="icon" aria-label="Import">
 						<UploadIcon className="size-4" />
 					</Button>
-					<Button variant="outline" size="sm">Fulfill</Button>
+					<Button variant="outline" size="sm">
+						Fulfill
+					</Button>
 					<Button size="sm">Create</Button>
 				</div>
 			</div>
 
 			<Card className="rounded-2xl border">
 				<CardContent className="p-0">
-					<div className="border-b px-4 py-2 text-xs font-semibold">No Filters</div>
+					<div className="border-b px-4 py-2 text-xs font-semibold">
+						No Filters
+					</div>
 					<div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
 						<div className="relative w-full max-w-md">
 							<SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
 								value={search}
-								onChange={(event) => setSearch(event.target.value)}
+								onChange={(event) =>
+									setSearch(event.target.value)
+								}
 								placeholder="Search"
 								className="h-8 pl-9"
 							/>
@@ -278,11 +302,17 @@ function OutboundTab() {
 							<TagIcon className="mr-1.5 size-3.5" />
 							Order Tags
 						</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Order Status</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Any Warehouse</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Order Status
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Any Warehouse
+						</Button>
 						<CompactPager
 							page={page}
-							onPrev={() => setPage((current) => Math.max(1, current - 1))}
+							onPrev={() =>
+								setPage((current) => Math.max(1, current - 1))
+							}
 							onNext={() => setPage((current) => current + 1)}
 						/>
 					</div>
@@ -336,12 +366,16 @@ function TransferTab() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between gap-3">
-				<h2 className="text-3xl font-semibold tracking-tight">Transfers</h2>
+				<h2 className="text-3xl font-semibold tracking-tight">
+					Transfers
+				</h2>
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="icon" aria-label="Import">
 						<UploadIcon className="size-4" />
 					</Button>
-					<Button variant="outline" size="sm">Discrepancies</Button>
+					<Button variant="outline" size="sm">
+						Discrepancies
+					</Button>
 					<Button size="sm">Create Transfer</Button>
 				</div>
 			</div>
@@ -353,7 +387,9 @@ function TransferTab() {
 							<SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
 								value={search}
-								onChange={(event) => setSearch(event.target.value)}
+								onChange={(event) =>
+									setSearch(event.target.value)
+								}
 								placeholder="Search"
 								className="h-8 pl-9"
 							/>
@@ -366,12 +402,20 @@ function TransferTab() {
 							<TagIcon className="mr-1.5 size-3.5" />
 							Order Tags
 						</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Order Status</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Origin</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Destination</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Order Status
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Origin
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Destination
+						</Button>
 						<CompactPager
 							page={page}
-							onPrev={() => setPage((current) => Math.max(1, current - 1))}
+							onPrev={() =>
+								setPage((current) => Math.max(1, current - 1))
+							}
 							onNext={() => setPage((current) => current + 1)}
 						/>
 					</div>
@@ -422,7 +466,9 @@ function ManifestTab() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between gap-3">
-				<h2 className="text-3xl font-semibold tracking-tight">Manifests</h2>
+				<h2 className="text-3xl font-semibold tracking-tight">
+					Manifests
+				</h2>
 				<Button size="sm">Create Manifests</Button>
 			</div>
 
@@ -431,7 +477,9 @@ function ManifestTab() {
 					<div className="flex items-center justify-end gap-2 border-b px-4 py-2">
 						<CompactPager
 							page={page}
-							onPrev={() => setPage((current) => Math.max(1, current - 1))}
+							onPrev={() =>
+								setPage((current) => Math.max(1, current - 1))
+							}
 							onNext={() => setPage((current) => current + 1)}
 						/>
 					</div>
@@ -467,11 +515,21 @@ function FulfillTab() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between gap-3">
-				<h2 className="text-3xl font-semibold tracking-tight">Fulfill</h2>
+				<h2 className="text-3xl font-semibold tracking-tight">
+					Fulfill
+				</h2>
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="sm">Packed Shipments</Button>
-					<Button variant="outline" size="sm">View Manifests</Button>
-					<Button variant="outline" size="icon" aria-label="More actions">
+					<Button variant="outline" size="sm">
+						Packed Shipments
+					</Button>
+					<Button variant="outline" size="sm">
+						View Manifests
+					</Button>
+					<Button
+						variant="outline"
+						size="icon"
+						aria-label="More actions"
+					>
 						<EllipsisIcon className="size-4" />
 					</Button>
 				</div>
@@ -483,13 +541,19 @@ function FulfillTab() {
 						<CardTitle className="text-sm font-semibold uppercase tracking-wider">
 							Batches
 						</CardTitle>
-						<Button size="sm" variant="outline">Merge Batches</Button>
+						<Button size="sm" variant="outline">
+							Merge Batches
+						</Button>
 					</div>
 				</CardHeader>
 				<CardContent className="p-0">
-					<div className="border-b px-4 py-2 text-xs font-semibold">No Filters</div>
+					<div className="border-b px-4 py-2 text-xs font-semibold">
+						No Filters
+					</div>
 					<div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Batch Status</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Batch Status
+						</Button>
 						<Button variant="outline" className={TAG_FILTER_CLASS}>
 							<CalendarIcon className="mr-1.5 size-3.5" />
 							Create Date
@@ -498,14 +562,22 @@ function FulfillTab() {
 							<CalendarIcon className="mr-1.5 size-3.5" />
 							Delivery Date
 						</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Any Priority</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Assigned to Anyone</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Any Priority
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Assigned to Anyone
+						</Button>
 						<CompactPager
 							page={batchPage}
 							onPrev={() =>
-								setBatchPage((current) => Math.max(1, current - 1))
+								setBatchPage((current) =>
+									Math.max(1, current - 1),
+								)
 							}
-							onNext={() => setBatchPage((current) => current + 1)}
+							onNext={() =>
+								setBatchPage((current) => current + 1)
+							}
 						/>
 					</div>
 
@@ -542,7 +614,9 @@ function FulfillTab() {
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="p-0">
-					<div className="border-b px-4 py-2 text-xs font-semibold">No Filters</div>
+					<div className="border-b px-4 py-2 text-xs font-semibold">
+						No Filters
+					</div>
 					<div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
 						<Button variant="outline" className={TAG_FILTER_CLASS}>
 							Payment Status
@@ -555,18 +629,34 @@ function FulfillTab() {
 							<TagIcon className="mr-1.5 size-3.5" />
 							Product Tags
 						</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Fulfillment Status</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Delivery Method</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Shipping Methods</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Item SKUs</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Order Sources</Button>
-						<Button variant="outline" className={TAG_FILTER_CLASS}>Create Date</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Fulfillment Status
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Delivery Method
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Shipping Methods
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Item SKUs
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Order Sources
+						</Button>
+						<Button variant="outline" className={TAG_FILTER_CLASS}>
+							Create Date
+						</Button>
 						<CompactPager
 							page={shipmentPage}
 							onPrev={() =>
-								setShipmentPage((current) => Math.max(1, current - 1))
+								setShipmentPage((current) =>
+									Math.max(1, current - 1),
+								)
 							}
-							onNext={() => setShipmentPage((current) => current + 1)}
+							onNext={() =>
+								setShipmentPage((current) => current + 1)
+							}
 						/>
 					</div>
 
@@ -604,19 +694,35 @@ export default function OrdersPage() {
 	return (
 		<div className="container py-8 max-w-7xl mx-auto space-y-6">
 			<div className="space-y-1">
-				<h1 className="text-3xl font-semibold tracking-tight">Orders</h1>
+				<h1 className="text-3xl font-semibold tracking-tight">
+					Orders
+				</h1>
 				<p className="text-muted-foreground">
-					Manage inbound, outbound, transfer, manifest, and fulfillment operations.
+					Manage inbound, outbound, transfer, manifest, and
+					fulfillment operations.
 				</p>
 			</div>
 
-			<Tabs defaultValue="inbound" className="space-y-6">
-				<TabsList variant="line" className="justify-start gap-2 overflow-x-auto p-0">
-					<TabsTrigger value="inbound" className="px-3">Inbound</TabsTrigger>
-					<TabsTrigger value="outbound" className="px-3">Outbound</TabsTrigger>
-					<TabsTrigger value="transfer" className="px-3">Transfer</TabsTrigger>
-					<TabsTrigger value="manifest" className="px-3">Manifest</TabsTrigger>
-					<TabsTrigger value="fulfill" className="px-3">Fulfill</TabsTrigger>
+			<Tabs defaultValue="inbound" className="space-y-6 flex flex-col">
+				<TabsList
+					variant="line"
+					className="justify-start gap-2 overflow-x-auto p-0"
+				>
+					<TabsTrigger value="inbound" className="px-3">
+						Inbound
+					</TabsTrigger>
+					<TabsTrigger value="outbound" className="px-3">
+						Outbound
+					</TabsTrigger>
+					<TabsTrigger value="transfer" className="px-3">
+						Transfer
+					</TabsTrigger>
+					<TabsTrigger value="manifest" className="px-3">
+						Manifest
+					</TabsTrigger>
+					<TabsTrigger value="fulfill" className="px-3">
+						Fulfill
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="inbound">
