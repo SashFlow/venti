@@ -41,6 +41,9 @@ model User {
     twofactors         TwoFactor[]
     aiChats            AiChat[]
     auditLogs          AuditLog[]
+    managedWarehouses  Warehouse[]
+    tasksAssigned      Task[]       @relation("TaskAssignedTo")
+    tasksCreated       Task[]       @relation("TaskAssignedBy")
 
     @@unique([email])
     @@unique([username])
@@ -138,6 +141,7 @@ model Organization {
     invitations        Invitation[]
     purchases          Purchase[]
     aiChats            AiChat[]
+    roleGroups         RoleGroup[]
 
     @@unique([slug])
     @@map("organization")
@@ -276,4 +280,205 @@ model Picture {
     @@map("picture")
 }
 
+// ================================================
+// Scope Models
+// ================================================
+
+model RoleGroup {
+    id             String       @id @default(cuid())
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    name           String
+    description    String
+    warehouses     Warehouse[]
+    roles          String[]
+
+    @@map("role_group")
+}
+
+// ================================================
+// Common Models
+// ================================================
+model Address {
+    id           String   @id @default(cuid())
+    addressLine1 String
+    addressLine2 String?
+    city         String
+    country      String
+    state        String
+    zip          String
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    warehouse       Warehouse?          @relation("WarehouseAddress")
+    warehouseReturn Warehouse?          @relation("WarehouseReturnAddress")
+    orgConfig       OrganizationConfig? @relation("OrgConfigHeadquarter")
+
+    @@map("address")
+}
+
+model Task {
+    id           String   @id @default(cuid())
+    description  String
+    assignedToId String
+    assignedTo   User     @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+    assignedById String
+    assignedBy   User     @relation("TaskAssignedBy", fields: [assignedById], references: [id])
+    deadline     DateTime
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    @@map("task")
+}
+
+model Barcode {
+    id        String   @id @default(cuid())
+    metadata  Json
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("barcode")
+}
+
+// ================================================
 // Functional Models.
+// ================================================
+
+model OrganizationConfig {
+    id             String   @id @default(cuid())
+    headquarterId  String   @unique
+    headquarter    Address  @relation("OrgConfigHeadquarter", fields: [headquarterId], references: [id])
+    fullfilment    Json
+    inventory      Json
+    units          Json
+    barcodeScanner Json
+    purchaseOrders Json
+    transfers      Json
+    cycleCount     Json
+    dataRetention  Json
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+
+    @@map("organization_config")
+}
+
+model Warehouse {
+    id              String     @id @default(cuid())
+    name            String
+    prefix          String
+    phone           String
+    managerId       String
+    manager         User       @relation(fields: [managerId], references: [id])
+    addressId       String     @unique
+    address         Address    @relation("WarehouseAddress", fields: [addressId], references: [id])
+    returnAddressId String     @unique
+    returnAddress   Address    @relation("WarehouseReturnAddress", fields: [returnAddressId], references: [id])
+    roleGroupId     String?
+    roleGroup       RoleGroup? @relation(fields: [roleGroupId], references: [id])
+    createdAt       DateTime   @default(now())
+    updatedAt       DateTime   @updatedAt
+
+    @@map("warehouse")
+}
+
+model Shelf {
+    id          String    @id @default(cuid())
+    name        String
+    description String
+    startX      Float
+    startY      Float
+    length      Float
+    width       Float
+    height      Float
+    isObstacle  Boolean
+    pickSides   Boolean[]
+    bins        Bin[]
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    @@map("shelf")
+}
+
+model Area {
+    id          String   @id @default(cuid())
+    name        String
+    description String
+    startX      Float
+    startY      Float
+    length      Float
+    width       Float
+    isObstacle  Boolean
+    color       String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@map("area")
+}
+
+model Bin {
+    id          String   @id @default(cuid())
+    name        String
+    description String
+    shelfId     String
+    shelf       Shelf    @relation(fields: [shelfId], references: [id])
+    level       Int
+    isPickable  Boolean
+    startX      Float
+    startY      Float
+    length      Float
+    width       Float
+    height      Float
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@map("bin")
+}
+
+model Border {
+    id        String   @id @default(cuid())
+    name      String
+    startX    Float
+    startY    Float
+    endX      Float
+    endY      Float
+    type      String // Wall | Door
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("border")
+}
+
+// ================================================
+// Product Models.
+// ================================================
+
+// model Product {
+//     id         String   @id @default(cuid())
+//     name       String
+//     image      Float
+//     tags       Float
+//     type       Float // Digital | Physical
+//     perishable Float
+//     status     String // Active, Draft, Archived
+//     metadata   Json
+//     createdAt  DateTime @default(now())
+//     updatedAt  DateTime @updatedAt
+// }
+
+// model SKU {
+//     id            String   @id @default(cuid())
+//     product       Product
+//     slug          String
+//     price         Float
+//     serialization Boolean
+//     metadata      Json
+//     options       Json
+//     height        Float
+//     width         Float
+//     length        Float
+//     weight        Float
+//     createdAt     DateTime @default(now())
+//     updatedAt     DateTime @updatedAt
+// }
