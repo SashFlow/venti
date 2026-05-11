@@ -53,6 +53,7 @@ model User {
     salesOrdersCreated         SalesOrder[]        @relation("SOCreatedBy")
     wavesReleased              Wave[]              @relation("WaveReleasedBy")
     shipmentsDispatched        Shipment[]          @relation("ShipmentDispatchedBy")
+    uploadedFiles              UploadFile[]        @relation("UploadedFilesByUser")
 
     @@unique([email])
     @@unique([username])
@@ -151,6 +152,8 @@ model Organization {
     name               String
     slug               String?
     logo               String?
+    logoUploadFileId   String?
+    logoUploadFile     UploadFile?         @relation("OrganizationLogoUpload", fields: [logoUploadFileId], references: [id], onDelete: SetNull)
     createdAt          DateTime
     metadata           Json?
     paymentsCustomerId String?
@@ -168,8 +171,10 @@ model Organization {
     skuCategories      SKUCategory[]
     purchaseOrders     PurchaseOrder[]
     salesOrders        SalesOrder[]
+    uploadFiles        UploadFile[]        @relation("OrganizationUploads")
 
     @@unique([slug])
+    @@index([logoUploadFileId])
     @@map("organization")
 }
 
@@ -390,6 +395,34 @@ model OrganizationConfig {
     updatedAt      DateTime     @updatedAt
 
     @@map("organization_config")
+}
+
+model UploadFile {
+    id               String           @id @default(cuid())
+    organizationId   String?
+    organization     Organization?    @relation("OrganizationUploads", fields: [organizationId], references: [id], onDelete: SetNull)
+    uploadedByUserId String?
+    uploadedByUser   User?            @relation("UploadedFilesByUser", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+    bucket           String           @db.VarChar(100)
+    path             String           @db.VarChar(1024)
+    fileName         String?          @db.VarChar(255)
+    mimeType         String?          @db.VarChar(255)
+    sizeBytes        Int?
+    checksum         String?          @db.VarChar(255)
+    scope            UploadFileScope  @default(GENERIC)
+    status           UploadFileStatus @default(PENDING)
+    metadata         Json?
+    createdAt        DateTime         @default(now())
+    updatedAt        DateTime         @updatedAt
+
+    organizationLogoFor Organization[] @relation("OrganizationLogoUpload")
+
+    @@unique([bucket, path])
+    @@index([organizationId])
+    @@index([uploadedByUserId])
+    @@index([scope])
+    @@index([status])
+    @@map("upload_file")
 }
 
 // ============================================================================
@@ -678,6 +711,20 @@ enum SKULifecycle {
     ACTIVE
     DISCONTINUED
     OBSOLETE
+}
+
+enum UploadFileScope {
+    ORGANIZATION_LOGO
+    USER_AVATAR
+    NOTE_IMAGE
+    GENERIC
+}
+
+enum UploadFileStatus {
+    PENDING
+    UPLOADED
+    FAILED
+    DELETED
 }
 
 // ============================================================================
