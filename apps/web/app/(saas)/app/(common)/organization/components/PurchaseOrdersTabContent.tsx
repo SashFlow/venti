@@ -41,13 +41,17 @@ export function PurchaseOrdersTabContent({
 					label="Enable bulk counting"
 					helpText="Supports one-step check-in quantity operations."
 					checked={toggles.po_oneStepCheckIn}
-					onCheckedChange={(checked) => updateToggle("po_oneStepCheckIn", checked)}
+					onCheckedChange={(checked) =>
+						updateToggle("po_oneStepCheckIn", checked)
+					}
 				/>
 				<SwitchRow
 					label="Edit closed POs"
 					helpText="Allows reopening or editing completed purchase orders."
 					checked={toggles.po_editClosed}
-					onCheckedChange={(checked) => updateToggle("po_editClosed", checked)}
+					onCheckedChange={(checked) =>
+						updateToggle("po_editClosed", checked)
+					}
 				/>
 			</SectionCard>
 		</TabsContent>

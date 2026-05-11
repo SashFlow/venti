@@ -28,7 +28,10 @@ export function FulfillmentTabContent({
 					description="Allow fulfillment without requiring carrier label purchase, such as in-store pickup and local delivery."
 					checked={toggles.outbound_markShipmentAsFulfilled}
 					onCheckedChange={(checked) =>
-						updateToggle("outbound_markShipmentAsFulfilled", checked)
+						updateToggle(
+							"outbound_markShipmentAsFulfilled",
+							checked,
+						)
 					}
 				/>
 				<SwitchRow
@@ -72,7 +75,9 @@ export function FulfillmentTabContent({
 					label="Allow bulk packing all items"
 					helpText="Packs all picked line items into shipment with one action."
 					checked={toggles.batch_packAll}
-					onCheckedChange={(checked) => updateToggle("batch_packAll", checked)}
+					onCheckedChange={(checked) =>
+						updateToggle("batch_packAll", checked)
+					}
 				/>
 				<SwitchRow
 					label="Print license plate when packing completes"
@@ -93,8 +98,8 @@ export function FulfillmentTabContent({
 
 				<CollapsibleGroup title="Label Messages">
 					<p className="text-muted-foreground text-sm">
-						Configure dynamic label message templates for different shipment
-						states and carrier actions.
+						Configure dynamic label message templates for different
+						shipment states and carrier actions.
 					</p>
 					<div className="grid gap-3 md:grid-cols-2">
 						<InputRow

@@ -21,7 +21,9 @@ export function CycleCountsTabContent({
 				<SwitchRow
 					label="Require bin scan"
 					checked={toggles.cycleCounts_scanBin}
-					onCheckedChange={(checked) => updateToggle("cycleCounts_scanBin", checked)}
+					onCheckedChange={(checked) =>
+						updateToggle("cycleCounts_scanBin", checked)
+					}
 				/>
 				<SwitchRow
 					label="Require item scan"
@@ -33,7 +35,9 @@ export function CycleCountsTabContent({
 				<SwitchRow
 					label="Show expected quantity in bin"
 					checked={toggles.cycleCounts_showQty}
-					onCheckedChange={(checked) => updateToggle("cycleCounts_showQty", checked)}
+					onCheckedChange={(checked) =>
+						updateToggle("cycleCounts_showQty", checked)
+					}
 				/>
 			</SectionCard>
 		</TabsContent>

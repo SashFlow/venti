@@ -7,7 +7,13 @@ import {
 } from "@repo/ui/select";
 import { TabsContent } from "@repo/ui/tabs";
 import { ABC_VALUATION_OPTIONS } from "./constants";
-import { CollapsibleGroup, HelpTip, InputRow, SectionCard, SwitchRow } from "./shared";
+import {
+	CollapsibleGroup,
+	HelpTip,
+	InputRow,
+	SectionCard,
+	SwitchRow,
+} from "./shared";
 
 export function InventoryTabContent({
 	toggles,
@@ -38,7 +44,10 @@ export function InventoryTabContent({
 					helpText="Allows internal replenishment transfers between bins."
 					checked={toggles.inventory_enableInternalReplenishment}
 					onCheckedChange={(checked) =>
-						updateToggle("inventory_enableInternalReplenishment", checked)
+						updateToggle(
+							"inventory_enableInternalReplenishment",
+							checked,
+						)
 					}
 				/>
 				<SwitchRow
@@ -53,7 +62,9 @@ export function InventoryTabContent({
 					label="Track packaging inventory"
 					helpText="Includes cartons and packaging supplies in stock records."
 					checked={toggles.inventory_packaging}
-					onCheckedChange={(checked) => updateToggle("inventory_packaging", checked)}
+					onCheckedChange={(checked) =>
+						updateToggle("inventory_packaging", checked)
+					}
 				/>
 				<SwitchRow
 					label="Retain empty records"
@@ -67,7 +78,10 @@ export function InventoryTabContent({
 					label="Require adjustment reason"
 					checked={toggles.inventory_adjustmentReasonRequired}
 					onCheckedChange={(checked) =>
-						updateToggle("inventory_adjustmentReasonRequired", checked)
+						updateToggle(
+							"inventory_adjustmentReasonRequired",
+							checked,
+						)
 					}
 				/>
 				<SwitchRow
@@ -81,14 +95,20 @@ export function InventoryTabContent({
 					label="Enable expiration and lot tracking"
 					checked={toggles.inventory_enableExpirationTracking}
 					onCheckedChange={(checked) =>
-						updateToggle("inventory_enableExpirationTracking", checked)
+						updateToggle(
+							"inventory_enableExpirationTracking",
+							checked,
+						)
 					}
 				/>
 				<SwitchRow
 					label="Prioritize lot expiration ranges during picking"
 					checked={toggles.inventory_enableLotClassifications}
 					onCheckedChange={(checked) =>
-						updateToggle("inventory_enableLotClassifications", checked)
+						updateToggle(
+							"inventory_enableLotClassifications",
+							checked,
+						)
 					}
 				/>
 				<SwitchRow
@@ -135,7 +155,9 @@ export function InventoryTabContent({
 
 						<div className="grid gap-3 md:grid-cols-[1fr_400px] md:items-center">
 							<div className="flex items-center gap-2">
-								<p className="font-semibold text-sm">Valuation Method</p>
+								<p className="font-semibold text-sm">
+									Valuation Method
+								</p>
 								<HelpTip text="Choose which value metric should drive A/B/C ranking." />
 							</div>
 							<Select
@@ -149,7 +171,10 @@ export function InventoryTabContent({
 								</SelectTrigger>
 								<SelectContent>
 									{ABC_VALUATION_OPTIONS.map((option) => (
-										<SelectItem key={option.value} value={option.value}>
+										<SelectItem
+											key={option.value}
+											value={option.value}
+										>
 											{option.label}
 										</SelectItem>
 									))}

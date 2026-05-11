@@ -14,7 +14,9 @@ export function TransfersTabContent({
 				<SwitchRow
 					label="Enable transfers between warehouses"
 					checked={toggles.transfers_enabled}
-					onCheckedChange={(checked) => updateToggle("transfers_enabled", checked)}
+					onCheckedChange={(checked) =>
+						updateToggle("transfers_enabled", checked)
+					}
 				/>
 				<SwitchRow
 					label="Edit closed transfers"

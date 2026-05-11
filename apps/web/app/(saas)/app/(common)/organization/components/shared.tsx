@@ -15,11 +15,7 @@ import {
 	SelectValue,
 } from "@repo/ui/select";
 import { Switch } from "@repo/ui/switch";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@repo/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@repo/ui/tooltip";
 import { ChevronDownIcon, ChevronRightIcon, InfoIcon } from "lucide-react";
 import { useState } from "react";
 import type { Option } from "./types";
@@ -56,7 +52,9 @@ export function SectionCard({
 		<Card id={id} className="rounded-2xl border">
 			<CardContent className="space-y-4 p-4 md:p-6">
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h3 className="font-semibold text-lg tracking-tight">{title}</h3>
+					<h3 className="font-semibold text-lg tracking-tight">
+						{title}
+					</h3>
 					{actions}
 				</div>
 				{children}
@@ -88,7 +86,9 @@ export function SwitchRow({
 					{helpText ? <HelpTip text={helpText} /> : null}
 				</div>
 				{description ? (
-					<p className="text-muted-foreground text-xs">{description}</p>
+					<p className="text-muted-foreground text-xs">
+						{description}
+					</p>
 				) : null}
 			</div>
 			<Switch

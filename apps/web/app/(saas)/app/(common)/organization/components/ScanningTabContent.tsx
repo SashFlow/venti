@@ -27,7 +27,9 @@ export function ScanningTabContent({
 				}
 			>
 				<div className="space-y-6 rounded-xl border bg-muted/20 p-4 md:p-6">
-					<p className="font-semibold text-sm">Fulfillment Scan Points:</p>
+					<p className="font-semibold text-sm">
+						Fulfillment Scan Points:
+					</p>
 
 					<div className="grid gap-6 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-start">
 						<div className="space-y-4">
@@ -40,38 +42,59 @@ export function ScanningTabContent({
 
 							<div className="space-y-2">
 								<div className="flex items-center gap-2 pl-1">
-									<p className="font-semibold text-xl">Pick</p>
+									<p className="font-semibold text-xl">
+										Pick
+									</p>
 									<ArrowRightIcon className="size-4 text-muted-foreground" />
 								</div>
 								<div className="flex items-center gap-3 pl-1">
 									<Switch
 										size="sm"
-										checked={toggles.batch_scanBinWhenRemovingFromBin}
+										checked={
+											toggles.batch_scanBinWhenRemovingFromBin
+										}
 										onCheckedChange={(checked) =>
-											updateToggle("batch_scanBinWhenRemovingFromBin", checked)
+											updateToggle(
+												"batch_scanBinWhenRemovingFromBin",
+												checked,
+											)
 										}
 									/>
-									<p className="font-semibold text-sm">Scan Bin</p>
+									<p className="font-semibold text-sm">
+										Scan Bin
+									</p>
 								</div>
 								<div className="flex items-center gap-3 pl-1">
 									<Switch
 										size="sm"
-										checked={toggles.batch_scanItemWhenRemovingFromBin}
+										checked={
+											toggles.batch_scanItemWhenRemovingFromBin
+										}
 										onCheckedChange={(checked) =>
-											updateToggle("batch_scanItemWhenRemovingFromBin", checked)
+											updateToggle(
+												"batch_scanItemWhenRemovingFromBin",
+												checked,
+											)
 										}
 									/>
-									<p className="font-semibold text-sm">Scan Item</p>
+									<p className="font-semibold text-sm">
+										Scan Item
+									</p>
 								</div>
 								<div className="flex items-center gap-3 pl-1">
 									<Switch
 										size="sm"
 										checked={toggles.batch_scanEachItem}
 										onCheckedChange={(checked) =>
-											updateToggle("batch_scanEachItem", checked)
+											updateToggle(
+												"batch_scanEachItem",
+												checked,
+											)
 										}
 									/>
-									<p className="font-semibold text-sm">1 scan = 1 qty</p>
+									<p className="font-semibold text-sm">
+										1 scan = 1 qty
+									</p>
 								</div>
 							</div>
 						</div>
@@ -89,18 +112,27 @@ export function ScanningTabContent({
 							</div>
 							<div className="space-y-2 pl-1">
 								<div className="flex items-center gap-2">
-									<p className="font-semibold text-xl">Pack</p>
+									<p className="font-semibold text-xl">
+										Pack
+									</p>
 									<ArrowRightIcon className="size-4 text-muted-foreground" />
 								</div>
 								<div className="flex items-center gap-3">
 									<Switch
 										size="sm"
-										checked={toggles.batch_scanItemWhenAddingToShipment}
+										checked={
+											toggles.batch_scanItemWhenAddingToShipment
+										}
 										onCheckedChange={(checked) =>
-											updateToggle("batch_scanItemWhenAddingToShipment", checked)
+											updateToggle(
+												"batch_scanItemWhenAddingToShipment",
+												checked,
+											)
 										}
 									/>
-									<p className="font-semibold text-sm">Scan Item</p>
+									<p className="font-semibold text-sm">
+										Scan Item
+									</p>
 								</div>
 							</div>
 						</div>
@@ -114,7 +146,9 @@ export function ScanningTabContent({
 								<div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
 									<BoxIcon className="size-5" />
 								</div>
-								<p className="font-semibold text-base">Shipment</p>
+								<p className="font-semibold text-base">
+									Shipment
+								</p>
 							</div>
 						</div>
 					</div>
@@ -122,20 +156,30 @@ export function ScanningTabContent({
 
 				<div className="space-y-3 pt-1">
 					<div className="flex items-center justify-between gap-4">
-						<p className="font-semibold text-base">Enable webcam scanner</p>
+						<p className="font-semibold text-base">
+							Enable webcam scanner
+						</p>
 						<Switch
 							checked={toggles.userConfig_enableCameraScanner}
 							onCheckedChange={(checked) =>
-								updateToggle("userConfig_enableCameraScanner", checked)
+								updateToggle(
+									"userConfig_enableCameraScanner",
+									checked,
+								)
 							}
 						/>
 					</div>
 					<div className="flex items-center justify-between gap-4">
-						<p className="font-semibold text-base">Enable test scanner</p>
+						<p className="font-semibold text-base">
+							Enable test scanner
+						</p>
 						<Switch
 							checked={toggles.userConfig_enableDevScanner}
 							onCheckedChange={(checked) =>
-								updateToggle("userConfig_enableDevScanner", checked)
+								updateToggle(
+									"userConfig_enableDevScanner",
+									checked,
+								)
 							}
 						/>
 					</div>
@@ -146,12 +190,17 @@ export function ScanningTabContent({
 						<Switch
 							checked={toggles.userConfig_enableNativeScanner}
 							onCheckedChange={(checked) =>
-								updateToggle("userConfig_enableNativeScanner", checked)
+								updateToggle(
+									"userConfig_enableNativeScanner",
+									checked,
+								)
 							}
 						/>
 					</div>
 					<div className="flex items-center justify-between gap-4">
-						<p className="font-semibold text-base">Listen for hardware scans</p>
+						<p className="font-semibold text-base">
+							Listen for hardware scans
+						</p>
 						<Switch
 							checked={toggles.scanPrefixValue}
 							onCheckedChange={(checked) =>

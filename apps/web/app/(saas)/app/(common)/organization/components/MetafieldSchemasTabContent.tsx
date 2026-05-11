@@ -64,11 +64,12 @@ export function MetafieldSchemasTabContent({
 							YOU DON'T HAVE ANY METAFIELD SCHEMAS SETUP YET
 						</p>
 						<p className="text-muted-foreground text-xs">
-							Metafield schemas let you define custom fields with validation
-							rules, required field enforcement, and type constraints. Use
-							them to ensure consistent data entry across your team when
-							adding metadata to records like inbound orders. This will
-							enforce that when creating a purchase order, for example, the
+							Metafield schemas let you define custom fields with
+							validation rules, required field enforcement, and
+							type constraints. Use them to ensure consistent data
+							entry across your team when adding metadata to
+							records like inbound orders. This will enforce that
+							when creating a purchase order, for example, the
 							metafields will be prepopulated.
 						</p>
 					</div>
@@ -78,11 +79,15 @@ export function MetafieldSchemasTabContent({
 							<table className="w-full text-sm">
 								<thead>
 									<tr className="border-b bg-muted/50">
-										<th className="px-4 py-3 text-left font-semibold">Name</th>
+										<th className="px-4 py-3 text-left font-semibold">
+											Name
+										</th>
 										<th className="px-4 py-3 text-left font-semibold">
 											Namespace
 										</th>
-										<th className="px-4 py-3 text-left font-semibold">Type</th>
+										<th className="px-4 py-3 text-left font-semibold">
+											Type
+										</th>
 										<th className="px-4 py-3 text-left font-semibold">
 											Required
 										</th>
@@ -97,7 +102,9 @@ export function MetafieldSchemasTabContent({
 											key={schema.id}
 											className="border-b hover:bg-muted/30"
 										>
-											<td className="px-4 py-3">{schema.name}</td>
+											<td className="px-4 py-3">
+												{schema.name}
+											</td>
 											<td className="px-4 py-3 text-muted-foreground">
 												{schema.namespace}
 											</td>
@@ -112,7 +119,9 @@ export function MetafieldSchemasTabContent({
 															: "bg-gray-100 text-gray-800"
 													}`}
 												>
-													{schema.required ? "Yes" : "No"}
+													{schema.required
+														? "Yes"
+														: "No"}
 												</span>
 											</td>
 											<td className="px-4 py-3 text-right">
@@ -120,14 +129,22 @@ export function MetafieldSchemasTabContent({
 													<Button
 														size="sm"
 														variant="ghost"
-														onClick={() => startEditingSchema(schema)}
+														onClick={() =>
+															startEditingSchema(
+																schema,
+															)
+														}
 													>
 														<Edit className="h-4 w-4" />
 													</Button>
 													<Button
 														size="sm"
 														variant="ghost"
-														onClick={() => deleteMetafieldSchema(schema.id)}
+														onClick={() =>
+															deleteMetafieldSchema(
+																schema.id,
+															)
+														}
 													>
 														<Trash2 className="h-4 w-4 text-red-600" />
 													</Button>
@@ -172,7 +189,9 @@ export function MetafieldSchemasTabContent({
 									type="checkbox"
 									checked={newSchemaRequired}
 									onChange={(event) =>
-										setNewSchemaRequired(event.target.checked)
+										setNewSchemaRequired(
+											event.target.checked,
+										)
 									}
 									className="h-4 w-4"
 								/>

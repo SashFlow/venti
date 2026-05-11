@@ -1,7 +1,7 @@
 import { Button } from "@repo/ui/button";
 import { TabsContent } from "@repo/ui/tabs";
 import { OrganizationLogo } from "@saas/organizations/components/OrganizationLogo";
-import type { ChangeEvent } from "react";
+import { type ChangeEvent, useRef } from "react";
 import { InputRow, SectionCard } from "./shared";
 
 type OrganizationLike = {
@@ -26,6 +26,8 @@ export function WhitelableTabContent({
 	onSaveName: () => Promise<void>;
 	onUploadLogo: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
 }) {
+	const fileInputReference = useRef<HTMLInputElement | null>(null);
+
 	return (
 		<TabsContent value="whitelable" className="space-y-4">
 			<SectionCard id="whitelable" title="Whitelable">
@@ -54,40 +56,36 @@ export function WhitelableTabContent({
 									!whiteLabelOrgName.trim()
 								}
 							>
-								{savingWhiteLabelName ? "Saving..." : "Save Name"}
+								{savingWhiteLabelName
+									? "Saving..."
+									: "Save Name"}
 							</Button>
-							<label
-								className="inline-flex items-center"
-								aria-label="Upload organization logo"
+							<input
+								ref={fileInputReference}
+								type="file"
+								accept="image/png,image/jpeg,image/webp"
+								onChange={onUploadLogo}
+								className="hidden"
+								disabled={
+									uploadingWhiteLabelLogo || !activeOrganization
+								}
+							/>
+							<Button
+								type="button"
+								variant="outline"
+								disabled={
+									uploadingWhiteLabelLogo || !activeOrganization
+								}
+								onClick={() => fileInputReference.current?.click()}
 							>
-								<input
-									type="file"
-									accept="image/png,image/jpeg,image/webp"
-									onChange={onUploadLogo}
-									className="hidden"
-									disabled={
-										uploadingWhiteLabelLogo || !activeOrganization
-									}
-								/>
-								<Button
-									type="button"
-									variant="outline"
-									disabled={
-										uploadingWhiteLabelLogo || !activeOrganization
-									}
-									asChild
-								>
-									<span>
-										{uploadingWhiteLabelLogo
-											? "Uploading..."
-											: "Upload Logo"}
-									</span>
-								</Button>
-							</label>
+								{uploadingWhiteLabelLogo
+									? "Uploading..."
+									: "Upload Logo"}
+							</Button>
 						</div>
 						<p className="text-muted-foreground text-xs">
-							Updated organization branding is consumed by shared organization
-							logo components used across the app.
+							Updated organization branding is consumed by shared
+							organization logo components used across the app.
 						</p>
 					</div>
 				</div>
