@@ -50,45 +50,71 @@ export const upsertOrganizationConfig = protectedProcedure
 			dataRetention,
 		} = input;
 
-		const config = await db.organizationConfig.upsert({
-			where: {
-				organizationId,
-			},
-			update: {
-				fulfillment,
-				inventory,
-				units,
-				barcodeScanner,
-				purchaseOrders,
-				transfers,
-				cycleCount,
-				dataRetention,
-			},
-			create: {
-				organizationId,
-				headquarter: {
-					create: {
-						addressLine1: "Pending setup",
-						city: "Pending",
-						country: "Pending",
-						state: "Pending",
-						zip: "00000",
-					},
+		const config = await db.$transaction(async (tx) => {
+			const existing = await tx.organizationConfig.findUnique({
+				where: {
+					organizationId,
 				},
-				fulfillment,
-				inventory,
-				units,
-				barcodeScanner,
-				purchaseOrders,
-				transfers,
-				cycleCount,
-				dataRetention,
-			},
-			select: {
-				id: true,
-				organizationId: true,
-				updatedAt: true,
-			},
+				select: {
+					id: true,
+				},
+			});
+
+			if (existing) {
+				return tx.organizationConfig.update({
+					where: {
+						organizationId,
+					},
+					data: {
+						fulfillment,
+						inventory,
+						units,
+						barcodeScanner,
+						purchaseOrders,
+						transfers,
+						cycleCount,
+						dataRetention,
+					},
+					select: {
+						id: true,
+						organizationId: true,
+						updatedAt: true,
+					},
+				});
+			}
+
+			const headquarter = await tx.address.create({
+				data: {
+					addressLine1: "Pending setup",
+					city: "Pending",
+					country: "Pending",
+					state: "Pending",
+					zip: "00000",
+				},
+				select: {
+					id: true,
+				},
+			});
+
+			return tx.organizationConfig.create({
+				data: {
+					organizationId,
+					headquarterId: headquarter.id,
+					fulfillment,
+					inventory,
+					units,
+					barcodeScanner,
+					purchaseOrders,
+					transfers,
+					cycleCount,
+					dataRetention,
+				},
+				select: {
+					id: true,
+					organizationId: true,
+					updatedAt: true,
+				},
+			});
 		});
 
 		return {

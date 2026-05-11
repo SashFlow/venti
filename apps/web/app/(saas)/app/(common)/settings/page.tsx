@@ -1,13 +1,6 @@
 "use client";
 
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@repo/ui/accordion";
 import { Button } from "@repo/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -25,68 +18,45 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/select";
-import { Switch } from "@repo/ui/switch";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@repo/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { useSession } from "@saas/auth/hooks/use-session";
-import { CopyIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import {
+	AccountTabContent,
+	type ApiToken,
+	ApiTokenTabContent,
+	type NotificationRule,
+	NotificationSettingsTabContent,
+	type Option,
+	type WebhookEndpoint,
+	WebhookTabContent,
+} from "./components/tab-contents";
 
-type NotificationRule = {
-	id: string;
-	warehouse: string;
-	period: string;
-};
-
-type ApiToken = {
-	id: string;
-	name: string;
-	expiresIn: string;
-	scope: string;
-};
-
-type WebhookEndpoint = {
-	id: string;
-	name: string;
-	url: string;
-	topic: string;
-};
-
-const WAREHOUSE_OPTIONS = [
+const WAREHOUSE_OPTIONS: Option[] = [
 	{ value: "bengaluru-bengaluru-ka", label: "Bengaluru | Bengaluru, KA" },
 	{ value: "chennai-chennai-tn", label: "Chennai | Chennai, TN" },
 ];
 
-const PERIOD_OPTIONS = [
+const PERIOD_OPTIONS: Option[] = [
 	{ value: "1-week", label: "1 week" },
 	{ value: "2-weeks", label: "2 weeks" },
 	{ value: "4-weeks", label: "4 weeks" },
 ];
 
-const TOKEN_EXPIRY_OPTIONS = [
+const TOKEN_EXPIRY_OPTIONS: Option[] = [
 	{ value: "30-days", label: "30 days" },
 	{ value: "90-days", label: "90 days" },
 	{ value: "no-expiry", label: "No expiry" },
 ];
 
-const WEBHOOK_TOPIC_OPTIONS = [
+const WEBHOOK_TOPIC_OPTIONS: Option[] = [
 	{ value: "inventory.lot.expiring", label: "inventory.lot.expiring" },
 	{ value: "inventory.lot.expired", label: "inventory.lot.expired" },
 	{ value: "order.created", label: "order.created" },
 ];
 
-function getOptionLabel(
-	options: { value: string; label: string }[],
-	value: string,
-) {
+function getOptionLabel(options: Option[], value: string) {
 	return options.find((option) => option.value === value)?.label ?? value;
 }
 
@@ -350,508 +320,49 @@ export default function SettingsPage() {
 						</TabsTrigger>
 					</TabsList>
 
-					<TabsContent value="account" className="space-y-4">
-						<Card className="rounded-2xl border">
-							<CardHeader>
-								<CardTitle>Account</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-8">
-								<div className="grid gap-4 md:grid-cols-2">
-									<div className="space-y-2">
-										<Label htmlFor="full-name">Name</Label>
-										<Input
-											id="full-name"
-											value={fullName}
-											onChange={(event) =>
-												setFullName(event.target.value)
-											}
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="email">Email</Label>
-										<Input
-											id="email"
-											type="email"
-											value={email}
-											onChange={(event) =>
-												setEmail(event.target.value)
-											}
-										/>
-									</div>
-								</div>
+					<AccountTabContent
+						fullName={fullName}
+						email={email}
+						theme={theme}
+						mfaEmailEnabled={mfaEmailEnabled}
+						mfaAppEnabled={mfaAppEnabled}
+						onFullNameChange={setFullName}
+						onEmailChange={setEmail}
+						onThemeChange={setTheme}
+						onMfaEmailChange={setMfaEmailEnabled}
+						onMfaAppChange={setMfaAppEnabled}
+						onChangePassword={handleChangePassword}
+						onSave={handleAccountSave}
+					/>
 
-								<div className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between">
-									<div>
-										<h3 className="font-medium">
-											Change Password
-										</h3>
-										<p className="text-muted-foreground text-sm">
-											Update your account password
-											regularly to keep your account
-											secure.
-										</p>
-									</div>
-									<Button onClick={handleChangePassword}>
-										Change Password
-									</Button>
-								</div>
+					<NotificationSettingsTabContent
+						notificationScope={notificationScope}
+						notificationPeriod={notificationPeriod}
+						notificationRules={notificationRules}
+						warehouseOptions={WAREHOUSE_OPTIONS}
+						periodOptions={PERIOD_OPTIONS}
+						onNotificationScopeChange={setNotificationScope}
+						onNotificationPeriodChange={setNotificationPeriod}
+						onCreateNotification={handleCreateNotification}
+						onEditNotification={handleEditNotification}
+						getOptionLabel={getOptionLabel}
+					/>
 
-								<div className="space-y-3">
-									<h3 className="font-medium">Theme</h3>
-									<div className="grid gap-2 md:grid-cols-3">
-										<Button
-											variant={
-												theme === "light"
-													? "default"
-													: "outline"
-											}
-											onClick={() => setTheme("light")}
-										>
-											Light
-										</Button>
-										<Button
-											variant={
-												theme === "dark"
-													? "default"
-													: "outline"
-											}
-											onClick={() => setTheme("dark")}
-										>
-											Dark
-										</Button>
-										<Button
-											variant={
-												theme === "system"
-													? "default"
-													: "outline"
-											}
-											onClick={() => setTheme("system")}
-										>
-											System
-										</Button>
-									</div>
-								</div>
+					<ApiTokenTabContent
+						apiTokens={apiTokens}
+						tokenExpiryOptions={TOKEN_EXPIRY_OPTIONS}
+						onCreateApiToken={handleCreateApiToken}
+						onEditApiToken={handleEditApiToken}
+						getOptionLabel={getOptionLabel}
+					/>
 
-								<div className="space-y-3">
-									<h3 className="font-medium">Enable MFA</h3>
-									<div className="space-y-3 rounded-lg border p-4">
-										<div className="flex items-center justify-between gap-4">
-											<div>
-												<p className="font-medium text-sm">
-													Email
-												</p>
-												<p className="text-muted-foreground text-xs">
-													Receive one-time
-													verification codes by email.
-												</p>
-											</div>
-											<Switch
-												checked={mfaEmailEnabled}
-												onCheckedChange={(checked) =>
-													setMfaEmailEnabled(checked)
-												}
-											/>
-										</div>
-										<div className="flex items-center justify-between gap-4">
-											<div>
-												<p className="font-medium text-sm">
-													Authentication App
-												</p>
-												<p className="text-muted-foreground text-xs">
-													Use an authenticator app for
-													time-based verification
-													codes.
-												</p>
-											</div>
-											<Switch
-												checked={mfaAppEnabled}
-												onCheckedChange={(checked) =>
-													setMfaAppEnabled(checked)
-												}
-											/>
-										</div>
-									</div>
-								</div>
-
-								<div className="flex justify-end">
-									<Button onClick={handleAccountSave}>
-										Save Changes
-									</Button>
-								</div>
-							</CardContent>
-						</Card>
-					</TabsContent>
-
-					<TabsContent
-						value="notification-settings"
-						className="space-y-4"
-					>
-						<Card className="rounded-2xl border">
-							<CardHeader className="border-b">
-								<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-									<CardTitle className="text-base tracking-wide uppercase">
-										Add Notification
-									</CardTitle>
-									<Button onClick={handleCreateNotification}>
-										Create
-									</Button>
-								</div>
-							</CardHeader>
-							<CardContent className="space-y-6 pt-6">
-								<div className="grid gap-4 lg:grid-cols-2">
-									<div className="space-y-2">
-										<Label>Scope</Label>
-										<Select
-											value={notificationScope}
-											onValueChange={(value) => {
-												if (value) {
-													setNotificationScope(value);
-												}
-											}}
-										>
-											<SelectTrigger className="h-11 w-full">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="bengaluru-bengaluru-ka">
-													Bengaluru | Bengaluru, KA
-												</SelectItem>
-												<SelectItem value="chennai-chennai-tn">
-													Chennai | Chennai, TN
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-									<div className="space-y-2">
-										<Label>Time period</Label>
-										<Select
-											value={notificationPeriod}
-											onValueChange={(value) => {
-												if (value) {
-													setNotificationPeriod(
-														value,
-													);
-												}
-											}}
-										>
-											<SelectTrigger className="h-11 w-full">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="1-week">
-													1 week
-												</SelectItem>
-												<SelectItem value="2-weeks">
-													2 weeks
-												</SelectItem>
-												<SelectItem value="4-weeks">
-													4 weeks
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
-
-								<div className="space-y-1.5">
-									<p className="font-semibold text-sm">
-										Explanation:
-									</p>
-									<p className="text-muted-foreground">
-										You would be notified today if the lot
-										was set to expire on 19/05/2026 for
-										inventory in Bengaluru. Lots with
-										expirations shorter than the selected
-										time period will be excluded.
-									</p>
-								</div>
-							</CardContent>
-						</Card>
-
-						<Card className="rounded-2xl border">
-							<CardContent className="pt-3">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead className="font-semibold uppercase">
-												Warehouse
-											</TableHead>
-											<TableHead className="font-semibold uppercase">
-												Time period
-											</TableHead>
-											<TableHead className="font-semibold uppercase">
-												Action
-											</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{notificationRules.length ? (
-											notificationRules.map((rule) => (
-												<TableRow key={rule.id}>
-													<TableCell>
-														{getOptionLabel(
-															WAREHOUSE_OPTIONS,
-															rule.warehouse,
-														)}
-													</TableCell>
-													<TableCell>
-														{getOptionLabel(
-															PERIOD_OPTIONS,
-															rule.period,
-														)}
-													</TableCell>
-													<TableCell>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() =>
-																handleEditNotification(
-																	rule,
-																)
-															}
-														>
-															Edit
-														</Button>
-													</TableCell>
-												</TableRow>
-											))
-										) : (
-											<TableRow>
-												<TableCell
-													className="py-6 text-muted-foreground"
-													colSpan={3}
-												>
-													No lot notification rules
-													yet.
-												</TableCell>
-											</TableRow>
-										)}
-									</TableBody>
-								</Table>
-							</CardContent>
-						</Card>
-					</TabsContent>
-
-					<TabsContent value="api-token" className="space-y-4">
-						<div className="flex flex-wrap items-center justify-end gap-3">
-							<Button onClick={handleCreateApiToken}>
-								Create Token
-							</Button>
-						</div>
-
-						<Card className="rounded-2xl border">
-							<CardContent className="space-y-6 pt-6">
-								{apiTokens.length ? (
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<TableHead className="font-semibold uppercase">
-													Name
-												</TableHead>
-												<TableHead className="font-semibold uppercase">
-													Scope
-												</TableHead>
-												<TableHead className="font-semibold uppercase">
-													Expiry
-												</TableHead>
-												<TableHead className="font-semibold uppercase">
-													Action
-												</TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{apiTokens.map((token) => (
-												<TableRow key={token.id}>
-													<TableCell>
-														{token.name}
-													</TableCell>
-													<TableCell>
-														{token.scope}
-													</TableCell>
-													<TableCell>
-														{getOptionLabel(
-															TOKEN_EXPIRY_OPTIONS,
-															token.expiresIn,
-														)}
-													</TableCell>
-													<TableCell>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() =>
-																handleEditApiToken(
-																	token,
-																)
-															}
-														>
-															Edit
-														</Button>
-													</TableCell>
-												</TableRow>
-											))}
-										</TableBody>
-									</Table>
-								) : (
-									<>
-										<p className="text-lg text-foreground/90">
-											You do not have any api tokens yet.
-											API tokens allow api users to make
-											requests on behalf of your account
-											from an external source such as
-											another server or webpage.
-										</p>
-										<div className="flex flex-wrap gap-3">
-											<Button variant="default">
-												Token Usage
-											</Button>
-											<Button variant="outline">
-												API Documentation
-											</Button>
-										</div>
-									</>
-								)}
-							</CardContent>
-						</Card>
-					</TabsContent>
-
-					<TabsContent value="webhook" className="space-y-4">
-						<div className="flex flex-wrap items-center justify-end gap-3">
-							<Button onClick={handleCreateWebhook}>
-								Create
-							</Button>
-						</div>
-
-						<Card className="rounded-2xl border">
-							<CardContent className="pt-6">
-								{webhooks.length ? (
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<TableHead className="font-semibold uppercase">
-													Name
-												</TableHead>
-												<TableHead className="font-semibold uppercase">
-													Endpoint
-												</TableHead>
-												<TableHead className="font-semibold uppercase">
-													Topic
-												</TableHead>
-												<TableHead className="font-semibold uppercase">
-													Action
-												</TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{webhooks.map((webhook) => (
-												<TableRow key={webhook.id}>
-													<TableCell>
-														{webhook.name}
-													</TableCell>
-													<TableCell>
-														{webhook.url}
-													</TableCell>
-													<TableCell>
-														{getOptionLabel(
-															WEBHOOK_TOPIC_OPTIONS,
-															webhook.topic,
-														)}
-													</TableCell>
-													<TableCell>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() =>
-																handleEditWebhook(
-																	webhook,
-																)
-															}
-														>
-															Edit
-														</Button>
-													</TableCell>
-												</TableRow>
-											))}
-										</TableBody>
-									</Table>
-								) : (
-									<p className="text-lg text-foreground/90">
-										You do not have any webhooks yet. They
-										will appear here when added.
-									</p>
-								)}
-							</CardContent>
-						</Card>
-
-						<Card className="rounded-2xl border">
-							<CardHeader className="border-b">
-								<CardTitle className="text-base tracking-wide uppercase">
-									FAQ
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-4 pt-4">
-								<div className="flex flex-col gap-3 border-b pb-4 md:flex-row md:items-center md:justify-between">
-									<p className="font-semibold uppercase">
-										What is my webhook secret?
-									</p>
-									<div className="flex w-full items-center gap-2 rounded-lg border px-3 py-2 md:max-w-[420px]">
-										<CopyIcon className="size-4 text-muted-foreground" />
-										<Input
-											readOnly
-											value="Hqic0C1wI4ogr3KGhyCA676eB/QSCl4BEGmu5WD+830="
-											className="h-auto border-0 p-0 focus-visible:ring-0"
-										/>
-									</div>
-								</div>
-
-								<Accordion>
-									<AccordionItem value="what-are-webhooks">
-										<AccordionTrigger className="font-semibold uppercase">
-											What are webhooks?
-										</AccordionTrigger>
-										<AccordionContent>
-											Webhooks let us send event payloads
-											to your endpoint whenever selected
-											events occur in your account.
-										</AccordionContent>
-									</AccordionItem>
-									<AccordionItem value="service-unavailable">
-										<AccordionTrigger className="font-semibold uppercase">
-											What happens if my service is
-											unavailable?
-										</AccordionTrigger>
-										<AccordionContent>
-											Delivery attempts are retried with
-											backoff and failed events can be
-											replayed after recovery.
-										</AccordionContent>
-									</AccordionItem>
-									<AccordionItem value="handle-webhook">
-										<AccordionTrigger className="font-semibold uppercase">
-											How do I handle a webhook on my
-											server?
-										</AccordionTrigger>
-										<AccordionContent>
-											Verify signatures, return a 2xx
-											response quickly, and process
-											payloads asynchronously to avoid
-											timeout retries.
-										</AccordionContent>
-									</AccordionItem>
-									<AccordionItem value="topics-and-payloads">
-										<AccordionTrigger className="font-semibold uppercase">
-											What topics are available and what
-											do their payloads look like?
-										</AccordionTrigger>
-										<AccordionContent>
-											Topic catalog and payload schemas
-											are documented in API documentation
-											and can be tested from the webhook
-											setup flow.
-										</AccordionContent>
-									</AccordionItem>
-								</Accordion>
-							</CardContent>
-						</Card>
-					</TabsContent>
+					<WebhookTabContent
+						webhooks={webhooks}
+						webhookTopicOptions={WEBHOOK_TOPIC_OPTIONS}
+						onCreateWebhook={handleCreateWebhook}
+						onEditWebhook={handleEditWebhook}
+						getOptionLabel={getOptionLabel}
+					/>
 				</Tabs>
 			</div>
 

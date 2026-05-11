@@ -33,7 +33,7 @@ import {
 	SelectValue,
 } from "@repo/ui/select";
 import { Table, TableBody, TableCell, TableRow } from "@repo/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { cn } from "@repo/ui/utils";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { InviteMemberForm } from "@saas/organizations/components/InviteMemberForm";
@@ -55,6 +55,13 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+	InvitedTabContent,
+	InviteTabContent,
+	ROLE_GROUP_TABS,
+	RoleGroupTabContent,
+	WorkersTabContent,
+} from "./components/tab-contents";
 
 type PermissionGroup = {
 	key: string;
@@ -93,13 +100,6 @@ type WorkforceMember = {
 		name: string;
 	} | null;
 };
-
-const ROLE_GROUP_TABS = [
-	{ value: "workers", label: "Workers" },
-	{ value: "invite", label: "Invite" },
-	{ value: "invited", label: "Invited" },
-	{ value: "role-group", label: "Role Group" },
-] as const;
 
 function RoleGroupBuilder({
 	permissionGroups,
@@ -1036,98 +1036,110 @@ export default function WorkforcePage() {
 						))}
 					</TabsList>
 
-					<TabsContent value="workers" className="space-y-4">
-						<Card className="rounded-2xl border">
-							<CardContent className="p-0">
-								<OrganizationMembersList
-									organizationId={organization.id}
-								/>
-							</CardContent>
-						</Card>
-						<MemberRoleGroupAssignments
-							members={members}
-							roleGroups={roleGroups}
-							isSaving={assignRoleGroupMutation.isPending}
-							onAssign={async (memberId, roleGroupId) => {
-								try {
-									await assignRoleGroupMutation.mutateAsync({
+					<WorkersTabContent
+						organizationMembers={
+							<OrganizationMembersList
+								organizationId={organization.id}
+							/>
+						}
+						memberRoleAssignments={
+							<MemberRoleGroupAssignments
+								members={members}
+								roleGroups={roleGroups}
+								isSaving={assignRoleGroupMutation.isPending}
+								onAssign={async (memberId, roleGroupId) => {
+									try {
+										await assignRoleGroupMutation.mutateAsync(
+											{
+												organizationId: organization.id,
+												memberId,
+												roleGroupId,
+											},
+										);
+
+										await invalidateAccessConfig(
+											organization.id,
+										);
+										toast.success("Member access updated.");
+									} catch {
+										toast.error(
+											"Failed to update member access.",
+										);
+									}
+								}}
+							/>
+						}
+					/>
+
+					<InviteTabContent
+						inviteMemberForm={
+							<InviteMemberForm
+								organizationId={organization.id}
+							/>
+						}
+					/>
+
+					<InvitedTabContent
+						organizationInvitations={
+							<OrganizationInvitationsList
+								organizationId={organization.id}
+							/>
+						}
+					/>
+
+					<RoleGroupTabContent
+						roleGroupBuilder={
+							<RoleGroupBuilder
+								permissionGroups={permissionGroups}
+								warehouses={warehouses}
+								roleGroups={roleGroups}
+								isSaving={createRoleGroupMutation.isPending}
+								isUpdating={updateRoleGroupMutation.isPending}
+								deletingRoleGroupId={
+									deleteRoleGroupMutation.isPending
+										? (deleteRoleGroupMutation.variables
+												?.roleGroupId ?? null)
+										: null
+								}
+								onCreateRoleGroup={async (payload) => {
+									await createRoleGroupMutation.mutateAsync({
 										organizationId: organization.id,
-										memberId,
+										name: payload.name,
+										permissions: payload.permissions,
+										warehouseIds: payload.warehouseIds,
+									});
+
+									await invalidateAccessConfig(
+										organization.id,
+									);
+								}}
+								onUpdateRoleGroup={async (payload) => {
+									await updateRoleGroupMutation.mutateAsync({
+										organizationId: organization.id,
+										roleGroupId: payload.roleGroupId,
+										name: payload.name,
+										description: payload.description,
+										permissions: payload.permissions,
+										warehouseIds: payload.warehouseIds,
+									});
+
+									await invalidateAccessConfig(
+										organization.id,
+									);
+								}}
+								onDeleteRoleGroup={async (roleGroupId) => {
+									await deleteRoleGroupMutation.mutateAsync({
+										organizationId: organization.id,
 										roleGroupId,
 									});
 
 									await invalidateAccessConfig(
 										organization.id,
 									);
-									toast.success("Member access updated.");
-								} catch {
-									toast.error(
-										"Failed to update member access.",
-									);
-								}
-							}}
-						/>
-					</TabsContent>
-
-					<TabsContent value="invite" className="space-y-4">
-						<InviteMemberForm organizationId={organization.id} />
-					</TabsContent>
-
-					<TabsContent value="invited" className="space-y-4">
-						<Card className="rounded-2xl border">
-							<CardContent className="p-4 md:p-6">
-								<OrganizationInvitationsList
-									organizationId={organization.id}
-								/>
-							</CardContent>
-						</Card>
-					</TabsContent>
-
-					<TabsContent value="role-group" className="space-y-4">
-						<RoleGroupBuilder
-							permissionGroups={permissionGroups}
-							warehouses={warehouses}
-							roleGroups={roleGroups}
-							isSaving={createRoleGroupMutation.isPending}
-							isUpdating={updateRoleGroupMutation.isPending}
-							deletingRoleGroupId={
-								deleteRoleGroupMutation.isPending
-									? (deleteRoleGroupMutation.variables
-											?.roleGroupId ?? null)
-									: null
-							}
-							onCreateRoleGroup={async (payload) => {
-								await createRoleGroupMutation.mutateAsync({
-									organizationId: organization.id,
-									name: payload.name,
-									permissions: payload.permissions,
-									warehouseIds: payload.warehouseIds,
-								});
-
-								await invalidateAccessConfig(organization.id);
-							}}
-							onUpdateRoleGroup={async (payload) => {
-								await updateRoleGroupMutation.mutateAsync({
-									organizationId: organization.id,
-									roleGroupId: payload.roleGroupId,
-									name: payload.name,
-									description: payload.description,
-									permissions: payload.permissions,
-									warehouseIds: payload.warehouseIds,
-								});
-
-								await invalidateAccessConfig(organization.id);
-							}}
-							onDeleteRoleGroup={async (roleGroupId) => {
-								await deleteRoleGroupMutation.mutateAsync({
-									organizationId: organization.id,
-									roleGroupId,
-								});
-
-								await invalidateAccessConfig(organization.id);
-							}}
-						/>
-					</TabsContent>
+								}}
+							/>
+						}
+					/>
 				</Tabs>
 			)}
 		</div>
