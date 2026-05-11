@@ -180,10 +180,13 @@ model Member {
     userId         String
     user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
     role           String
+    roleGroupId    String?
+    roleGroup      RoleGroup?   @relation(fields: [roleGroupId], references: [id], onDelete: SetNull)
     createdAt      DateTime
 
     @@unique([organizationId, userId])
     @@index([userId])
+    @@index([roleGroupId])
     @@map("member")
 }
 
@@ -309,7 +312,8 @@ model RoleGroup {
     name           String
     description    String?
     warehouses     Warehouse[]  @relation("RoleGroupWarehouses")
-    roles          String[]
+    permissions    String[]
+    members        Member[]
 
     @@index([organizationId])
     @@map("role_group")

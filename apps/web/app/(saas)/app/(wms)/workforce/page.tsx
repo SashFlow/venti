@@ -1,18 +1,59 @@
 "use client";
 
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@repo/ui/alert-dialog";
 import { Button } from "@repo/ui/button";
 import { Card, CardContent } from "@repo/ui/card";
 import { Checkbox } from "@repo/ui/checkbox";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@repo/ui/dialog";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@repo/ui/select";
+import { Table, TableBody, TableCell, TableRow } from "@repo/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { cn } from "@repo/ui/utils";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { InviteMemberForm } from "@saas/organizations/components/InviteMemberForm";
 import { OrganizationInvitationsList } from "@saas/organizations/components/OrganizationInvitationsList";
 import { OrganizationMembersList } from "@saas/organizations/components/OrganizationMembersList";
-import { ChevronDownIcon, ChevronUpIcon, SearchIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import {
+	skipToken,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import {
+	ChevronDownIcon,
+	ChevronUpIcon,
+	PencilIcon,
+	SearchIcon,
+	Trash2Icon,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type PermissionGroup = {
@@ -24,6 +65,35 @@ type PermissionGroup = {
 	}>;
 };
 
+type WarehouseScope = {
+	id: string;
+	code: string;
+	name: string;
+};
+
+type RoleGroup = {
+	id: string;
+	name: string;
+	description: string | null;
+	permissions: string[];
+	warehouses: WarehouseScope[];
+};
+
+type WorkforceMember = {
+	id: string;
+	role: string;
+	roleGroupId: string | null;
+	user: {
+		id: string;
+		name: string | null;
+		email: string;
+	};
+	roleGroup: {
+		id: string;
+		name: string;
+	} | null;
+};
+
 const ROLE_GROUP_TABS = [
 	{ value: "workers", label: "Workers" },
 	{ value: "invite", label: "Invite" },
@@ -31,191 +101,47 @@ const ROLE_GROUP_TABS = [
 	{ value: "role-group", label: "Role Group" },
 ] as const;
 
-const PERMISSION_GROUPS: PermissionGroup[] = [
-	{
-		key: "warehouse",
-		label: "warehouse",
-		permissions: [
-			{ key: "VIEW_WAREHOUSES", label: "view warehouses" },
-			{ key: "CREATE_WAREHOUSE", label: "create warehouse" },
-			{ key: "UPDATE_WAREHOUSE", label: "update warehouse" },
-			{ key: "DELETE_WAREHOUSE", label: "delete warehouse" },
-		],
-	},
-	{
-		key: "product",
-		label: "product",
-		permissions: [
-			{ key: "VIEW_PRODUCTS", label: "view products" },
-			{ key: "CREATE_PRODUCT", label: "create product" },
-			{ key: "UPDATE_PRODUCT", label: "update product" },
-			{ key: "DELETE_PRODUCT", label: "delete product" },
-		],
-	},
-	{
-		key: "order",
-		label: "order",
-		permissions: [
-			{ key: "VIEW_INBOUND_ORDERS", label: "view inbound orders" },
-			{ key: "VIEW_OUTBOUND_ORDERS", label: "view outbound orders" },
-			{
-				key: "VIEW_OUTBOUND_ORDER_BATCHES",
-				label: "view outbound order batches",
-			},
-			{ key: "CREATE_INBOUND_ORDER", label: "create inbound order" },
-			{ key: "CREATE_OUTBOUND_ORDER", label: "create outbound order" },
-			{
-				key: "CREATE_OUTBOUND_ORDER_BATCH",
-				label: "create outbound order batch",
-			},
-			{ key: "UPDATE_INBOUND_ORDER", label: "update inbound order" },
-			{ key: "UPDATE_OUTBOUND_ORDER", label: "update outbound order" },
-			{
-				key: "UPDATE_OUTBOUND_ORDER_BATCH",
-				label: "update outbound order batch",
-			},
-			{
-				key: "DELETE_OUTBOUND_ORDER_BATCH",
-				label: "delete outbound order batch",
-			},
-			{ key: "CANCEL_OUTBOUND_ORDER", label: "cancel outbound order" },
-		],
-	},
-	{
-		key: "employee",
-		label: "employee",
-		permissions: [
-			{ key: "VIEW_EMPLOYEES", label: "view employees" },
-			{
-				key: "VIEW_EMPLOYEES_PRODUCTIVITY",
-				label: "view employees productivity",
-			},
-			{ key: "CREATE_EMPLOYEE", label: "create employee" },
-			{ key: "UPDATE_EMPLOYEE", label: "update employee" },
-			{ key: "DELETE_EMPLOYEE", label: "delete employee" },
-		],
-	},
-	{
-		key: "bin",
-		label: "bin",
-		permissions: [
-			{ key: "VIEW_BINS", label: "view bins" },
-			{ key: "CREATE_BIN", label: "create bin" },
-			{ key: "UPDATE_BIN", label: "update bin" },
-			{ key: "DELETE_BIN", label: "delete bin" },
-		],
-	},
-	{
-		key: "vendor",
-		label: "vendor",
-		permissions: [
-			{ key: "VIEW_VENDORS", label: "view vendors" },
-			{ key: "CREATE_VENDOR", label: "create vendor" },
-			{ key: "UPDATE_VENDOR", label: "update vendor" },
-			{ key: "DELETE_VENDOR", label: "delete vendor" },
-		],
-	},
-	{
-		key: "replenishment",
-		label: "replenishment",
-		permissions: [
-			{ key: "VIEW_REPLENISHMENTS", label: "view replenishments" },
-			{ key: "CREATE_REPLENISHMENT", label: "create replenishment" },
-			{ key: "UPDATE_REPLENISHMENT", label: "update replenishment" },
-			{ key: "DELETE_REPLENISHMENT", label: "delete replenishment" },
-		],
-	},
-	{
-		key: "customer",
-		label: "customer",
-		permissions: [
-			{ key: "VIEW_CUSTOMERS", label: "view customers" },
-			{ key: "CREATE_CUSTOMER", label: "create customer" },
-			{ key: "UPDATE_CUSTOMER", label: "update customer" },
-			{ key: "DELETE_CUSTOMER", label: "delete customer" },
-		],
-	},
-	{
-		key: "transfer",
-		label: "transfer",
-		permissions: [
-			{ key: "VIEW_TRANSFERS", label: "view transfers" },
-			{ key: "CREATE_TRANSFER", label: "create transfer" },
-			{ key: "UPDATE_TRANSFERS", label: "update transfers" },
-		],
-	},
-	{
-		key: "carrier",
-		label: "carrier",
-		permissions: [
-			{ key: "VIEW_CARRIERS", label: "view carriers" },
-			{ key: "CREATE_CARRIER", label: "create carrier" },
-			{ key: "UPDATE_CARRIERS", label: "update carriers" },
-			{ key: "DELETE_CARRIERS", label: "delete carriers" },
-		],
-	},
-	{
-		key: "inventory",
-		label: "inventory",
-		permissions: [
-			{ key: "VIEW_INVENTORY", label: "view inventory" },
-			{ key: "UPDATE_INVENTORY", label: "update inventory" },
-		],
-	},
-	{
-		key: "packaging",
-		label: "packaging",
-		permissions: [
-			{ key: "VIEW_PACKAGING", label: "view packaging" },
-			{ key: "CREATE_PACKAGING", label: "create packaging" },
-			{ key: "UPDATE_PACKAGING", label: "update packaging" },
-			{ key: "DELETE_PACKAGING", label: "delete packaging" },
-		],
-	},
-	{
-		key: "export",
-		label: "export",
-		permissions: [
-			{ key: "VIEW_EXPORT", label: "view export" },
-			{ key: "VIEW_EXPORTED", label: "view exported" },
-			{ key: "CREATE_EXPORT", label: "create export" },
-			{ key: "TRIGGER_EXPORT", label: "trigger export" },
-			{ key: "UPDATE_EXPORT", label: "update export" },
-			{ key: "DELETE_EXPORT", label: "delete export" },
-		],
-	},
-	{
-		key: "webhook",
-		label: "webhook",
-		permissions: [
-			{ key: "VIEW_WEBHOOKS", label: "view webhooks" },
-			{ key: "CREATE_WEBHOOK", label: "create webhook" },
-			{ key: "UPDATE_WEBHOOK", label: "update webhook" },
-			{ key: "DELETE_WEBHOOKS", label: "delete webhooks" },
-		],
-	},
-	{
-		key: "company",
-		label: "company",
-		permissions: [
-			{ key: "UPDATE_COMPANY", label: "update company" },
-			{
-				key: "UPDATE_COMPANY_BILLING",
-				label: "update company billing",
-			},
-			{ key: "DISABLE_USERS", label: "disable users" },
-		],
-	},
-];
-
-function RoleGroupBuilder() {
+function RoleGroupBuilder({
+	permissionGroups,
+	warehouses,
+	roleGroups,
+	isSaving,
+	isUpdating,
+	deletingRoleGroupId,
+	onCreateRoleGroup,
+	onUpdateRoleGroup,
+	onDeleteRoleGroup,
+}: {
+	permissionGroups: PermissionGroup[];
+	warehouses: WarehouseScope[];
+	roleGroups: RoleGroup[];
+	isSaving: boolean;
+	isUpdating: boolean;
+	deletingRoleGroupId: string | null;
+	onCreateRoleGroup: (input: {
+		name: string;
+		permissions: string[];
+		warehouseIds: string[];
+	}) => Promise<void>;
+	onUpdateRoleGroup: (input: {
+		roleGroupId: string;
+		name: string;
+		description: string | null;
+		permissions: string[];
+		warehouseIds: string[];
+	}) => Promise<void>;
+	onDeleteRoleGroup: (roleGroupId: string) => Promise<void>;
+}) {
 	const [name, setName] = useState("");
 	const [search, setSearch] = useState("");
 	const [checkedPermissions, setCheckedPermissions] = useState<
 		Record<string, boolean>
 	>({});
+	const [warehouseScope, setWarehouseScope] = useState<
+		Record<string, boolean>
+	>({});
 	const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
-		PERMISSION_GROUPS.reduce<Record<string, boolean>>((acc, group) => {
+		permissionGroups.reduce<Record<string, boolean>>((acc, group) => {
 			acc[group.key] = true;
 			return acc;
 		}, {}),
@@ -225,23 +151,29 @@ function RoleGroupBuilder() {
 
 	const filteredGroups = useMemo(() => {
 		if (!normalizedSearch) {
-			return PERMISSION_GROUPS;
+			return permissionGroups;
 		}
 
-		return PERMISSION_GROUPS.map((group) => {
-			const matchesGroup = group.label.includes(normalizedSearch);
-			const filteredPermissions = matchesGroup
-				? group.permissions
-				: group.permissions.filter((permission) =>
-						permission.label.includes(normalizedSearch),
-					);
+		return permissionGroups
+			.map((group) => {
+				const matchesGroup = group.label
+					.toLowerCase()
+					.includes(normalizedSearch);
+				const filteredPermissions = matchesGroup
+					? group.permissions
+					: group.permissions.filter((permission) =>
+							permission.label
+								.toLowerCase()
+								.includes(normalizedSearch),
+						);
 
-			return {
-				...group,
-				permissions: filteredPermissions,
-			};
-		}).filter((group) => group.permissions.length > 0);
-	}, [normalizedSearch]);
+				return {
+					...group,
+					permissions: filteredPermissions,
+				};
+			})
+			.filter((group) => group.permissions.length > 0);
+	}, [normalizedSearch, permissionGroups]);
 
 	const visiblePermissionKeys = filteredGroups.flatMap((group) =>
 		group.permissions.map((permission) => permission.key),
@@ -282,7 +214,9 @@ function RoleGroupBuilder() {
 		});
 	};
 
-	const onCreateRoleGroup = (event: React.FormEvent<HTMLFormElement>) => {
+	const onCreateRoleGroupSubmit = (
+		event: React.FormEvent<HTMLFormElement>,
+	) => {
 		event.preventDefault();
 
 		if (!name.trim()) {
@@ -290,8 +224,39 @@ function RoleGroupBuilder() {
 			return;
 		}
 
-		toast.success("Role group created.");
+		const selectedPermissions = Object.entries(checkedPermissions)
+			.filter(([, checked]) => checked)
+			.map(([key]) => key);
+
+		if (selectedPermissions.length === 0) {
+			toast.error("Select at least one permission.");
+			return;
+		}
+
+		const selectedWarehouseIds = Object.entries(warehouseScope)
+			.filter(([, checked]) => checked)
+			.map(([key]) => key);
+
+		toast.promise(
+			onCreateRoleGroup({
+				name: name.trim(),
+				permissions: selectedPermissions,
+				warehouseIds: selectedWarehouseIds,
+			}).then(() => {
+				setName("");
+				setCheckedPermissions({});
+				setWarehouseScope({});
+			}),
+			{
+				loading: "Creating role group...",
+				success: "Role group created.",
+				error: "Failed to create role group.",
+			},
+		);
 	};
+
+	const selectedWarehouseCount =
+		Object.values(warehouseScope).filter(Boolean).length;
 
 	return (
 		<div className="space-y-4">
@@ -303,13 +268,14 @@ function RoleGroupBuilder() {
 						form="RoleGroupEdit"
 						size="sm"
 						id="RoleGroupEdit_CreateBtn"
+						disabled={isSaving}
 					>
-						Create
+						{isSaving ? "Creating..." : "Create"}
 					</Button>
 				</div>
 
 				<div className="p-4 md:p-6">
-					<form id="RoleGroupEdit" onSubmit={onCreateRoleGroup}>
+					<form id="RoleGroupEdit" onSubmit={onCreateRoleGroupSubmit}>
 						<div className="space-y-2">
 							<Label htmlFor="RoleGroupEdit_name">
 								name<span className="text-destructive">*</span>
@@ -322,6 +288,62 @@ function RoleGroupBuilder() {
 									setName(event.target.value)
 								}
 							/>
+						</div>
+
+						<div className="mt-4 space-y-2">
+							<Label>Warehouse scope</Label>
+							<p className="text-muted-foreground text-xs">
+								Selected {selectedWarehouseCount} of{" "}
+								{warehouses.length} warehouses
+							</p>
+							<div className="grid gap-2 sm:grid-cols-2">
+								{warehouses.length === 0 ? (
+									<p className="text-muted-foreground text-sm">
+										No warehouses found for this
+										organization.
+									</p>
+								) : (
+									warehouses.map((warehouse) => {
+										const checkboxId = `warehouse-scope-${warehouse.id}`;
+
+										return (
+											<div
+												key={warehouse.id}
+												className="flex items-center gap-2 rounded-md border px-3 py-2"
+											>
+												<Checkbox
+													id={checkboxId}
+													checked={Boolean(
+														warehouseScope[
+															warehouse.id
+														],
+													)}
+													onCheckedChange={(
+														checked,
+													) =>
+														setWarehouseScope(
+															(previous) => ({
+																...previous,
+																[warehouse.id]:
+																	Boolean(
+																		checked,
+																	),
+															}),
+														)
+													}
+												/>
+												<Label
+													htmlFor={checkboxId}
+													className="text-sm"
+												>
+													{warehouse.name} (
+													{warehouse.code})
+												</Label>
+											</div>
+										);
+									})
+								)}
+							</div>
 						</div>
 					</form>
 				</div>
@@ -478,12 +500,502 @@ function RoleGroupBuilder() {
 					)}
 				</CardContent>
 			</div>
+
+			<div className="rounded-xl border bg-card">
+				<div className="border-b px-4 py-3 md:px-6">
+					<h3 className="font-semibold text-base">
+						Existing role groups
+					</h3>
+				</div>
+				<CardContent className="space-y-2 px-4 py-4 md:px-6">
+					{roleGroups.length === 0 ? (
+						<p className="text-muted-foreground text-sm">
+							No role groups created yet.
+						</p>
+					) : (
+						roleGroups.map((roleGroup) => (
+							<div
+								key={roleGroup.id}
+								className="rounded-lg border p-3"
+							>
+								<div className="flex items-start justify-between gap-3">
+									<div>
+										<div className="font-medium text-sm">
+											{roleGroup.name}
+										</div>
+										{roleGroup.description ? (
+											<p className="mt-1 text-muted-foreground text-xs">
+												{roleGroup.description}
+											</p>
+										) : null}
+									</div>
+									<div className="flex items-center gap-2">
+										<RoleGroupEditDialog
+											roleGroup={roleGroup}
+											permissionGroups={permissionGroups}
+											warehouses={warehouses}
+											isSaving={isUpdating}
+											onSave={onUpdateRoleGroup}
+										/>
+										<AlertDialog>
+											<AlertDialogTrigger>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													disabled={
+														deletingRoleGroupId ===
+														roleGroup.id
+													}
+												>
+													<Trash2Icon className="size-4 text-destructive" />
+												</Button>
+											</AlertDialogTrigger>
+											<AlertDialogContent>
+												<AlertDialogHeader>
+													<AlertDialogTitle>
+														Delete role group?
+													</AlertDialogTitle>
+													<AlertDialogDescription>
+														This will remove access
+														profile {roleGroup.name}
+														. Assigned members will
+														be unassigned from this
+														role group.
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel>
+														Cancel
+													</AlertDialogCancel>
+													<AlertDialogAction
+														className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+														onClick={() => {
+															toast.promise(
+																onDeleteRoleGroup(
+																	roleGroup.id,
+																),
+																{
+																	loading:
+																		"Deleting role group...",
+																	success:
+																		"Role group deleted.",
+																	error: "Failed to delete role group.",
+																},
+															);
+														}}
+													>
+														Delete
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
+									</div>
+								</div>
+								<p className="mt-1 text-muted-foreground text-xs">
+									{roleGroup.warehouses.length} warehouse
+									scopes • {roleGroup.permissions.length}{" "}
+									permissions
+								</p>
+							</div>
+						))
+					)}
+				</CardContent>
+			</div>
 		</div>
+	);
+}
+
+function RoleGroupEditDialog({
+	roleGroup,
+	permissionGroups,
+	warehouses,
+	isSaving,
+	onSave,
+}: {
+	roleGroup: RoleGroup;
+	permissionGroups: PermissionGroup[];
+	warehouses: WarehouseScope[];
+	isSaving: boolean;
+	onSave: (input: {
+		roleGroupId: string;
+		name: string;
+		description: string | null;
+		permissions: string[];
+		warehouseIds: string[];
+	}) => Promise<void>;
+}) {
+	const [open, setOpen] = useState(false);
+	const [name, setName] = useState(roleGroup.name);
+	const [description, setDescription] = useState(roleGroup.description ?? "");
+	const [checkedPermissions, setCheckedPermissions] = useState<
+		Record<string, boolean>
+	>({});
+	const [warehouseScope, setWarehouseScope] = useState<
+		Record<string, boolean>
+	>({});
+
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+
+		setName(roleGroup.name);
+		setDescription(roleGroup.description ?? "");
+		setCheckedPermissions(
+			roleGroup.permissions.reduce<Record<string, boolean>>(
+				(acc, key) => {
+					acc[key] = true;
+					return acc;
+				},
+				{},
+			),
+		);
+		setWarehouseScope(
+			roleGroup.warehouses.reduce<Record<string, boolean>>(
+				(acc, warehouse) => {
+					acc[warehouse.id] = true;
+					return acc;
+				},
+				{},
+			),
+		);
+	}, [open, roleGroup]);
+
+	const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+
+		if (!name.trim()) {
+			toast.error("Role group name is required.");
+			return;
+		}
+
+		const selectedPermissions = Object.entries(checkedPermissions)
+			.filter(([, checked]) => checked)
+			.map(([key]) => key);
+
+		if (selectedPermissions.length === 0) {
+			toast.error("Select at least one permission.");
+			return;
+		}
+
+		const selectedWarehouseIds = Object.entries(warehouseScope)
+			.filter(([, checked]) => checked)
+			.map(([key]) => key);
+
+		toast.promise(
+			onSave({
+				roleGroupId: roleGroup.id,
+				name: name.trim(),
+				description: description.trim() ? description.trim() : null,
+				permissions: selectedPermissions,
+				warehouseIds: selectedWarehouseIds,
+			}).then(() => setOpen(false)),
+			{
+				loading: "Updating role group...",
+				success: "Role group updated.",
+				error: "Failed to update role group.",
+			},
+		);
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger>
+				<Button type="button" variant="ghost" size="icon">
+					<PencilIcon className="size-4" />
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-xl">
+				<DialogHeader>
+					<DialogTitle>Edit Role Group</DialogTitle>
+					<DialogDescription>
+						Update role group permissions and warehouse scope.
+					</DialogDescription>
+				</DialogHeader>
+
+				<form
+					id={`RoleGroupEdit_${roleGroup.id}`}
+					onSubmit={onSubmit}
+					className="space-y-4"
+				>
+					<div className="space-y-2">
+						<Label htmlFor={`RoleGroupEdit_name_${roleGroup.id}`}>
+							name<span className="text-destructive">*</span>
+						</Label>
+						<Input
+							id={`RoleGroupEdit_name_${roleGroup.id}`}
+							value={name}
+							onChange={(event) => setName(event.target.value)}
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label
+							htmlFor={`RoleGroupEdit_description_${roleGroup.id}`}
+						>
+							description
+						</Label>
+						<Input
+							id={`RoleGroupEdit_description_${roleGroup.id}`}
+							value={description}
+							onChange={(event) =>
+								setDescription(event.target.value)
+							}
+							placeholder="Optional description"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label>Warehouse scope</Label>
+						<div className="grid max-h-44 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+							{warehouses.map((warehouse) => {
+								const checkboxId = `edit-warehouse-${roleGroup.id}-${warehouse.id}`;
+
+								return (
+									<div
+										key={warehouse.id}
+										className="flex items-center gap-2 rounded-md border px-3 py-2"
+									>
+										<Checkbox
+											id={checkboxId}
+											checked={Boolean(
+												warehouseScope[warehouse.id],
+											)}
+											onCheckedChange={(checked) =>
+												setWarehouseScope(
+													(previous) => ({
+														...previous,
+														[warehouse.id]:
+															Boolean(checked),
+													}),
+												)
+											}
+										/>
+										<Label
+											htmlFor={checkboxId}
+											className="text-sm"
+										>
+											{warehouse.name} ({warehouse.code})
+										</Label>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+
+					<div className="space-y-2">
+						<Label>Permissions</Label>
+						<div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+							{permissionGroups.map((group) => (
+								<div
+									key={group.key}
+									className="rounded-md border p-2"
+								>
+									<p className="font-medium text-xs uppercase">
+										{group.label}
+									</p>
+									<div className="mt-2 grid gap-2 sm:grid-cols-2">
+										{group.permissions.map((permission) => {
+											const permissionId = `edit-permission-${roleGroup.id}-${permission.key}`;
+
+											return (
+												<div
+													key={permission.key}
+													className="flex items-center gap-2"
+												>
+													<Checkbox
+														id={permissionId}
+														checked={Boolean(
+															checkedPermissions[
+																permission.key
+															],
+														)}
+														onCheckedChange={(
+															checked,
+														) =>
+															setCheckedPermissions(
+																(previous) => ({
+																	...previous,
+																	[permission.key]:
+																		Boolean(
+																			checked,
+																		),
+																}),
+															)
+														}
+													/>
+													<Label
+														htmlFor={permissionId}
+														className="text-xs"
+													>
+														{permission.label}
+													</Label>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				</form>
+
+				<DialogFooter>
+					<Button
+						type="submit"
+						form={`RoleGroupEdit_${roleGroup.id}`}
+						disabled={isSaving}
+					>
+						{isSaving ? "Saving..." : "Save changes"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function MemberRoleGroupAssignments({
+	members,
+	roleGroups,
+	isSaving,
+	onAssign,
+}: {
+	members: WorkforceMember[];
+	roleGroups: RoleGroup[];
+	isSaving: boolean;
+	onAssign: (memberId: string, roleGroupId: string | null) => Promise<void>;
+}) {
+	return (
+		<Card className="rounded-2xl border">
+			<div className="border-b px-4 py-3 md:px-6">
+				<h3 className="font-semibold text-base">
+					Role group assignments
+				</h3>
+				<p className="text-muted-foreground text-xs">
+					Assign role groups to users to enforce warehouse scope and
+					action access.
+				</p>
+			</div>
+			<CardContent className="p-0">
+				<Table>
+					<TableBody>
+						{members.length === 0 ? (
+							<TableRow>
+								<TableCell className="h-24 text-center">
+									No members found.
+								</TableCell>
+							</TableRow>
+						) : (
+							members.map((member) => {
+								const userLabel =
+									member.user.name ?? member.user.email;
+
+								return (
+									<TableRow key={member.id}>
+										<TableCell>
+											<div>
+												<div className="font-medium text-sm">
+													{userLabel}
+												</div>
+												<div className="text-muted-foreground text-xs">
+													{member.user.email} •{" "}
+													{member.role}
+												</div>
+											</div>
+										</TableCell>
+										<TableCell className="w-[260px]">
+											<Select
+												value={
+													member.roleGroupId ?? "none"
+												}
+												disabled={
+													isSaving ||
+													member.role === "owner"
+												}
+												onValueChange={(value) =>
+													void onAssign(
+														member.id,
+														value === "none"
+															? null
+															: value,
+													)
+												}
+											>
+												<SelectTrigger>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="none">
+														No role group
+													</SelectItem>
+													{roleGroups.map((group) => (
+														<SelectItem
+															key={group.id}
+															value={group.id}
+														>
+															{group.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</TableCell>
+									</TableRow>
+								);
+							})
+						)}
+					</TableBody>
+				</Table>
+			</CardContent>
+		</Card>
 	);
 }
 
 export default function WorkforcePage() {
 	const { organization } = useSession();
+	const queryClient = useQueryClient();
+
+	const accessConfigQuery = useQuery(
+		orpc.workforce.listAccessConfig.queryOptions({
+			input: organization
+				? {
+						organizationId: organization.id,
+					}
+				: skipToken,
+		}),
+	);
+
+	const createRoleGroupMutation = useMutation(
+		orpc.workforce.createRoleGroup.mutationOptions(),
+	);
+
+	const updateRoleGroupMutation = useMutation(
+		orpc.workforce.updateRoleGroup.mutationOptions(),
+	);
+
+	const deleteRoleGroupMutation = useMutation(
+		orpc.workforce.deleteRoleGroup.mutationOptions(),
+	);
+
+	const assignRoleGroupMutation = useMutation(
+		orpc.workforce.assignMemberRoleGroup.mutationOptions(),
+	);
+
+	const invalidateAccessConfig = async (organizationId: string) => {
+		await queryClient.invalidateQueries({
+			queryKey: orpc.workforce.listAccessConfig.queryKey({
+				input: {
+					organizationId,
+				},
+			}),
+		});
+	};
+
+	const permissionGroups = accessConfigQuery.data?.permissionGroups ?? [];
+	const warehouses = accessConfigQuery.data?.warehouses ?? [];
+	const roleGroups = accessConfigQuery.data?.roleGroups ?? [];
+	const members = accessConfigQuery.data?.members ?? [];
+
 	return (
 		<div className="container mx-auto max-w-7xl py-8">
 			<h1 className="text-2xl font-semibold tracking-tight">Workforce</h1>
@@ -496,6 +1008,12 @@ export default function WorkforcePage() {
 				<Card className="mt-6 rounded-2xl border">
 					<CardContent className="p-6 text-sm text-muted-foreground">
 						Loading active organization...
+					</CardContent>
+				</Card>
+			) : accessConfigQuery.isLoading ? (
+				<Card className="mt-6 rounded-2xl border">
+					<CardContent className="p-6 text-sm text-muted-foreground">
+						Loading workforce access configuration...
 					</CardContent>
 				</Card>
 			) : (
@@ -526,6 +1044,29 @@ export default function WorkforcePage() {
 								/>
 							</CardContent>
 						</Card>
+						<MemberRoleGroupAssignments
+							members={members}
+							roleGroups={roleGroups}
+							isSaving={assignRoleGroupMutation.isPending}
+							onAssign={async (memberId, roleGroupId) => {
+								try {
+									await assignRoleGroupMutation.mutateAsync({
+										organizationId: organization.id,
+										memberId,
+										roleGroupId,
+									});
+
+									await invalidateAccessConfig(
+										organization.id,
+									);
+									toast.success("Member access updated.");
+								} catch {
+									toast.error(
+										"Failed to update member access.",
+									);
+								}
+							}}
+						/>
 					</TabsContent>
 
 					<TabsContent value="invite" className="space-y-4">
@@ -543,7 +1084,49 @@ export default function WorkforcePage() {
 					</TabsContent>
 
 					<TabsContent value="role-group" className="space-y-4">
-						<RoleGroupBuilder />
+						<RoleGroupBuilder
+							permissionGroups={permissionGroups}
+							warehouses={warehouses}
+							roleGroups={roleGroups}
+							isSaving={createRoleGroupMutation.isPending}
+							isUpdating={updateRoleGroupMutation.isPending}
+							deletingRoleGroupId={
+								deleteRoleGroupMutation.isPending
+									? (deleteRoleGroupMutation.variables
+											?.roleGroupId ?? null)
+									: null
+							}
+							onCreateRoleGroup={async (payload) => {
+								await createRoleGroupMutation.mutateAsync({
+									organizationId: organization.id,
+									name: payload.name,
+									permissions: payload.permissions,
+									warehouseIds: payload.warehouseIds,
+								});
+
+								await invalidateAccessConfig(organization.id);
+							}}
+							onUpdateRoleGroup={async (payload) => {
+								await updateRoleGroupMutation.mutateAsync({
+									organizationId: organization.id,
+									roleGroupId: payload.roleGroupId,
+									name: payload.name,
+									description: payload.description,
+									permissions: payload.permissions,
+									warehouseIds: payload.warehouseIds,
+								});
+
+								await invalidateAccessConfig(organization.id);
+							}}
+							onDeleteRoleGroup={async (roleGroupId) => {
+								await deleteRoleGroupMutation.mutateAsync({
+									organizationId: organization.id,
+									roleGroupId,
+								});
+
+								await invalidateAccessConfig(organization.id);
+							}}
+						/>
 					</TabsContent>
 				</Tabs>
 			)}

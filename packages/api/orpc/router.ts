@@ -6,6 +6,7 @@ import { newsletterRouter } from "../modules/newsletter/router";
 import { organizationsRouter } from "../modules/organizations/router";
 import { paymentsRouter } from "../modules/payments/router";
 import { usersRouter } from "../modules/users/router";
+import { workforceRouter } from "../modules/workforce/router";
 import { publicProcedure } from "./procedures";
 
 export const router = publicProcedure
@@ -18,6 +19,7 @@ export const router = publicProcedure
 		organizations: organizationsRouter,
 		users: usersRouter,
 		payments: paymentsRouter,
+		workforce: workforceRouter,
 		ai: aiRouter,
 	});
 
