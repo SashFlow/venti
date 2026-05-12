@@ -52,26 +52,26 @@ const SideBarHeader = () => {
 	const [isTicketsDialogOpen, setIsTicketsDialogOpen] = useState(false);
 
 	return (
-		<header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-primary border-foreground/20 px-4 text-primary-foreground">
+		<header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-foreground/20 px-4">
 			<div className="flex items-center gap-2 overflow-hidden">
-				<SidebarTrigger className="text-primary-foreground hidden md:flex lg:hidden" />
+				<SidebarTrigger className="text-foreground hidden md:flex lg:hidden" />
 				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem className="hidden sm:inline-flex">
 							<BreadcrumbLink
 								href="/app/home"
-								className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+								className="text-foreground/70 hover:text-foreground transition-colors"
 							>
 								App
 							</BreadcrumbLink>
 						</BreadcrumbItem>
 						{currentModule && (
 							<>
-								<BreadcrumbSeparator className="text-primary-foreground/40 hidden sm:block" />
+								<BreadcrumbSeparator className="text-foreground/40 hidden sm:block" />
 								<BreadcrumbItem>
 									<BreadcrumbLink
 										href={currentModule.url}
-										className="text-primary-foreground/70 hover:text-primary-foreground transition-colors truncate max-w-[100px] sm:max-w-none"
+										className="text-foreground/70 hover:text-foreground transition-colors truncate max-w-[100px] sm:max-w-none"
 									>
 										{currentModule.title}
 									</BreadcrumbLink>
@@ -80,9 +80,9 @@ const SideBarHeader = () => {
 						)}
 						{currentRoute && (
 							<>
-								<BreadcrumbSeparator className="text-primary-foreground/40" />
+								<BreadcrumbSeparator className="text-foreground/40" />
 								<BreadcrumbItem>
-									<BreadcrumbPage className="font-medium text-primary-foreground truncate max-w-[100px] sm:max-w-none">
+									<BreadcrumbPage className="font-medium text-foreground truncate max-w-[100px] sm:max-w-none">
 										{currentRoute.title}
 									</BreadcrumbPage>
 								</BreadcrumbItem>
@@ -97,11 +97,11 @@ const SideBarHeader = () => {
 					<DrawerTrigger asChild>
 						<Button
 							variant="ghost"
-							className="relative w-full justify-start bg-white/10 hover:bg-white/15 border-transparent text-primary-foreground/50 hover:text-primary-foreground/80 font-normal px-9 h-9 group transition-colors"
+							className="relative w-full justify-start border border-black text-foreground/50 hover:text-foreground/80 font-normal px-9 h-9 group transition-colors"
 						>
 							<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
 							<span>Search...</span>
-							<div className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-primary-foreground/20 text-[10px] text-primary-foreground/40">
+							<div className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-foreground/20 text-[10px] text-foreground/40">
 								⌘ K
 							</div>
 						</Button>
@@ -183,7 +183,7 @@ const SideBarHeader = () => {
 				<Button
 					variant="ghost"
 					size="icon"
-					className="rounded-full text-primary-foreground hover:bg-white/10"
+					className="rounded-full text-foreground hover:bg-white/10"
 				>
 					<Bot className="h-5 w-5" />
 					<span className="sr-only">Chatbot</span>
@@ -192,7 +192,7 @@ const SideBarHeader = () => {
 				<Button
 					variant="ghost"
 					size="icon"
-					className="rounded-full text-primary-foreground hover:bg-white/10"
+					className="rounded-full text-foreground hover:bg-white/10"
 				>
 					<Bell className="h-5 w-5" />
 					<span className="sr-only">Notifications</span>
@@ -203,7 +203,7 @@ const SideBarHeader = () => {
 						<Button
 							variant="ghost"
 							size="icon"
-							className="rounded-full text-primary-foreground hover:bg-white/10"
+							className="rounded-full text-foreground hover:bg-white/10"
 						>
 							<HelpCircle className="h-5 w-5" />
 							<span className="sr-only">Help</span>
@@ -239,12 +239,12 @@ const SideBarHeader = () => {
 					onOpenChange={setIsTicketsDialogOpen}
 				>
 					<DialogContent className="max-w-xl p-0 overflow-hidden border-none shadow-2xl">
-						<div className="bg-primary p-8 text-primary-foreground">
+						<div className="bg-primary p-8 text-foreground">
 							<DialogHeader>
 								<DialogTitle className="text-2xl font-bold">
 									How can we help?
 								</DialogTitle>
-								<DialogDescription className="text-primary-foreground/70 text-base">
+								<DialogDescription className="text-foreground/70 text-base">
 									Select an option below to get started with
 									your request.
 								</DialogDescription>

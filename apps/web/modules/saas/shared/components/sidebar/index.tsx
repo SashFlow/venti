@@ -26,7 +26,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			className="border-r border-foreground/20"
 			{...props}
 		>
-			<SidebarHeader className="border-b border-foreground/20">
+			<SidebarHeader className="border-b border-foreground/20 max-h-[64px]">
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>

@@ -1262,7 +1262,7 @@ function LayoutTab({
 
 function OrdersTab() {
 	return (
-		<Tabs defaultValue="fulfill" className="space-y-4">
+		<Tabs defaultValue="fulfill" className="space-y-4 flex flex-col">
 			<TabsList
 				variant="line"
 				className="h-auto justify-start gap-2 rounded-none px-0 pb-0"

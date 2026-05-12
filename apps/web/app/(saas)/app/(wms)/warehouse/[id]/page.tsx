@@ -294,11 +294,21 @@ export default function WarehouseDetailsPage() {
 				) : null}
 			</div>
 
-			<Tabs defaultValue="settings" className="space-y-4">
+			<Tabs
+				defaultValue="inventory"
+				className="space-y-4 flex flex-col"
+				orientation="horizontal"
+			>
 				<TabsList
 					variant="line"
 					className="h-auto justify-start gap-2 overflow-x-auto rounded-none px-0 pb-0"
 				>
+					<TabsTrigger
+						value="inventory"
+						className="px-3 py-2 text-sm font-medium"
+					>
+						Inventory
+					</TabsTrigger>
 					<TabsTrigger
 						value="layout"
 						className="px-3 py-2 text-sm font-medium"
@@ -311,12 +321,7 @@ export default function WarehouseDetailsPage() {
 					>
 						Settings
 					</TabsTrigger>
-					<TabsTrigger
-						value="inventory"
-						className="px-3 py-2 text-sm font-medium"
-					>
-						Inventory
-					</TabsTrigger>
+
 					<TabsTrigger
 						value="cycle-count"
 						className="px-3 py-2 text-sm font-medium"
