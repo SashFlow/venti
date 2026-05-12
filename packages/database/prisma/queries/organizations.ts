@@ -37,12 +37,17 @@ export async function countAllOrganizations() {
 	return db.organization.count();
 }
 
-export async function getOrganizationById(id: string) {
+export async function getOrganizationById(
+	id: string,
+	members = true,
+	invitations = true,
+) {
 	return db.organization.findUnique({
 		where: { id },
 		include: {
-			members: true,
-			invitations: true,
+			members,
+			invitations,
+			logoUploadFile: true,
 		},
 	});
 }

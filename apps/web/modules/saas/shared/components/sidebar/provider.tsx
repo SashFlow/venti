@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
 	createContext,
 	type PropsWithChildren,
+	useCallback,
 	useContext,
 	useMemo,
 } from "react";
@@ -84,24 +85,37 @@ export function NavigationProvider({ children }: PropsWithChildren) {
 		return { currentModule: foundModule, currentRoute: foundRoute };
 	}, [pathname]);
 
+	const setCurrentRoute = useCallback(
+		(route: ProfileRoute | null) => {
+			if (route?.url) {
+				router.push(route.url);
+			}
+		},
+		[router],
+	);
+
+	const routeTo = useCallback(
+		(url: string) => {
+			router.push(url);
+		},
+		[router],
+	);
+
+	const contextValue = useMemo(
+		() => ({
+			sidebarOpen: open,
+			setSidebarOpen: setOpen,
+			routes: NAV_ROUTES,
+			currentModule,
+			currentRoute,
+			setCurrentRoute,
+			routeTo,
+		}),
+		[open, setOpen, currentModule, currentRoute, setCurrentRoute, routeTo],
+	);
+
 	return (
-		<NavigationContext.Provider
-			value={{
-				sidebarOpen: open,
-				setSidebarOpen: setOpen,
-				routes: NAV_ROUTES,
-				currentModule,
-				currentRoute,
-				setCurrentRoute: (route: ProfileRoute | null) => {
-					if (route?.url) {
-						router.push(route.url);
-					}
-				},
-				routeTo: (url: string) => {
-					router.push(url);
-				},
-			}}
-		>
+		<NavigationContext.Provider value={contextValue}>
 			{children}
 		</NavigationContext.Provider>
 	);

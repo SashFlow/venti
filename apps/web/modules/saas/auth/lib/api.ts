@@ -1,3 +1,4 @@
+import type { Organization } from "@repo/auth";
 import { authClient } from "@repo/auth/client";
 import { config } from "@repo/config";
 import { useQuery } from "@tanstack/react-query";
@@ -18,12 +19,60 @@ export const useSessionQuery = () => {
 				throw new Error(error.message || "Failed to fetch session");
 			}
 
-			return data;
+			if (!data) {
+				return null;
+			}
+
+			let organization: Organization | null = null;
+
+			if (data.session.activeOrganizationId) {
+				const { data: org } =
+					await authClient.organization.getFullOrganization({
+						query: {
+							organizationId: data.session.activeOrganizationId,
+						},
+					});
+				organization = org ?? null;
+			}
+
+			return { ...data, organization };
 		},
 		staleTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
 		retry: false,
 		enabled: config.ui.saas.enabled,
+	});
+};
+
+export const activeOrganizationByIdQueryKey = (id: string) =>
+	["user", "activeOrganizationById", id] as const;
+
+export const useActiveOrganizationQuery = (
+	activeOrganizationId?: string | null,
+) => {
+	return useQuery({
+		queryKey: activeOrganizationByIdQueryKey(activeOrganizationId ?? ""),
+		queryFn: async () => {
+			const { data: activeOrganization, error: organizationError } =
+				await authClient.organization.getFullOrganization({
+					query: {
+						organizationId: activeOrganizationId ?? "",
+					},
+				});
+
+			if (organizationError) {
+				throw new Error(
+					organizationError.message ||
+						"Failed to fetch active organization",
+				);
+			}
+
+			return activeOrganization;
+		},
+		staleTime: Number.POSITIVE_INFINITY,
+		refetchOnWindowFocus: false,
+		retry: false,
+		enabled: config.ui.saas.enabled && !!activeOrganizationId,
 	});
 };
 

@@ -36,10 +36,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">
-										{organization.name || "Acme Inc"}
+										{organization?.name || "Acme Inc"}
 									</span>
 									<span className="truncate text-xs">
-										{organization.slug || "Enterprise"}
+										{organization?.slug || "Enterprise"}
 									</span>
 								</div>
 							</div>
@@ -55,9 +55,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<SidebarFooter className="border-t border-foreground/20">
 				<NavUser
 					user={{
-						email: user.email || "",
-						name: user.name || "",
-						avatar: user.image || "",
+						email: user?.email || "",
+						name: user?.name || "",
+						avatar: user?.image || "",
 					}}
 				/>
 			</SidebarFooter>

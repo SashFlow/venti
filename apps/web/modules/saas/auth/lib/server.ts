@@ -31,12 +31,9 @@ export const getSession = cache(async () => {
 					id: true,
 					name: true,
 					slug: true,
-					logoUploadFile: {
-						select: {
-							bucket: true,
-							path: true,
-						},
-					},
+					createdAt: true,
+					logo: true,
+					metadata: true,
 				},
 			});
 
@@ -45,11 +42,9 @@ export const getSession = cache(async () => {
 						id: activeOrganization.id,
 						name: activeOrganization.name,
 						slug: activeOrganization.slug,
-						logoUploadFileUrl: activeOrganization.logoUploadFile
-							? `/image-proxy/${activeOrganization.logoUploadFile.bucket}/${activeOrganization.logoUploadFile.path}`
-							: null,
-						logoUploadFilePath:
-							activeOrganization.logoUploadFile?.path ?? null,
+						createdAt: activeOrganization.createdAt,
+						logo: activeOrganization.logo ?? null,
+						metadata: activeOrganization.metadata,
 					}
 				: null;
 		} catch {
