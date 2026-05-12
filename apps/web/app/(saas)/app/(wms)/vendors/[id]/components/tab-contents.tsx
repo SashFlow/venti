@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@repo/ui/button";
+import { Badge } from "@repo/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
@@ -11,14 +12,27 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/select";
-import { TabsContent } from "@repo/ui/tabs";
 import {
-	DownloadIcon,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@repo/ui/table";
+import { TabsContent } from "@repo/ui/tabs";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useQuery } from "@tanstack/react-query";
+import {
+	CheckIcon,
+	ChevronLeftIcon,
+	ChevronRightIcon,
 	FileSpreadsheetIcon,
 	InfoIcon,
-	Link2Icon,
+	Loader2Icon,
 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
+import { useState } from "react";
 
 export type VendorAddress = {
 	address1: string;
@@ -47,19 +61,6 @@ const COMMUNICATION_OPTIONS = [
 	{ value: "email", label: "Email" },
 	{ value: "phone", label: "Phone" },
 	{ value: "both", label: "Email and Phone" },
-];
-
-const COUNTRY_OPTIONS = [
-	{ value: "us", label: "United States" },
-	{ value: "ca", label: "Canada" },
-	{ value: "mx", label: "Mexico" },
-];
-
-const STATE_OPTIONS = [
-	{ value: "al", label: "Alabama" },
-	{ value: "ca", label: "California" },
-	{ value: "ny", label: "New York" },
-	{ value: "tx", label: "Texas" },
 ];
 
 export function SettingsTabContent({
@@ -306,74 +307,38 @@ export function SettingsTabContent({
 						/>
 					</div>
 					<div className="space-y-1.5">
-						<Label htmlFor="shipping-country">Country *</Label>
-						<Select
+						<Label htmlFor="shipping-country">Country</Label>
+						<Input
+							id="shipping-country"
+							placeholder="e.g. United States"
 							value={vendor.shipping.country}
-							onValueChange={(value) => {
-								if (!value) {
-									return;
-								}
+							onChange={(event) =>
 								setVendor((current) => ({
 									...current,
 									shipping: {
 										...current.shipping,
-										country: value,
+										country: event.target.value,
 									},
-								}));
-							}}
-						>
-							<SelectTrigger
-								id="shipping-country"
-								className="w-full"
-							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{COUNTRY_OPTIONS.map((option) => (
-									<SelectItem
-										key={option.value}
-										value={option.value}
-									>
-										{option.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+								}))
+							}
+						/>
 					</div>
 					<div className="space-y-1.5">
-						<Label htmlFor="shipping-state">State *</Label>
-						<Select
+						<Label htmlFor="shipping-state">State</Label>
+						<Input
+							id="shipping-state"
+							placeholder="e.g. California"
 							value={vendor.shipping.state}
-							onValueChange={(value) => {
-								if (!value) {
-									return;
-								}
+							onChange={(event) =>
 								setVendor((current) => ({
 									...current,
 									shipping: {
 										...current.shipping,
-										state: value,
+										state: event.target.value,
 									},
-								}));
-							}}
-						>
-							<SelectTrigger
-								id="shipping-state"
-								className="w-full"
-							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{STATE_OPTIONS.map((option) => (
-									<SelectItem
-										key={option.value}
-										value={option.value}
-									>
-										{option.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+								}))
+							}
+						/>
 					</div>
 					<div className="space-y-1.5">
 						<Label htmlFor="shipping-zip">Zip *</Label>
@@ -397,7 +362,32 @@ export function SettingsTabContent({
 	);
 }
 
-export function ItemsTabContent({ vendorName }: { vendorName: string }) {
+export function ItemsTabContent({
+	organizationId,
+	supplierId,
+}: {
+	organizationId: string | null;
+	supplierId: string;
+}) {
+	const ITEMS_PER_PAGE = 20;
+	const [page, setPage] = useState(1);
+
+	const { data, isPending } = useQuery({
+		...orpc.masterData.suppliers.listSkus.queryOptions({
+			input: {
+				organizationId: organizationId ?? "",
+				supplierId,
+				limit: ITEMS_PER_PAGE,
+				offset: (page - 1) * ITEMS_PER_PAGE,
+			},
+		}),
+		enabled: Boolean(organizationId && supplierId),
+	});
+
+	const skuSuppliers = data?.skuSuppliers ?? [];
+	const total = data?.total ?? 0;
+	const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
 	return (
 		<TabsContent value="items" className="space-y-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -406,92 +396,137 @@ export function ItemsTabContent({ vendorName }: { vendorName: string }) {
 					<Button
 						variant="outline"
 						size="icon"
-						aria-label="Download item template"
-					>
-						<DownloadIcon className="size-4" />
-					</Button>
-					<Button
-						variant="outline"
-						size="icon"
 						aria-label="Export item CSV"
 					>
 						<FileSpreadsheetIcon className="size-4" />
 					</Button>
-					<Button variant="outline">Request Item Feed</Button>
 				</div>
 			</div>
 
 			<Card className="rounded-2xl border">
-				<CardHeader className="flex flex-row items-center justify-between pb-3">
-					<CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-						Coverage
-					</CardTitle>
-					<Button size="sm" variant="outline">
-						<Link2Icon className="size-4" />
-						Link Catalog Feed
-					</Button>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<p className="text-sm text-muted-foreground">
-						Item associations for {vendorName.toLowerCase()} are not
-						available through the current supplier API yet. Use this
-						tab to review readiness and request catalog linkage.
-					</p>
-					<div className="grid gap-4 md:grid-cols-3">
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">
-								Catalog linkage
-							</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Awaiting supplier-to-SKU relation procedures.
-							</p>
+				<CardContent className="p-0">
+					{isPending ? (
+						<div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+							<Loader2Icon className="size-4 animate-spin" />
+							Loading items...
 						</div>
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">Price history</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Margin and cost trend data will appear once item
-								feeds are available.
-							</p>
+					) : skuSuppliers.length === 0 ? (
+						<div className="rounded-md px-4 py-12 text-center text-sm text-muted-foreground">
+							No items linked to this vendor yet.
 						</div>
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">
-								Bulk onboarding
-							</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Use the template actions to prepare a future
-								import batch.
-							</p>
-						</div>
-					</div>
+					) : (
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>SKU Code</TableHead>
+									<TableHead>Name</TableHead>
+									<TableHead>Vendor Code</TableHead>
+									<TableHead className="text-right">Unit Price</TableHead>
+									<TableHead className="text-right">MOQ</TableHead>
+									<TableHead className="text-right">Lead Time</TableHead>
+									<TableHead className="text-center">Primary</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{skuSuppliers.map((row) => (
+									<TableRow key={row.id}>
+										<TableCell className="font-mono text-sm">
+											{row.sku.skuCode}
+										</TableCell>
+										<TableCell>{row.sku.name}</TableCell>
+										<TableCell className="text-muted-foreground">
+											{row.vendorCode ?? "—"}
+										</TableCell>
+										<TableCell className="text-right">
+											{row.unitPrice != null
+												? `$${Number(row.unitPrice).toFixed(2)}`
+												: "—"}
+										</TableCell>
+										<TableCell className="text-right">
+											{row.moq != null ? String(row.moq) : "—"}
+										</TableCell>
+										<TableCell className="text-right">
+											{row.leadTimeDays != null
+												? `${row.leadTimeDays}d`
+												: "—"}
+										</TableCell>
+										<TableCell className="text-center">
+											{row.isPrimary ? (
+												<CheckIcon className="mx-auto size-4 text-green-600" />
+											) : (
+												<span className="text-muted-foreground">—</span>
+											)}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					)}
 				</CardContent>
 			</Card>
 
-			<Card className="rounded-2xl border">
-				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-						Next Step
-					</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-3">
-					<p className="text-sm text-muted-foreground">
-						When the supplier item contract is exposed, this tab
-						should support item linkage, unit-cost updates,
-						import/export, and purchase coverage analytics.
-					</p>
-					<div className="rounded-md border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
-						No vendor items are available yet.
+			{totalPages > 1 && (
+				<div className="flex items-center justify-between text-sm text-muted-foreground">
+					<span>
+						Page {page} of {totalPages} ({total} items)
+					</span>
+					<div className="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon"
+							disabled={page <= 1}
+							onClick={() => setPage((p) => p - 1)}
+						>
+							<ChevronLeftIcon className="size-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							disabled={page >= totalPages}
+							onClick={() => setPage((p) => p + 1)}
+						>
+							<ChevronRightIcon className="size-4" />
+						</Button>
 					</div>
-				</CardContent>
-			</Card>
+				</div>
+			)}
 		</TabsContent>
 	);
 }
 
+function formatPoStatus(status: string) {
+	return status
+		.split("_")
+		.map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+		.join(" ");
+}
+
 export function PurchaseOrdersTabContent({
-	vendorName,
+	organizationId,
+	supplierId,
 }: {
-	vendorName: string;
+	organizationId: string | null;
+	supplierId: string;
 }) {
+	const ITEMS_PER_PAGE = 20;
+	const [page, setPage] = useState(1);
+
+	const { data, isPending } = useQuery({
+		...orpc.masterData.suppliers.listPurchaseOrders.queryOptions({
+			input: {
+				organizationId: organizationId ?? "",
+				supplierId,
+				limit: ITEMS_PER_PAGE,
+				offset: (page - 1) * ITEMS_PER_PAGE,
+			},
+		}),
+		enabled: Boolean(organizationId && supplierId),
+	});
+
+	const orders = data?.orders ?? [];
+	const total = data?.total ?? 0;
+	const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
 	return (
 		<TabsContent value="purchase-orders" className="space-y-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -502,49 +537,96 @@ export function PurchaseOrdersTabContent({
 					<Button
 						variant="outline"
 						size="icon"
-						aria-label="Export purchase order CSV"
+						aria-label="Export purchase orders CSV"
 					>
 						<FileSpreadsheetIcon className="size-4" />
 					</Button>
-					<Button variant="outline">Request PO Feed</Button>
 				</div>
 			</div>
 
 			<Card className="rounded-2xl border">
-				<CardContent className="space-y-4 p-4 md:p-6">
-					<p className="text-sm text-muted-foreground">
-						Purchase orders for {vendorName.toLowerCase()} are not
-						yet queryable from the supplier API. This tab is ready
-						for live data once purchase-order relations are exposed.
-					</p>
-					<div className="grid gap-4 md:grid-cols-3">
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">Order history</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								PO timelines and financial statuses will appear
-								here.
-							</p>
+				<CardContent className="p-0">
+					{isPending ? (
+						<div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+							<Loader2Icon className="size-4 animate-spin" />
+							Loading purchase orders...
 						</div>
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">Filters</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Warehouse, payment, and progress filters are
-								staged for the live feed.
-							</p>
+					) : orders.length === 0 ? (
+						<div className="rounded-md px-4 py-12 text-center text-sm text-muted-foreground">
+							No purchase orders found for this vendor.
 						</div>
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">Exports</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								CSV export is ready to connect once the query
-								endpoint is available.
-							</p>
-						</div>
-					</div>
-					<div className="rounded-md border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
-						No purchase orders are available for this vendor yet.
-					</div>
+					) : (
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>PO Number</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Warehouse</TableHead>
+									<TableHead className="text-right">Lines</TableHead>
+									<TableHead>Expected Date</TableHead>
+									<TableHead>Created</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{orders.map((order) => (
+									<TableRow key={order.id}>
+										<TableCell className="font-mono text-sm font-medium">
+											{order.poNumber}
+										</TableCell>
+										<TableCell>
+											<Badge variant="outline">
+												{formatPoStatus(order.status)}
+											</Badge>
+										</TableCell>
+										<TableCell>{order.warehouse.name}</TableCell>
+										<TableCell className="text-right">
+											{order._count.lines}
+										</TableCell>
+										<TableCell>
+											{order.expectedDate
+												? new Date(
+														order.expectedDate,
+													).toLocaleDateString()
+												: "—"}
+										</TableCell>
+										<TableCell>
+											{new Date(
+												order.createdAt,
+											).toLocaleDateString()}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					)}
 				</CardContent>
 			</Card>
+
+			{totalPages > 1 && (
+				<div className="flex items-center justify-between text-sm text-muted-foreground">
+					<span>
+						Page {page} of {totalPages} ({total} orders)
+					</span>
+					<div className="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon"
+							disabled={page <= 1}
+							onClick={() => setPage((p) => p - 1)}
+						>
+							<ChevronLeftIcon className="size-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							disabled={page >= totalPages}
+							onClick={() => setPage((p) => p + 1)}
+						>
+							<ChevronRightIcon className="size-4" />
+						</Button>
+					</div>
+				</div>
+			)}
 		</TabsContent>
 	);
 }

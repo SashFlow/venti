@@ -388,6 +388,9 @@
 						}
 					},
 					"role": "Role",
+					"rolePlaceholder": "Select a role",
+					"roleGroup": "Role Group",
+					"roleGroupPlaceholder": "Select a role group",
 					"submit": "Invite",
 					"title": "Invite member"
 				},

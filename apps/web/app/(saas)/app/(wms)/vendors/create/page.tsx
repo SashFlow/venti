@@ -45,19 +45,6 @@ type CreateVendorInput = {
 	billing: VendorAddress | null;
 };
 
-const COUNTRY_OPTIONS = [
-	{ value: "us", label: "United States" },
-	{ value: "ca", label: "Canada" },
-	{ value: "mx", label: "Mexico" },
-];
-
-const STATE_OPTIONS = [
-	{ value: "al", label: "Alabama" },
-	{ value: "ca", label: "California" },
-	{ value: "ny", label: "New York" },
-	{ value: "tx", label: "Texas" },
-];
-
 const COMMUNICATION_OPTIONS = [
 	{ value: "none", label: "None" },
 	{ value: "email", label: "Email" },
@@ -111,56 +98,22 @@ function AddressFields({
 				/>
 			</div>
 			<div className="space-y-1.5">
-				<Label htmlFor={`${prefix}-country`}>
-					Country <span className="text-destructive">*</span>
-				</Label>
-				<Select
+				<Label htmlFor={`${prefix}-country`}>Country</Label>
+				<Input
+					id={`${prefix}-country`}
+					placeholder="e.g. United States"
 					value={address.country}
-					onValueChange={(value) => {
-						if (!value) {
-							return;
-						}
-
-						onChange({ country: value });
-					}}
-				>
-					<SelectTrigger id={`${prefix}-country`} className="w-full">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{COUNTRY_OPTIONS.map((option) => (
-							<SelectItem key={option.value} value={option.value}>
-								{option.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+					onChange={(event) => onChange({ country: event.target.value })}
+				/>
 			</div>
 			<div className="space-y-1.5">
-				<Label htmlFor={`${prefix}-state`}>
-					State <span className="text-destructive">*</span>
-				</Label>
-				<Select
+				<Label htmlFor={`${prefix}-state`}>State</Label>
+				<Input
+					id={`${prefix}-state`}
+					placeholder="e.g. California"
 					value={address.state}
-					onValueChange={(value) => {
-						if (!value) {
-							return;
-						}
-
-						onChange({ state: value });
-					}}
-				>
-					<SelectTrigger id={`${prefix}-state`} className="w-full">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{STATE_OPTIONS.map((option) => (
-							<SelectItem key={option.value} value={option.value}>
-								{option.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+					onChange={(event) => onChange({ state: event.target.value })}
+				/>
 			</div>
 			<div className="space-y-1.5">
 				<Label htmlFor={`${prefix}-zip`}>
@@ -201,8 +154,8 @@ export default function CreateVendorPage() {
 		address1: "",
 		address2: "",
 		city: "",
-		country: "us",
-		state: "al",
+		country: "",
+		state: "",
 		zip: "",
 	});
 
@@ -210,8 +163,8 @@ export default function CreateVendorPage() {
 		address1: "",
 		address2: "",
 		city: "",
-		country: "us",
-		state: "al",
+		country: "",
+		state: "",
 		zip: "",
 	});
 

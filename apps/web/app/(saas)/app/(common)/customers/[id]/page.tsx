@@ -2,7 +2,7 @@
 
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { orpc } from "@shared/lib/orpc-query-utils";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -42,6 +42,7 @@ export default function CustomerDetailPage() {
 	const params = useParams();
 	const customerId = params.id as string;
 	const { organizationId, invalidateCustomers } = useCustomersContext();
+	const queryClient = useQueryClient();
 
 	const [activeTab, setActiveTab] = useState<PageTab>("orders");
 	const [scheduleMode, setScheduleMode] = useState<ScheduleMode>("weekly");
@@ -56,6 +57,10 @@ export default function CustomerDetailPage() {
 	const [monthlyDay, setMonthlyDay] = useState("1");
 	const [quarterlyMonth, setQuarterlyMonth] = useState("q1-first-month");
 	const [yearlyDate, setYearlyDate] = useState("2026-01-15");
+
+	const [customAttributes, setCustomAttributes] = useState<
+		Record<string, string>
+	>({});
 
 	const [openByDay, setOpenByDay] = useState<Record<Weekday, boolean>>({
 		Monday: true,
@@ -89,9 +94,45 @@ export default function CustomerDetailPage() {
 		enabled: Boolean(organizationId && customerId),
 	});
 
+	const { data: locationsData, isPending: locationsLoading } = useQuery({
+		...orpc.customers.locations.list.queryOptions({
+			input: {
+				organizationId: organizationId ?? "",
+				customerId,
+			},
+		}),
+		enabled: Boolean(organizationId && customerId),
+	});
+
+	const { data: ordersData, isPending: ordersLoading } = useQuery({
+		...orpc.orders.listOutbound.queryOptions({
+			input: {
+				organizationId: organizationId ?? "",
+				customerId,
+				limit: 20,
+				offset: 0,
+			},
+		}),
+		enabled: Boolean(organizationId && customerId),
+	});
+
 	const updateCustomerMutation = useMutation(
 		orpc.customers.update.mutationOptions(),
 	);
+
+	const createLocationMutation = useMutation(
+		orpc.customers.locations.create.mutationOptions(),
+	);
+
+	const deleteLocationMutation = useMutation(
+		orpc.customers.locations.delete.mutationOptions(),
+	);
+
+	const invalidateLocations = async () => {
+		await queryClient.invalidateQueries({
+			queryKey: orpc.customers.locations.list.key(),
+		});
+	};
 
 	useEffect(() => {
 		const customer = data?.customer;
@@ -111,6 +152,11 @@ export default function CustomerDetailPage() {
 		setMonthlyDay(metadata.monthlyDay || "1");
 		setQuarterlyMonth(metadata.quarterlyMonth || "q1-first-month");
 		setYearlyDate(metadata.yearlyDate || "2026-01-15");
+
+		const raw = customer.metadata as Record<string, unknown> | null;
+		if (raw && typeof raw.customAttributes === "object" && raw.customAttributes !== null && !Array.isArray(raw.customAttributes)) {
+			setCustomAttributes(raw.customAttributes as Record<string, string>);
+		}
 
 		if (Object.keys(metadata.openByDay).length > 0) {
 			setOpenByDay((previous) => ({
@@ -189,6 +235,35 @@ export default function CustomerDetailPage() {
 		await invalidateCustomers();
 	};
 
+	const saveCustomAttributes = async () => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		await toast.promise(
+			updateCustomerMutation.mutateAsync({
+				organizationId,
+				id: customerId,
+				metadata: buildCustomerMetadata({
+					deliveryNotes,
+					scheduleMode,
+					monthlyDay,
+					quarterlyMonth,
+					yearlyDate,
+					openByDay,
+					windowByDay,
+					customAttributes,
+				}),
+			}),
+			{
+				loading: "Saving attributes...",
+				success: "Attributes saved.",
+				error: "Failed to save attributes.",
+			},
+		);
+	};
+
 	return (
 		<div className="container mx-auto max-w-7xl py-8">
 			<div className="mb-8">
@@ -233,10 +308,52 @@ export default function CustomerDetailPage() {
 						void saveCustomer();
 					}}
 					saving={updateCustomerMutation.isPending}
+					locations={locationsData?.locations ?? []}
+					locationsLoading={locationsLoading}
+					onCreateLocation={async (input) => {
+						if (!organizationId) return;
+						await createLocationMutation.mutateAsync({
+							organizationId,
+							customerId,
+							...input,
+						});
+						await invalidateLocations();
+					}}
+					onDeleteLocation={async (id) => {
+						if (!organizationId) return;
+						await deleteLocationMutation.mutateAsync({
+							organizationId,
+							customerId,
+							id,
+						});
+						await invalidateLocations();
+					}}
+					customAttributes={customAttributes}
+					onCustomAttributeChange={(key, value) =>
+						setCustomAttributes((prev) => ({
+							...prev,
+							[key]: value,
+						}))
+					}
+					onCustomAttributeAdd={() =>
+						setCustomAttributes((prev) => ({ ...prev, "": "" }))
+					}
+					onCustomAttributeRemove={(key) =>
+						setCustomAttributes((prev) => {
+							const next = { ...prev };
+							delete next[key];
+							return next;
+						})
+					}
+					onCustomAttributesSave={() => {
+						void saveCustomAttributes();
+					}}
+					customAttributesSaving={updateCustomerMutation.isPending}
 				/>
 
 				<OrdersTabContent
-					customerName={customerName || "This customer"}
+					orders={ordersData?.orders ?? []}
+					isLoading={ordersLoading}
 				/>
 
 				<DeliveryTabContent
@@ -272,3 +389,4 @@ export default function CustomerDetailPage() {
 		</div>
 	);
 }
+

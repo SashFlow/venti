@@ -1,5 +1,14 @@
+import { Badge } from "@repo/ui/badge";
 import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@repo/ui/dialog";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
 import {
@@ -9,11 +18,71 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/select";
+import { Skeleton } from "@repo/ui/skeleton";
 import { Switch } from "@repo/ui/switch";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@repo/ui/table";
 import { TabsContent } from "@repo/ui/tabs";
-import { Link2Icon } from "lucide-react";
+import { MapPinIcon, Trash2Icon, XIcon } from "lucide-react";
+import { useState } from "react";
 
 export type ScheduleMode = "weekly" | "monthly" | "quarterly" | "yearly";
+
+// ── Shared types ──────────────────────────────────────────────────────────────
+
+export type CustomerLocation = {
+	id: string;
+	customerId: string;
+	organizationId: string;
+	name: string;
+	isDefault: boolean;
+	notes?: string | null;
+	createdAt: Date | string;
+	updatedAt: Date | string;
+	address: {
+		id: string;
+		addressLine1: string;
+		addressLine2?: string | null;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+	};
+};
+
+export type CustomerOrder = {
+	id: string;
+	orderNumber: string;
+	status: string;
+	customerName?: string | null;
+	customerRef?: string | null;
+	createdAt: Date | string;
+	requiredByDate?: Date | string | null;
+	warehouse: { name: string };
+	_count: { lines: number };
+};
+
+type CreateLocationInput = {
+	name: string;
+	isDefault: boolean;
+	notes?: string;
+	address: {
+		addressLine1: string;
+		addressLine2?: string;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+	};
+};
+
+// ── Settings tab ──────────────────────────────────────────────────────────────
 
 type SettingsTabContentProps = {
 	customerName: string;
@@ -28,7 +97,39 @@ type SettingsTabContentProps = {
 	onWholesalerChange: (value: boolean) => void;
 	onSave?: () => void;
 	saving?: boolean;
+	// Locations
+	locations: CustomerLocation[];
+	locationsLoading: boolean;
+	onCreateLocation: (input: CreateLocationInput) => Promise<void>;
+	onDeleteLocation: (id: string) => Promise<void>;
+	// Custom attributes
+	customAttributes: Record<string, string>;
+	onCustomAttributeChange: (key: string, value: string) => void;
+	onCustomAttributeAdd: () => void;
+	onCustomAttributeRemove: (key: string) => void;
+	onCustomAttributesSave: () => void;
+	customAttributesSaving?: boolean;
 };
+
+const EMPTY_LOCATION_FORM: CreateLocationInput = {
+	name: "",
+	isDefault: false,
+	notes: "",
+	address: {
+		addressLine1: "",
+		addressLine2: "",
+		city: "",
+		state: "",
+		zip: "",
+		country: "",
+	},
+};
+
+function formatAddress(addr: CustomerLocation["address"]): string {
+	return [addr.addressLine1, addr.city, addr.state, addr.country]
+		.filter(Boolean)
+		.join(", ");
+}
 
 export function SettingsTabContent({
 	customerName,
@@ -43,9 +144,47 @@ export function SettingsTabContent({
 	onWholesalerChange,
 	onSave,
 	saving,
+	locations,
+	locationsLoading,
+	onCreateLocation,
+	onDeleteLocation,
+	customAttributes,
+	onCustomAttributeChange,
+	onCustomAttributeAdd,
+	onCustomAttributeRemove,
+	onCustomAttributesSave,
+	customAttributesSaving,
 }: SettingsTabContentProps) {
+	const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+	const [locationForm, setLocationForm] =
+		useState<CreateLocationInput>(EMPTY_LOCATION_FORM);
+	const [locationSaving, setLocationSaving] = useState(false);
+
+	const handleCreateLocation = async () => {
+		if (!locationForm.name.trim()) return;
+		setLocationSaving(true);
+		try {
+			await onCreateLocation({
+				...locationForm,
+				name: locationForm.name.trim(),
+				notes: locationForm.notes?.trim() || undefined,
+				address: {
+					...locationForm.address,
+					addressLine2:
+						locationForm.address.addressLine2?.trim() ||
+						undefined,
+				},
+			});
+			setLocationForm(EMPTY_LOCATION_FORM);
+			setLocationDialogOpen(false);
+		} finally {
+			setLocationSaving(false);
+		}
+	};
+
 	return (
 		<TabsContent value="settings" className="space-y-4">
+			{/* ── Core settings ── */}
 			<Card className="rounded-xl border">
 				<CardHeader className="flex flex-row items-center justify-between pb-2">
 					<CardTitle className="text-lg">Settings</CardTitle>
@@ -111,96 +250,415 @@ export function SettingsTabContent({
 				</CardContent>
 			</Card>
 
+			{/* ── Locations ── */}
 			<Card className="rounded-xl border">
 				<CardHeader className="flex flex-row items-center justify-between pb-2">
 					<CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
 						Locations
 					</CardTitle>
-					<Button size="sm">Create Location</Button>
+					<Dialog
+						open={locationDialogOpen}
+						onOpenChange={setLocationDialogOpen}
+					>
+						<DialogTrigger asChild>
+							<Button size="sm">Create Location</Button>
+						</DialogTrigger>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>New Location</DialogTitle>
+							</DialogHeader>
+							<div className="space-y-4 py-2">
+								<div className="space-y-2">
+									<Label>
+										Name{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										value={locationForm.name}
+										onChange={(e) =>
+											setLocationForm((f) => ({
+												...f,
+												name: e.target.value,
+											}))
+										}
+										placeholder="e.g. Main Warehouse"
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label>Address Line 1</Label>
+									<Input
+										value={
+											locationForm.address.addressLine1
+										}
+										onChange={(e) =>
+											setLocationForm((f) => ({
+												...f,
+												address: {
+													...f.address,
+													addressLine1:
+														e.target.value,
+												},
+											}))
+										}
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label>Address Line 2</Label>
+									<Input
+										value={
+											locationForm.address
+												.addressLine2 ?? ""
+										}
+										onChange={(e) =>
+											setLocationForm((f) => ({
+												...f,
+												address: {
+													...f.address,
+													addressLine2:
+														e.target.value,
+												},
+											}))
+										}
+									/>
+								</div>
+								<div className="grid grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label>City</Label>
+										<Input
+											value={locationForm.address.city}
+											onChange={(e) =>
+												setLocationForm((f) => ({
+													...f,
+													address: {
+														...f.address,
+														city: e.target.value,
+													},
+												}))
+											}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label>State</Label>
+										<Input
+											value={locationForm.address.state}
+											onChange={(e) =>
+												setLocationForm((f) => ({
+													...f,
+													address: {
+														...f.address,
+														state: e.target.value,
+													},
+												}))
+											}
+										/>
+									</div>
+								</div>
+								<div className="grid grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label>ZIP</Label>
+										<Input
+											value={locationForm.address.zip}
+											onChange={(e) =>
+												setLocationForm((f) => ({
+													...f,
+													address: {
+														...f.address,
+														zip: e.target.value,
+													},
+												}))
+											}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label>Country</Label>
+										<Input
+											value={
+												locationForm.address.country
+											}
+											onChange={(e) =>
+												setLocationForm((f) => ({
+													...f,
+													address: {
+														...f.address,
+														country: e.target.value,
+													},
+												}))
+											}
+										/>
+									</div>
+								</div>
+								<div className="space-y-2">
+									<Label>Notes</Label>
+									<Input
+										value={locationForm.notes ?? ""}
+										onChange={(e) =>
+											setLocationForm((f) => ({
+												...f,
+												notes: e.target.value,
+											}))
+										}
+									/>
+								</div>
+								<div className="flex items-center gap-3">
+									<Switch
+										checked={locationForm.isDefault}
+										onCheckedChange={(checked) =>
+											setLocationForm((f) => ({
+												...f,
+												isDefault: Boolean(checked),
+											}))
+										}
+									/>
+									<Label>Set as default location</Label>
+								</div>
+							</div>
+							<DialogFooter>
+								<Button
+									variant="outline"
+									onClick={() =>
+										setLocationDialogOpen(false)
+									}
+								>
+									Cancel
+								</Button>
+								<Button
+									onClick={() => {
+										void handleCreateLocation();
+									}}
+									disabled={
+										locationSaving ||
+										!locationForm.name.trim()
+									}
+								>
+									{locationSaving ? "Creating…" : "Create"}
+								</Button>
+							</DialogFooter>
+						</DialogContent>
+					</Dialog>
 				</CardHeader>
 				<CardContent>
-					<div className="grid grid-cols-2 gap-4 border-t pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-						<div>Name</div>
-						<div>Location</div>
-					</div>
+					{locationsLoading ? (
+						<div className="space-y-2 pt-3">
+							<Skeleton className="h-10 w-full" />
+							<Skeleton className="h-10 w-full" />
+						</div>
+					) : locations.length === 0 ? (
+						<div className="flex flex-col items-center gap-2 py-8 text-center text-sm text-muted-foreground">
+							<MapPinIcon className="size-6 opacity-40" />
+							<p>No locations yet. Create one to get started.</p>
+						</div>
+					) : (
+						<div className="divide-y border-t">
+							{locations.map((loc) => (
+								<div
+									key={loc.id}
+									className="flex items-center justify-between py-3"
+								>
+									<div className="min-w-0">
+										<div className="flex items-center gap-2">
+											<span className="text-sm font-medium">
+												{loc.name}
+											</span>
+											{loc.isDefault && (
+												<Badge
+													variant="secondary"
+													className="text-xs"
+												>
+													Default
+												</Badge>
+											)}
+										</div>
+										<p className="truncate text-xs text-muted-foreground">
+											{formatAddress(loc.address)}
+										</p>
+									</div>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="shrink-0 text-destructive hover:text-destructive"
+										onClick={() => {
+											void onDeleteLocation(loc.id);
+										}}
+									>
+										<Trash2Icon className="size-4" />
+									</Button>
+								</div>
+							))}
+						</div>
+					)}
 				</CardContent>
 			</Card>
 
+			{/* ── Edit Metadata ── */}
 			<Card className="rounded-xl border">
 				<CardHeader className="flex flex-row items-center justify-between pb-2">
 					<CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
 						Edit Metadata
 					</CardTitle>
 					<div className="flex items-center gap-2">
-						<Button variant="outline" size="sm">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={onCustomAttributeAdd}
+						>
 							Add Attribute
 						</Button>
-						<Button size="sm">Save</Button>
-					</div>
-				</CardHeader>
-				<CardContent className="space-y-4 border-t pt-4">
-					<p className="text-muted-foreground text-sm">
-						Store custom key/value pairs on this customer.
-					</p>
-					<div className="flex justify-end">
-						<Button variant="outline" size="sm">
-							Show Supported Types
+						<Button
+							size="sm"
+							onClick={onCustomAttributesSave}
+							disabled={customAttributesSaving}
+						>
+							Save
 						</Button>
 					</div>
+				</CardHeader>
+				<CardContent className="space-y-3 border-t pt-4">
+					{Object.keys(customAttributes).length === 0 ? (
+						<p className="text-sm text-muted-foreground">
+							No custom attributes yet. Click &quot;Add
+							Attribute&quot; to add key/value pairs.
+						</p>
+					) : (
+						Object.entries(customAttributes).map(
+							([key, value], index) => (
+								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: stable for this pattern
+									key={index}
+									className="flex items-center gap-2"
+								>
+									<Input
+										placeholder="Key"
+										value={key}
+										className="w-1/3"
+										onChange={(e) => {
+											const newKey = e.target.value;
+											const entries = Object.entries(
+												customAttributes,
+											);
+											entries[index] = [newKey, value];
+											const next = Object.fromEntries(
+												entries,
+											) as Record<string, string>;
+											onCustomAttributeChange(
+												newKey,
+												value,
+											);
+											// Replace the whole map via a workaround:
+											// remove old key, add new key
+											if (newKey !== key) {
+												onCustomAttributeRemove(key);
+												onCustomAttributeChange(
+													newKey,
+													value,
+												);
+											}
+										}}
+									/>
+									<Input
+										placeholder="Value"
+										value={value}
+										className="flex-1"
+										onChange={(e) =>
+											onCustomAttributeChange(
+												key,
+												e.target.value,
+											)
+										}
+									/>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() =>
+											onCustomAttributeRemove(key)
+										}
+									>
+										<XIcon className="size-4" />
+									</Button>
+								</div>
+							),
+						)
+					)}
 				</CardContent>
 			</Card>
 		</TabsContent>
 	);
 }
 
-export function OrdersTabContent({ customerName }: { customerName: string }) {
+// ── Orders tab ────────────────────────────────────────────────────────────────
+
+type OrdersTabContentProps = {
+	orders: CustomerOrder[];
+	isLoading: boolean;
+};
+
+function formatDate(date: Date | string | null | undefined): string {
+	if (!date) return "—";
+	return new Date(date).toLocaleDateString(undefined, {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	});
+}
+
+export function OrdersTabContent({ orders, isLoading }: OrdersTabContentProps) {
 	return (
 		<TabsContent value="orders" className="space-y-4">
 			<Card className="rounded-xl border">
-				<CardHeader className="flex flex-row items-center justify-between pb-2">
+				<CardHeader className="pb-2">
 					<CardTitle className="text-lg">Orders</CardTitle>
-					<Button variant="outline" size="sm">
-						<Link2Icon className="mr-2 size-4" />
-						Connect Order Feed
-					</Button>
 				</CardHeader>
-				<CardContent className="space-y-4">
-					<p className="text-sm text-muted-foreground">
-						Order history for {customerName.toLowerCase()} is not
-						exposed through the current customer detail API yet.
-						This tab is staged for live order history, filters, and
-						timeline metrics.
-					</p>
-					<div className="grid gap-4 md:grid-cols-3">
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">
-								Pending orders
-							</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Awaiting customer-order relation queries.
-							</p>
+				<CardContent>
+					{isLoading ? (
+						<div className="space-y-2">
+							{Array.from({ length: 4 }).map((_, i) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows
+								<Skeleton key={i} className="h-10 w-full" />
+							))}
 						</div>
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">
-								Completed orders
-							</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Shipment and delivery summaries will appear
-								here.
-							</p>
+					) : orders.length === 0 ? (
+						<div className="rounded-md border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+							No orders linked to this customer yet.
 						</div>
-						<div className="rounded-xl border p-4">
-							<p className="text-sm font-medium">Filters</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Date, warehouse, and tag filters are reserved
-								for the live feed.
-							</p>
-						</div>
-					</div>
-					<div className="rounded-md border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
-						No customer orders are available in this detail view
-						yet.
-					</div>
+					) : (
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Order #</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Warehouse</TableHead>
+									<TableHead>Required By</TableHead>
+									<TableHead className="text-right">
+										Lines
+									</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{orders.map((order) => (
+									<TableRow key={order.id}>
+										<TableCell className="font-medium">
+											{order.orderNumber}
+										</TableCell>
+										<TableCell>
+											<Badge variant="secondary">
+												{order.status}
+											</Badge>
+										</TableCell>
+										<TableCell>
+											{order.warehouse.name}
+										</TableCell>
+										<TableCell>
+											{formatDate(order.requiredByDate)}
+										</TableCell>
+										<TableCell className="text-right">
+											{order._count.lines}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					)}
 				</CardContent>
 			</Card>
 		</TabsContent>

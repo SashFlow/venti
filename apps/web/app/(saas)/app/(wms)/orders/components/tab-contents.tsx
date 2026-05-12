@@ -27,6 +27,7 @@ import {
 	UploadIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -235,6 +236,7 @@ export function InboundTabContent({
 }: {
 	organizationId: string;
 }) {
+	const router = useRouter();
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
 	const offset = (page - 1) * PAGE_SIZE;
@@ -278,7 +280,9 @@ export function InboundTabContent({
 						<Button variant="outline" size="sm">
 							Discrepancies
 						</Button>
-						<Button size="sm">Create</Button>
+						<Button size="sm" asChild>
+							<Link href="/app/orders/inbound/new">Create</Link>
+						</Button>
 					</div>
 				</div>
 
@@ -374,7 +378,8 @@ export function InboundTabContent({
 								{orders.map((order) => (
 									<TableRow
 										key={order.id}
-										className="hover:bg-muted/30"
+										className="hover:bg-muted/30 cursor-pointer"
+										onClick={() => router.push(`/app/orders/inbound/${order.id}`)}
 									>
 										<TableCell>
 											{statusPill(order.status)}
@@ -408,7 +413,7 @@ export function InboundTabContent({
 					title="No purchase orders yet...Let's change that"
 					guideLabel="View Purchase Orders Guide"
 					primaryActionLabel="Create Purchase Order"
-					primaryActionHref="/app/orders"
+					primaryActionHref="/app/orders/inbound/new"
 					secondaryActionLabel="Sync Shopify Vendors"
 					secondaryActionHref="/app/vendors/import"
 					heroTitle="Purchase Orders and Put Away"
@@ -423,6 +428,7 @@ export function OutboundTabContent({
 }: {
 	organizationId: string;
 }) {
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
@@ -589,10 +595,12 @@ export function OutboundTabContent({
 						>
 							Ship Selected
 						</Button>
-						<Button variant="outline" size="sm">
-							Fulfill
+						<Button variant="outline" size="sm" asChild>
+							<Link href="/app/orders/fulfill/new">Fulfill</Link>
 						</Button>
-						<Button size="sm">Create</Button>
+						<Button size="sm" asChild>
+							<Link href="/app/orders/outbound/new">Create</Link>
+						</Button>
 					</div>
 				</div>
 
@@ -697,7 +705,8 @@ export function OutboundTabContent({
 								{orders.map((order) => (
 									<TableRow
 										key={order.id}
-										className="hover:bg-muted/30"
+										className="hover:bg-muted/30 cursor-pointer"
+										onClick={(e) => { if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).tagName === 'BUTTON') return; router.push(`/app/orders/outbound/${order.id}`); }}
 									>
 										<TableCell>
 											<Checkbox
@@ -787,7 +796,7 @@ export function OutboundTabContent({
 					title="No orders yet...Let's change that"
 					guideLabel="View the Orders Guide"
 					primaryActionLabel="Create Outbound Order"
-					primaryActionHref="/app/orders"
+					primaryActionHref="/app/orders/outbound/new"
 					secondaryActionLabel="Connect Shopify"
 					secondaryActionHref="/app/integrations"
 					heroTitle="Simple Order Fulfillment"
@@ -802,6 +811,7 @@ export function TransferTabContent({
 }: {
 	organizationId: string;
 }) {
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
@@ -883,7 +893,9 @@ export function TransferTabContent({
 						<Button variant="outline" size="sm">
 							Discrepancies
 						</Button>
-						<Button size="sm">Create Transfer</Button>
+						<Button size="sm" asChild>
+							<Link href="/app/orders/transfers/new">Create Transfer</Link>
+						</Button>
 					</div>
 				</div>
 
@@ -979,7 +991,8 @@ export function TransferTabContent({
 								{transfers.map((transfer) => (
 									<TableRow
 										key={transfer.id}
-										className="hover:bg-muted/30"
+										className="hover:bg-muted/30 cursor-pointer"
+										onClick={(e) => { if ((e.target as HTMLElement).tagName === 'BUTTON') return; router.push(`/app/orders/transfers/${transfer.id}`); }}
 									>
 										<TableCell>
 											{statusPill(transfer.status)}
@@ -1050,7 +1063,7 @@ export function TransferTabContent({
 					primaryActionLabel="Create a New Warehouse"
 					primaryActionHref="/app/warehouse"
 					secondaryActionLabel="Create New Transfer"
-					secondaryActionHref="/app/orders"
+					secondaryActionHref="/app/orders/transfers/new"
 					heroTitle="How To Transfer Stock"
 				/>
 			</div>
@@ -1063,6 +1076,7 @@ export function ManifestTabContent({
 }: {
 	organizationId: string;
 }) {
+	const router = useRouter();
 	const [page, setPage] = useState(1);
 	const offset = (page - 1) * PAGE_SIZE;
 
@@ -1093,7 +1107,9 @@ export function ManifestTabContent({
 							{total} manifest records
 						</p>
 					</div>
-					<Button size="sm">Create Manifests</Button>
+					<Button size="sm" asChild>
+						<Link href="/app/orders/manifests/new">Create Shipment</Link>
+					</Button>
 				</div>
 
 				<Card className="rounded-2xl border">
@@ -1135,7 +1151,8 @@ export function ManifestTabContent({
 								{manifests.map((manifest) => (
 									<TableRow
 										key={manifest.id}
-										className="hover:bg-muted/30"
+										className="hover:bg-muted/30 cursor-pointer"
+										onClick={() => router.push(`/app/orders/manifests/${manifest.id}`)}
 									>
 										<TableCell>
 											{formatDate(manifest.createdAt)}
@@ -1429,9 +1446,14 @@ export function FulfillTabContent({
 							<CardTitle className="text-sm font-semibold uppercase tracking-wider">
 								Batches
 							</CardTitle>
-							<Button size="sm" variant="outline">
-								Merge Batches
-							</Button>
+							<div className="flex gap-2">
+								<Button size="sm" variant="outline">
+									Merge Batches
+								</Button>
+								<Button size="sm" asChild>
+									<Link href="/app/orders/fulfill/new">New Wave</Link>
+								</Button>
+							</div>
 						</div>
 					</CardHeader>
 					<CardContent className="p-0">
@@ -1515,7 +1537,8 @@ export function FulfillTabContent({
 								{batches.map((batch) => (
 									<TableRow
 										key={batch.id}
-										className="hover:bg-muted/30"
+										className="hover:bg-muted/30 cursor-pointer"
+										onClick={() => router.push(`/app/orders/fulfill/${batch.id}`)}
 									>
 										<TableCell className="font-medium">
 											{batch.waveNumber}
@@ -1669,7 +1692,8 @@ export function FulfillTabContent({
 								{unbatchedShipments.map((shipment) => (
 									<TableRow
 										key={shipment.id}
-										className="hover:bg-muted/30"
+										className="hover:bg-muted/30 cursor-pointer"
+										onClick={(e) => { if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).tagName === 'BUTTON') return; router.push(`/app/orders/manifests/${shipment.id}`); }}
 									>
 										<TableCell>
 											<Checkbox

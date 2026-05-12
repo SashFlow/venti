@@ -147,3 +147,178 @@ export async function deleteCustomer(params: {
 
 	return result.count > 0;
 }
+
+// ============================================================================
+// CUSTOMER LOCATIONS
+// ============================================================================
+
+const customerLocationSelect = {
+	id: true,
+	customerId: true,
+	organizationId: true,
+	name: true,
+	isDefault: true,
+	notes: true,
+	createdAt: true,
+	updatedAt: true,
+	address: {
+		select: {
+			id: true,
+			addressLine1: true,
+			addressLine2: true,
+			city: true,
+			state: true,
+			zip: true,
+			country: true,
+		},
+	},
+} satisfies Prisma.CustomerLocationSelect;
+
+export async function listCustomerLocations(params: {
+	organizationId: string;
+	customerId: string;
+}) {
+	const locations = await db.customerLocation.findMany({
+		where: {
+			customerId: params.customerId,
+			organizationId: params.organizationId,
+		},
+		select: customerLocationSelect,
+		orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+	});
+
+	return { locations };
+}
+
+type AddressPayload = {
+	addressLine1: string;
+	addressLine2?: string;
+	city: string;
+	state: string;
+	zip: string;
+	country: string;
+};
+
+export async function createCustomerLocation(params: {
+	organizationId: string;
+	customerId: string;
+	name: string;
+	isDefault?: boolean;
+	notes?: string;
+	address: AddressPayload;
+}) {
+	return db.$transaction(async (tx) => {
+		if (params.isDefault) {
+			await tx.customerLocation.updateMany({
+				where: {
+					customerId: params.customerId,
+					organizationId: params.organizationId,
+					isDefault: true,
+				},
+				data: { isDefault: false },
+			});
+		}
+
+		const address = await tx.address.create({
+			data: params.address,
+		});
+
+		const location = await tx.customerLocation.create({
+			data: {
+				customerId: params.customerId,
+				organizationId: params.organizationId,
+				addressId: address.id,
+				name: params.name,
+				isDefault: params.isDefault ?? false,
+				notes: params.notes,
+			},
+			select: customerLocationSelect,
+		});
+
+		return { location };
+	});
+}
+
+export async function updateCustomerLocation(params: {
+	organizationId: string;
+	customerId: string;
+	id: string;
+	name?: string;
+	isDefault?: boolean;
+	notes?: string;
+	address?: Partial<AddressPayload>;
+}) {
+	return db.$transaction(async (tx) => {
+		const existing = await tx.customerLocation.findFirst({
+			where: {
+				id: params.id,
+				customerId: params.customerId,
+				organizationId: params.organizationId,
+			},
+			select: { id: true, addressId: true },
+		});
+
+		if (!existing) {
+			return null;
+		}
+
+		if (params.isDefault) {
+			await tx.customerLocation.updateMany({
+				where: {
+					customerId: params.customerId,
+					organizationId: params.organizationId,
+					isDefault: true,
+					id: { not: params.id },
+				},
+				data: { isDefault: false },
+			});
+		}
+
+		if (params.address && Object.keys(params.address).length > 0) {
+			await tx.address.update({
+				where: { id: existing.addressId },
+				data: params.address,
+			});
+		}
+
+		const location = await tx.customerLocation.update({
+			where: { id: params.id },
+			data: {
+				...(params.name !== undefined && { name: params.name }),
+				...(params.isDefault !== undefined && {
+					isDefault: params.isDefault,
+				}),
+				...(params.notes !== undefined && { notes: params.notes }),
+			},
+			select: customerLocationSelect,
+		});
+
+		return { location };
+	});
+}
+
+export async function deleteCustomerLocation(params: {
+	organizationId: string;
+	customerId: string;
+	id: string;
+}) {
+	return db.$transaction(async (tx) => {
+		const existing = await tx.customerLocation.findFirst({
+			where: {
+				id: params.id,
+				customerId: params.customerId,
+				organizationId: params.organizationId,
+			},
+			select: { id: true, addressId: true },
+		});
+
+		if (!existing) {
+			return false;
+		}
+
+		await tx.customerLocation.delete({ where: { id: params.id } });
+		await tx.address.delete({ where: { id: existing.addressId } });
+
+		return true;
+	});
+}

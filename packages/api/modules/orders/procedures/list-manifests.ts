@@ -5,6 +5,9 @@ import { listManifests } from "../services/orders-service";
 
 const listManifestsInput = z.object({
 	organizationId: z.string(),
+	carrierId: z.string().optional(),
+	startDate: z.coerce.date().optional(),
+	endDate: z.coerce.date().optional(),
 	limit: z.number().min(1).max(100).default(20),
 	offset: z.number().min(0).default(0),
 });

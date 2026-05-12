@@ -12,6 +12,7 @@ export type CustomerMetadata = {
 	yearlyDate?: string;
 	openByDay?: Record<string, boolean>;
 	windowByDay?: Record<string, { start: string; end: string }>;
+	customAttributes?: Record<string, string>;
 };
 
 function asRecord(value: unknown) {
@@ -91,5 +92,6 @@ export function buildCustomerMetadata(
 		yearlyDate: input.yearlyDate?.trim() || undefined,
 		openByDay: input.openByDay,
 		windowByDay: input.windowByDay,
+		customAttributes: input.customAttributes,
 	};
 }

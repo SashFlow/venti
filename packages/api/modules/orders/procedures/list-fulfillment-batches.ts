@@ -5,6 +5,7 @@ import { listFulfillmentBatches } from "../services/orders-service";
 
 const listFulfillmentBatchesInput = z.object({
 	organizationId: z.string(),
+	status: z.array(z.string()).optional(),
 	limit: z.number().min(1).max(100).default(20),
 	offset: z.number().min(0).default(0),
 });

@@ -161,7 +161,6 @@ export function OrganizationMembersList({
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
 										<Button
-											asChild
 											size="icon"
 											variant="ghost"
 										>
@@ -241,7 +240,7 @@ export function OrganizationMembersList({
 	});
 
 	return (
-		<div className="rounded-md border">
+		<div className="">
 			<Table>
 				<TableBody>
 					{table.getRowModel().rows?.length ? (

@@ -23,7 +23,7 @@ import { z } from "zod";
 
 const formSchema = z.object({
 	email: z.string().email(),
-	role: z.enum(["member", "owner", "admin"]),
+	roleGroupId: z.string().min(1, "Please select a role group"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -40,14 +40,15 @@ export function InviteMemberForm({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			email: "",
-			role: "member",
+			roleGroupId: "",
 		},
 	});
 
 	const onSubmit: SubmitHandler<FormValues> = async (values) => {
 		try {
 			const { error } = await authClient.organization.inviteMember({
-				...values,
+				email: values.email,
+				role: "member",
 				organizationId,
 			});
 
@@ -110,18 +111,22 @@ export function InviteMemberForm({
 						<div>
 							<FormField
 								control={form.control}
-								name="role"
+								name="roleGroupId"
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>
 											{t(
-												"organizations.settings.members.inviteMember.role",
+												"organizations.settings.members.inviteMember.roleGroup",
 											)}
 										</FormLabel>
 										<FormControl>
 											<OrganizationRoleSelect
 												value={field.value}
 												onSelect={field.onChange}
+												organizationId={organizationId}
+												placeholder={t(
+													"organizations.settings.members.inviteMember.roleGroupPlaceholder",
+												)}
 											/>
 										</FormControl>
 									</FormItem>

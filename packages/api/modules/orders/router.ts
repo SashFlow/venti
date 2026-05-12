@@ -1,6 +1,16 @@
 import { bulkUpdateOutboundStatusProcedure } from "./procedures/bulk-update-outbound-status";
 import { bulkUpdateShipmentStatusesProcedure } from "./procedures/bulk-update-shipment-statuses";
 import { completeTransferProcedure } from "./procedures/complete-transfer";
+import { createPurchaseOrderProcedure } from "./procedures/create-purchase-order";
+import { createSalesOrderProcedure } from "./procedures/create-sales-order";
+import { createShipmentProcedure } from "./procedures/create-shipment";
+import { createTransferProcedure } from "./procedures/create-transfer";
+import { createWaveProcedure } from "./procedures/create-wave";
+import { getPurchaseOrderProcedure } from "./procedures/get-purchase-order";
+import { getSalesOrderProcedure } from "./procedures/get-sales-order";
+import { getShipmentProcedure } from "./procedures/get-shipment";
+import { getTransferProcedure } from "./procedures/get-transfer";
+import { getWaveProcedure } from "./procedures/get-wave";
 import { listFulfillmentBatchesProcedure } from "./procedures/list-fulfillment-batches";
 import { listFulfillmentShipmentsProcedure } from "./procedures/list-fulfillment-shipments";
 import { listInboundOrdersProcedure } from "./procedures/list-inbound-orders";
@@ -11,12 +21,26 @@ import { updateOutboundOrderStatusProcedure } from "./procedures/update-outbound
 import { updateShipmentStatusProcedure } from "./procedures/update-shipment-status";
 
 export const ordersRouter = {
+	// List
 	listInbound: listInboundOrdersProcedure,
 	listOutbound: listOutboundOrdersProcedure,
 	listTransfers: listTransfersProcedure,
 	listManifests: listManifestsProcedure,
 	listFulfillmentBatches: listFulfillmentBatchesProcedure,
 	listFulfillmentShipments: listFulfillmentShipmentsProcedure,
+	// Get by ID
+	getPurchaseOrder: getPurchaseOrderProcedure,
+	getSalesOrder: getSalesOrderProcedure,
+	getTransfer: getTransferProcedure,
+	getShipment: getShipmentProcedure,
+	getWave: getWaveProcedure,
+	// Create
+	createPurchaseOrder: createPurchaseOrderProcedure,
+	createSalesOrder: createSalesOrderProcedure,
+	createTransfer: createTransferProcedure,
+	createShipment: createShipmentProcedure,
+	createWave: createWaveProcedure,
+	// Status updates
 	bulkUpdateOutboundStatus: bulkUpdateOutboundStatusProcedure,
 	bulkUpdateShipmentStatuses: bulkUpdateShipmentStatusesProcedure,
 	updateOutboundStatus: updateOutboundOrderStatusProcedure,

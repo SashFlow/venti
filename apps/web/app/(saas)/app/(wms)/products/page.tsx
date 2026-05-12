@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { useConfirmationAlert } from "@saas/shared/components/ConfirmationAlertProvider";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	BundlesTabContent,
@@ -58,6 +58,8 @@ function ProductsPage() {
 		setPage,
 		invalidateProducts,
 	} = useProductsContext();
+
+	const [activeTab, setActiveTab] = useState("sku");
 
 	const { data, isPending } = useQuery({
 		...orpc.products.list.queryOptions({
@@ -124,7 +126,11 @@ function ProductsPage() {
 				</h1>
 			</div>
 
-			<Tabs defaultValue="sku" className="gap-4 flex flex-col">
+			<Tabs
+				value={activeTab}
+				onValueChange={setActiveTab}
+				className="gap-4 flex flex-col"
+			>
 				<TabsList
 					variant="default"
 					className="h-auto w-full justify-start overflow-x-auto"
@@ -141,7 +147,7 @@ function ProductsPage() {
 					>
 						Inventory
 					</TabsTrigger>
-					<TabsTrigger
+					{/* <TabsTrigger
 						value="lots"
 						className="px-3 py-2 text-sm font-medium"
 					>
@@ -152,7 +158,7 @@ function ProductsPage() {
 						className="px-3 py-2 text-sm font-medium"
 					>
 						Bundles
-					</TabsTrigger>
+					</TabsTrigger> */}
 					<TabsTrigger
 						value="imports"
 						className="px-3 py-2 text-sm font-medium"
@@ -170,8 +176,18 @@ function ProductsPage() {
 						setPage(1);
 					}}
 					onDelete={onDeleteSKU}
+					onCreateClick={() => setActiveTab("inventory")}
+					page={page}
+					totalPages={totalPages}
+					onPageChange={setPage}
 				/>
-				<InventoryTabContent />
+				<InventoryTabContent
+					organizationId={organizationId}
+					onSuccess={async () => {
+						await invalidateProducts();
+						setActiveTab("sku");
+					}}
+				/>
 				<LotsTabContent />
 				<BundlesTabContent />
 				<ImportsTabContent importFields={IMPORT_FIELDS} />

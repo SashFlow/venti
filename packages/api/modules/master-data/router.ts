@@ -7,6 +7,8 @@ import { getSupplierProcedure } from "./procedures/get-supplier";
 import { getSupplierImportTemplateProcedure } from "./procedures/get-supplier-import-template";
 import { getUomProcedure } from "./procedures/get-uom";
 import { importSuppliersProcedure } from "./procedures/import-suppliers";
+import { listSupplierPurchaseOrdersProcedure } from "./procedures/list-supplier-purchase-orders";
+import { listSupplierSkusProcedure } from "./procedures/list-supplier-skus";
 import { listSuppliersProcedure } from "./procedures/list-suppliers";
 import { listUomsProcedure } from "./procedures/list-uoms";
 import { updateSupplierProcedure } from "./procedures/update-supplier";
@@ -22,6 +24,8 @@ export const masterDataRouter = {
 		import: importSuppliersProcedure,
 		importTemplate: getSupplierImportTemplateProcedure,
 		export: exportSuppliersProcedure,
+		listSkus: listSupplierSkusProcedure,
+		listPurchaseOrders: listSupplierPurchaseOrdersProcedure,
 	},
 	uoms: {
 		list: listUomsProcedure,

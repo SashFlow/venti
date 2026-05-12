@@ -17,8 +17,16 @@ import { Pagination } from "@saas/shared/components/Pagination";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@repo/ui/dropdown-menu";
+import {
 	DownloadIcon,
 	FileSpreadsheetIcon,
+	MoreVerticalIcon,
 	PlusIcon,
 	SearchIcon,
 	UploadIcon,
@@ -250,7 +258,7 @@ export default function CustomersPage() {
 												<Skeleton className="h-4 w-24" />
 											</TableCell>
 											<TableCell className="text-right">
-												<Skeleton className="ml-auto h-8 w-8" />
+												<Skeleton className="ml-auto h-8 w-8 rounded-md" />
 											</TableCell>
 										</TableRow>
 									))
@@ -274,42 +282,44 @@ export default function CustomersPage() {
 												{customer.lastOrderDate ?? "—"}
 											</TableCell>
 											<TableCell className="text-right">
-												<div className="flex items-center justify-end gap-1">
-													<Button
-														variant="ghost"
-														size="sm"
-														asChild
-													>
-														<Link
-															href={`/app/customers/${customer.id}`}
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="size-8"
 														>
-															View
-														</Link>
-													</Button>
-													<Button
-														variant="ghost"
-														size="sm"
-														asChild
-													>
-														<Link
-															href={`/app/customers/${customer.id}`}
+															<MoreVerticalIcon className="size-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end">
+														<DropdownMenuItem asChild>
+															<Link
+																href={`/app/customers/${customer.id}`}
+															>
+																View
+															</Link>
+														</DropdownMenuItem>
+														<DropdownMenuItem asChild>
+															<Link
+																href={`/app/customers/${customer.id}`}
+															>
+																Edit
+															</Link>
+														</DropdownMenuItem>
+														<DropdownMenuSeparator />
+														<DropdownMenuItem
+															className="text-destructive focus:text-destructive"
+															onClick={() =>
+																handleDelete(
+																	customer,
+																)
+															}
 														>
-															Edit
-														</Link>
-													</Button>
-													<Button
-														variant="ghost"
-														size="sm"
-														className="text-destructive hover:text-destructive"
-														onClick={() =>
-															handleDelete(
-																customer,
-															)
-														}
-													>
-														Delete
-													</Button>
-												</div>
+															Delete
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
 											</TableCell>
 										</TableRow>
 									))}

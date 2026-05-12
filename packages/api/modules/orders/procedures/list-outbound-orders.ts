@@ -5,7 +5,13 @@ import { listOutboundOrders } from "../services/orders-service";
 
 const listOutboundOrdersInput = z.object({
 	organizationId: z.string(),
+	customerId: z.string().optional(),
 	query: z.string().optional(),
+	status: z.array(z.string()).optional(),
+	warehouseId: z.string().optional(),
+	priority: z.enum(["CRITICAL", "HIGH", "NORMAL", "LOW"]).optional(),
+	startDate: z.coerce.date().optional(),
+	endDate: z.coerce.date().optional(),
 	limit: z.number().min(1).max(100).default(20),
 	offset: z.number().min(0).default(0),
 });

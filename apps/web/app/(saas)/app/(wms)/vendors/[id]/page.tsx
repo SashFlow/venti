@@ -32,8 +32,8 @@ const EMPTY_VENDOR: VendorProfile = {
 		address1: "",
 		address2: "",
 		city: "",
-		country: "us",
-		state: "al",
+		country: "",
+		state: "",
 		zip: "",
 	},
 };
@@ -208,9 +208,13 @@ export default function VendorDetailPage() {
 					</TabsTrigger>
 				</TabsList>
 
-				<ItemsTabContent vendorName={vendor.name || "This vendor"} />
+				<ItemsTabContent
+					organizationId={organizationId}
+					supplierId={vendorId}
+				/>
 				<PurchaseOrdersTabContent
-					vendorName={vendor.name || "This vendor"}
+					organizationId={organizationId}
+					supplierId={vendorId}
 				/>
 				<SettingsTabContent vendor={vendor} setVendor={setVendor} />
 			</Tabs>

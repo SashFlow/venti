@@ -288,9 +288,10 @@ export default function AutopilotPage() {
 				onValueChange={(value) =>
 					setActiveTab(value as "rules" | "queue")
 				}
-				className="space-y-4"
+				className="space-y-4 flex flex-col"
 			>
-				<TabsList variant="line" className="justify-start gap-2 p-0">
+				<TabsList 						variant="default"
+						className="h-auto w-full justify-start overflow-x-auto">
 					<TabsTrigger value="rules" className="px-3">
 						Rules
 					</TabsTrigger>

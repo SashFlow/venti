@@ -161,7 +161,7 @@ export function OrganizationList() {
 						<div className="flex flex-row justify-end gap-2">
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button asChild size="icon" variant="ghost">
+									<Button size="icon" variant="ghost">
 										<MoreVerticalIcon className="size-4" />
 									</Button>
 								</DropdownMenuTrigger>

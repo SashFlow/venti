@@ -1,3 +1,6 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
 import { Input } from "@repo/ui/input";
@@ -11,7 +14,12 @@ import {
 } from "@repo/ui/table";
 import { TabsContent } from "@repo/ui/tabs";
 import { Textarea } from "@repo/ui/textarea";
-import { Loader2Icon, Trash2Icon } from "lucide-react";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation } from "@tanstack/react-query";
+import { ChevronLeftIcon, ChevronRightIcon, Loader2Icon, Trash2Icon } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 export type ImportField = {
 	column: string;
@@ -32,6 +40,44 @@ type SkuTabContentProps = {
 	search: string;
 	onSearchChange: (value: string) => void;
 	onDelete: (sku: SKURow) => void;
+	onCreateClick: () => void;
+	page: number;
+	totalPages: number;
+	onPageChange: (page: number) => void;
+};
+
+const createSKUSchema = z.object({
+	name: z.string().trim().min(1, "Name is required").max(255),
+	description: z.string().trim().optional(),
+	skuCode: z.string().trim().min(1, "SKU code is required").max(100),
+	lengthMm: z.preprocess(
+		(v) =>
+			v === "" || v === undefined || (typeof v === "number" && isNaN(v))
+				? undefined
+				: Number(v),
+		z.number().positive().optional(),
+	),
+	widthMm: z.preprocess(
+		(v) =>
+			v === "" || v === undefined || (typeof v === "number" && isNaN(v))
+				? undefined
+				: Number(v),
+		z.number().positive().optional(),
+	),
+	heightMm: z.preprocess(
+		(v) =>
+			v === "" || v === undefined || (typeof v === "number" && isNaN(v))
+				? undefined
+				: Number(v),
+		z.number().positive().optional(),
+	),
+});
+
+type CreateSKUFormValues = z.infer<typeof createSKUSchema>;
+
+type InventoryTabContentProps = {
+	organizationId: string | null;
+	onSuccess: () => void;
 };
 
 export function SkuTabContent({
@@ -40,6 +86,10 @@ export function SkuTabContent({
 	search,
 	onSearchChange,
 	onDelete,
+	onCreateClick,
+	page,
+	totalPages,
+	onPageChange,
 }: SkuTabContentProps) {
 	return (
 		<TabsContent value="sku" className="space-y-4">
@@ -50,7 +100,9 @@ export function SkuTabContent({
 						<Button variant="outline" size="sm">
 							...
 						</Button>
-						<Button size="sm">Create Product</Button>
+						<Button size="sm" onClick={onCreateClick}>
+							Create Product
+						</Button>
 					</div>
 				</CardHeader>
 				<CardContent className="space-y-4 p-4">
@@ -121,76 +173,201 @@ export function SkuTabContent({
 						</TableBody>
 					</Table>
 				</CardContent>
+				{totalPages > 1 && (
+					<div className="flex items-center justify-between border-t pt-3">
+						<p className="text-sm text-muted-foreground">
+							Page {page} of {totalPages}
+						</p>
+						<div className="flex items-center gap-1">
+							<Button
+								variant="outline"
+								size="icon"
+								onClick={() => onPageChange(page - 1)}
+								disabled={page <= 1}
+								aria-label="Previous page"
+							>
+								<ChevronLeftIcon className="size-4" />
+							</Button>
+							<Button
+								variant="outline"
+								size="icon"
+								onClick={() => onPageChange(page + 1)}
+								disabled={page >= totalPages}
+								aria-label="Next page"
+							>
+								<ChevronRightIcon className="size-4" />
+							</Button>
+						</div>
+					</div>
+				)}
 			</Card>
 		</TabsContent>
 	);
 }
 
-export function InventoryTabContent() {
+export function InventoryTabContent({
+	organizationId,
+	onSuccess,
+}: InventoryTabContentProps) {
+	const createSKUMutation = useMutation(
+		orpc.products.create.mutationOptions(),
+	);
+
+	const form = useForm<CreateSKUFormValues>({
+		resolver: zodResolver(createSKUSchema),
+		defaultValues: {
+			name: "",
+			description: "",
+			skuCode: "",
+		},
+	});
+
+	const onSubmit = form.handleSubmit(async (values) => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+		try {
+			await createSKUMutation.mutateAsync({
+				organizationId,
+				name: values.name,
+				description: values.description || undefined,
+				skuCode: values.skuCode,
+				lengthMm: values.lengthMm,
+				widthMm: values.widthMm,
+				heightMm: values.heightMm,
+			});
+			toast.success("Product created successfully.");
+			form.reset();
+			onSuccess();
+		} catch {
+			toast.error("Failed to create product.");
+		}
+	});
+
 	return (
 		<TabsContent value="inventory" className="space-y-4">
-			<Card className="border">
-				<CardHeader className="flex flex-row items-center justify-between border-b pb-3">
-					<CardTitle className="text-xl">Create Product</CardTitle>
-					<Button size="sm">Create Product</Button>
-				</CardHeader>
-				<CardContent className="space-y-6 p-4">
-					<div className="space-y-2">
-						<p className="text-sm font-medium">Name*</p>
-						<Input />
-					</div>
-
-					<div className="grid gap-4 md:grid-cols-2">
-						<div className="space-y-2">
-							<p className="text-sm font-medium">Tags</p>
-							<Input placeholder="Product Tag" />
-						</div>
-						<div className="space-y-2">
-							<p className="text-sm font-medium">Type</p>
-							<Input />
-						</div>
-					</div>
-				</CardContent>
-			</Card>
-
-			<Card className="border">
-				<CardHeader className="flex flex-row items-center justify-between border-b pb-3">
-					<CardTitle className="text-sm font-semibold uppercase tracking-wider">
-						Variants
-					</CardTitle>
-					<Button variant="outline" size="sm">
-						Add Option
-					</Button>
-				</CardHeader>
-				<CardContent className="p-4">
-					<div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1fr_1fr_1fr_auto]">
-						<Input placeholder="SKU" />
-						<Input placeholder="$ 9.99" />
-						<Input placeholder="Length" />
-						<Input placeholder="Width" />
-						<Input placeholder="Height" />
-						<Button variant="outline" size="icon">
-							+
+			<form onSubmit={onSubmit} className="space-y-4">
+				<Card className="border">
+					<CardHeader className="flex flex-row items-center justify-between border-b pb-3">
+						<CardTitle className="text-xl">Create Product</CardTitle>
+						<Button
+							type="submit"
+							size="sm"
+							disabled={
+								createSKUMutation.isPending ||
+								!organizationId
+							}
+						>
+							{createSKUMutation.isPending ? (
+								<>
+									<Loader2Icon className="mr-2 size-4 animate-spin" />
+									Creating...
+								</>
+							) : (
+								"Create Product"
+							)}
 						</Button>
-					</div>
-				</CardContent>
-			</Card>
+					</CardHeader>
+					<CardContent className="space-y-6 p-4">
+						<div className="space-y-2">
+							<p className="text-sm font-medium">Name*</p>
+							<Input {...form.register("name")} />
+							{form.formState.errors.name && (
+								<p className="text-sm text-destructive">
+									{form.formState.errors.name.message}
+								</p>
+							)}
+						</div>
 
-			<Card className="border">
-				<CardHeader className="flex flex-row items-center justify-between border-b pb-3">
-					<CardTitle className="text-sm font-semibold uppercase tracking-wider">
-						Product Image
-					</CardTitle>
-					<Button variant="outline" size="sm">
-						Browse
-					</Button>
-				</CardHeader>
-				<CardContent className="p-4">
-					<div className="flex h-36 w-36 items-center justify-center rounded-md border border-dashed text-sm font-medium text-muted-foreground">
-						+ Add Image
-					</div>
-				</CardContent>
-			</Card>
+						<div className="grid gap-4 md:grid-cols-2">
+							<div className="space-y-2">
+								<p className="text-sm font-medium">Tags</p>
+								<Input placeholder="Product Tag" disabled />
+							</div>
+							<div className="space-y-2">
+								<p className="text-sm font-medium">Description</p>
+								<Input {...form.register("description")} />
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="border">
+					<CardHeader className="flex flex-row items-center justify-between border-b pb-3">
+						<CardTitle className="text-sm font-semibold uppercase tracking-wider">
+							Variants
+						</CardTitle>
+						<Button variant="outline" size="sm" type="button">
+							Add Option
+						</Button>
+					</CardHeader>
+					<CardContent className="p-4">
+						<div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1fr_1fr_1fr_auto]">
+							<Input
+								placeholder="SKU"
+								{...form.register("skuCode")}
+							/>
+							<Input
+								placeholder="$ 9.99"
+								disabled
+							/>
+							<Input
+								placeholder="Length (mm)"
+								type="number"
+								min={0}
+								{...form.register("lengthMm", {
+									valueAsNumber: true,
+								})}
+							/>
+							<Input
+								placeholder="Width (mm)"
+								type="number"
+								min={0}
+								{...form.register("widthMm", {
+									valueAsNumber: true,
+								})}
+							/>
+							<Input
+								placeholder="Height (mm)"
+								type="number"
+								min={0}
+								{...form.register("heightMm", {
+									valueAsNumber: true,
+								})}
+							/>
+							<Button
+								variant="outline"
+								size="icon"
+								type="button"
+							>
+								+
+							</Button>
+						</div>
+						{form.formState.errors.skuCode && (
+							<p className="mt-1 text-sm text-destructive">
+								{form.formState.errors.skuCode.message}
+							</p>
+						)}
+					</CardContent>
+				</Card>
+
+				<Card className="border">
+					<CardHeader className="flex flex-row items-center justify-between border-b pb-3">
+						<CardTitle className="text-sm font-semibold uppercase tracking-wider">
+							Product Image
+						</CardTitle>
+						<Button variant="outline" size="sm" type="button">
+							Browse
+						</Button>
+					</CardHeader>
+					<CardContent className="p-4">
+						<div className="flex h-36 w-36 items-center justify-center rounded-md border border-dashed text-sm font-medium text-muted-foreground">
+							+ Add Image
+						</div>
+					</CardContent>
+				</Card>
+			</form>
 		</TabsContent>
 	);
 }
