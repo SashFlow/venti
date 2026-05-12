@@ -403,8 +403,8 @@ export default function SettingsPage() {
 					className="flex flex-col"
 				>
 					<TabsList
-						variant="line"
-						className="justify-start gap-2 overflow-x-auto p-0"
+						variant="default"
+						className="h-auto w-full justify-start overflow-x-auto"
 					>
 						<TabsTrigger
 							value="account"

@@ -300,12 +300,12 @@ export default function WarehouseDetailsPage() {
 				orientation="horizontal"
 			>
 				<TabsList
-					variant="line"
-					className="h-auto justify-start gap-2 overflow-x-auto rounded-none px-0 pb-0"
+					variant="default"
+					className="h-auto w-full justify-start overflow-x-auto"
 				>
 					<TabsTrigger
 						value="inventory"
-						className="px-3 py-2 text-sm font-medium"
+						className="py-2 text-sm font-medium"
 					>
 						Inventory
 					</TabsTrigger>

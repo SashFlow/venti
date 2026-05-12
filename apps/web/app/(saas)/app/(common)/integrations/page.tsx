@@ -273,13 +273,16 @@ export default function IntegrationsPage() {
 				onValueChange={(value) =>
 					setActiveTab(value as "catalog" | "activity")
 				}
-				className="space-y-4"
+				className="space-y-4 flex flex-col"
 			>
-				<TabsList variant="line" className="justify-start gap-2 p-0">
-					<TabsTrigger value="catalog" className="px-3">
+				<TabsList
+					variant="default"
+					className="h-auto w-full justify-start overflow-x-auto"
+				>
+					<TabsTrigger value="catalog" className="h-10 px-3">
 						Connector Catalog
 					</TabsTrigger>
-					<TabsTrigger value="activity" className="px-3">
+					<TabsTrigger value="activity" className="h-10 px-3">
 						Recent Activity
 					</TabsTrigger>
 				</TabsList>

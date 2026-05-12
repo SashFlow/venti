@@ -172,6 +172,7 @@ model Organization {
     purchaseOrders     PurchaseOrder[]
     salesOrders        SalesOrder[]
     customers          Customer[]
+    customerLocations  CustomerLocation[]
     packageTypes       PackageType[]
     uploadFiles        UploadFile[]        @relation("OrganizationUploads")
 
@@ -197,11 +198,37 @@ model Customer {
     totalOrders  Int       @default(0)
     metadata     Json?
 
+    locations   CustomerLocation[]
+    salesOrders SalesOrder[]
+
     @@index([organizationId])
     @@index([organizationId, createdAt])
     @@index([organizationId, name])
     @@index([organizationId, email])
     @@map("customer")
+}
+
+model CustomerLocation {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    customerId String
+    customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    addressId String  @unique
+    address   Address @relation("CustomerLocationAddress", fields: [addressId], references: [id], onDelete: Restrict)
+
+    name      String  @db.VarChar(255)
+    isDefault Boolean @default(false)
+    notes     String? @db.Text
+
+    @@index([customerId])
+    @@index([organizationId])
+    @@map("customer_location")
 }
 
 model PackageType {
@@ -391,9 +418,10 @@ model Address {
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt
 
-    warehouseAddress Warehouse?          @relation("WarehouseAddress")
-    warehouseReturn  Warehouse?          @relation("WarehouseReturnAddress")
-    orgConfig        OrganizationConfig? @relation("BillingAddress")
+    warehouseAddress  Warehouse?          @relation("WarehouseAddress")
+    warehouseReturn   Warehouse?          @relation("WarehouseReturnAddress")
+    orgConfig         OrganizationConfig? @relation("BillingAddress")
+    customerLocations CustomerLocation[]  @relation("CustomerLocationAddress")
 
     @@map("address")
 }
@@ -1984,7 +2012,10 @@ model SalesOrder {
     status      SalesOrderStatus   @default(DRAFT)
     priority    SalesOrderPriority @default(NORMAL)
 
-    // Customer info — denormalized; a Customer model can be added later
+    customerId String?
+    customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+    // Denormalized snapshot — populated from Customer at order creation time
     customerName  String? @db.VarChar(255)
     customerEmail String? @db.VarChar(255)
     customerRef   String? @db.VarChar(100)
@@ -2009,6 +2040,7 @@ model SalesOrder {
     @@unique([organizationId, orderNumber])
     @@index([organizationId])
     @@index([warehouseId])
+    @@index([customerId])
     @@index([status])
     @@index([priority])
     @@index([requestedShipDate])

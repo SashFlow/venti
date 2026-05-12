@@ -126,8 +126,8 @@ function ProductsPage() {
 
 			<Tabs defaultValue="sku" className="gap-4 flex flex-col">
 				<TabsList
-					variant="line"
-					className="h-auto justify-start gap-2 rounded-none px-0 pb-0"
+					variant="default"
+					className="h-auto w-full justify-start overflow-x-auto"
 				>
 					<TabsTrigger
 						value="sku"

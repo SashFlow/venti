@@ -1014,14 +1014,14 @@ export default function WorkforcePage() {
 					className="mt-6 gap-4 flex flex-col"
 				>
 					<TabsList
-						variant="line"
-						className="w-full justify-start gap-1 overflow-x-auto p-0"
+						variant="default"
+						className="h-auto w-full justify-start overflow-x-auto"
 					>
 						{ROLE_GROUP_TABS.map((tab) => (
 							<TabsTrigger
 								key={tab.value}
 								value={tab.value}
-								className="flex-none px-3"
+								className="h-10 px-3"
 							>
 								{tab.label}
 							</TabsTrigger>

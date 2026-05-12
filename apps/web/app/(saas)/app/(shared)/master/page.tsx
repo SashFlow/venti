@@ -194,11 +194,14 @@ export default function UsersPage() {
 				onValueChange={(value) => setActiveTab(value as MasterTab)}
 				className="mt-6 gap-4 flex flex-col"
 			>
-				<TabsList variant="line" className="justify-start p-0">
-					<TabsTrigger value="organizations" className="px-3">
+				<TabsList
+					variant="default"
+					className="h-auto w-full justify-start overflow-x-auto"
+				>
+					<TabsTrigger value="organizations" className="h-10 px-3">
 						Organizations
 					</TabsTrigger>
-					<TabsTrigger value="admins" className="px-3">
+					<TabsTrigger value="admins" className="h-10 px-3">
 						Admins
 					</TabsTrigger>
 				</TabsList>

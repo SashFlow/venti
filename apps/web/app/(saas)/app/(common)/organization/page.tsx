@@ -726,16 +726,16 @@ export default function OrganizationPage() {
 					orientation="horizontal"
 					className="mb-8 py-8 flex-col"
 				>
-					<div className="overflow-x-auto pb-1 max-w-2xl">
+					<div className="overflow-x-auto pb-1">
 						<TabsList
-							variant="line"
-							className="w-max min-w-full justify-start gap-1 p-0"
+							variant="default"
+							className="h-auto w-full justify-start overflow-x-auto"
 						>
 							{TAB_ITEMS.map((tab) => (
 								<TabsTrigger
 									key={tab.value}
 									value={tab.value}
-									className="shrink-0 whitespace-nowrap px-3"
+									className="h-10 shrink-0 whitespace-nowrap px-3"
 								>
 									{tab.label}
 								</TabsTrigger>

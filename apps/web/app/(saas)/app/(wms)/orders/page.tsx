@@ -28,22 +28,22 @@ export default function OrdersPage() {
 
 			<Tabs defaultValue="inbound" className="space-y-6 flex flex-col">
 				<TabsList
-					variant="line"
-					className="justify-start gap-2 overflow-x-auto p-0"
+					variant="default"
+					className="h-auto w-full justify-start overflow-x-auto"
 				>
-					<TabsTrigger value="inbound" className="px-3">
+					<TabsTrigger value="inbound" className="h-10 px-3">
 						Inbound
 					</TabsTrigger>
-					<TabsTrigger value="outbound" className="px-3">
+					<TabsTrigger value="outbound" className="h-10 px-3">
 						Outbound
 					</TabsTrigger>
-					<TabsTrigger value="transfer" className="px-3">
+					<TabsTrigger value="transfer" className="h-10 px-3">
 						Transfer
 					</TabsTrigger>
-					<TabsTrigger value="manifest" className="px-3">
+					<TabsTrigger value="manifest" className="h-10 px-3">
 						Manifest
 					</TabsTrigger>
-					<TabsTrigger value="fulfill" className="px-3">
+					<TabsTrigger value="fulfill" className="h-10 px-3">
 						Fulfill
 					</TabsTrigger>
 				</TabsList>

@@ -1,3 +1,5 @@
+import "@app/globals.css";
+import "cropperjs/dist/cropper.css";
 import { headingFont, poppins } from "@app/fonts";
 import { TooltipProvider } from "@repo/ui/tooltip";
 import { cn } from "@repo/ui/utils";
