@@ -12,11 +12,15 @@ import {
 	SelectValue,
 } from "@repo/ui/select";
 import { Switch } from "@repo/ui/switch";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation } from "@tanstack/react-query";
 import { ArrowLeftIcon, InfoIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { buildVendorMetadata, deriveSupplierCode } from "../lib/vendor-utils";
+import { useVendorsContext } from "../lib/vendors-context";
 
 type VendorAddress = {
 	address1: string;
@@ -60,14 +64,6 @@ const COMMUNICATION_OPTIONS = [
 	{ value: "phone", label: "Phone" },
 	{ value: "both", label: "Email and Phone" },
 ];
-
-// TODO: wire up real API
-async function createVendor(
-	_input: CreateVendorInput,
-): Promise<{ id: string }> {
-	await new Promise((resolve) => setTimeout(resolve, 900));
-	return { id: `ven_${Date.now()}` };
-}
 
 function AddressFields({
 	prefix,
@@ -120,7 +116,13 @@ function AddressFields({
 				</Label>
 				<Select
 					value={address.country}
-					onValueChange={(value) => onChange({ country: value })}
+					onValueChange={(value) => {
+						if (!value) {
+							return;
+						}
+
+						onChange({ country: value });
+					}}
 				>
 					<SelectTrigger id={`${prefix}-country`} className="w-full">
 						<SelectValue />
@@ -140,7 +142,13 @@ function AddressFields({
 				</Label>
 				<Select
 					value={address.state}
-					onValueChange={(value) => onChange({ state: value })}
+					onValueChange={(value) => {
+						if (!value) {
+							return;
+						}
+
+						onChange({ state: value });
+					}}
 				>
 					<SelectTrigger id={`${prefix}-state`} className="w-full">
 						<SelectValue />
@@ -171,6 +179,10 @@ function AddressFields({
 
 export default function CreateVendorPage() {
 	const router = useRouter();
+	const { organizationId, invalidateVendors } = useVendorsContext();
+	const createSupplierMutation = useMutation(
+		orpc.masterData.suppliers.create.mutationOptions(),
+	);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [sameAsShipping, setSameAsShipping] = useState(true);
 
@@ -205,6 +217,11 @@ export default function CreateVendorPage() {
 
 	async function handleSubmit(event: React.FormEvent) {
 		event.preventDefault();
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
 		if (!name.trim() || !email.trim()) {
 			toast.error("Vendor name and email are required.");
 			return;
@@ -212,27 +229,51 @@ export default function CreateVendorPage() {
 
 		setIsSubmitting(true);
 		try {
-			await toast.promise(
-				createVendor({
-					name,
-					prefix,
-					email,
-					phone,
-					communicationPreference,
-					representativeName,
-					accountNumber,
-					notes,
-					brands,
-					shipping: shippingAddress,
-					billing: sameAsShipping ? null : billingAddress,
+			const payload: CreateVendorInput = {
+				name,
+				prefix,
+				email,
+				phone,
+				communicationPreference,
+				representativeName,
+				accountNumber,
+				notes,
+				brands,
+				shipping: shippingAddress,
+				billing: sameAsShipping ? null : billingAddress,
+			};
+
+			const createPromise = createSupplierMutation.mutateAsync({
+				organizationId,
+				name: payload.name.trim(),
+				code: deriveSupplierCode(payload.name, payload.prefix),
+				email: payload.email.trim(),
+				phone: payload.phone.trim() || undefined,
+				metadata: buildVendorMetadata({
+					accountNumber: payload.accountNumber,
+					representativeName: payload.representativeName,
+					communicationPreference: payload.communicationPreference,
+					notes: payload.notes,
+					brands: payload.brands,
+					address1: payload.shipping.address1,
+					address2: payload.shipping.address2,
+					city: payload.shipping.city,
+					state: payload.shipping.state,
+					zip: payload.shipping.zip,
+					country: payload.shipping.country,
 				}),
-				{
-					loading: "Creating vendor...",
-					success: "Vendor created.",
-					error: "Failed to create vendor.",
-				},
-			);
-			router.push("/app/vendors");
+			});
+
+			await toast.promise(createPromise, {
+				loading: "Creating vendor...",
+				success: "Vendor created.",
+				error: "Failed to create vendor.",
+			});
+
+			const result = await createPromise;
+
+			await invalidateVendors();
+			router.push(`/app/vendors/${result.supplier.id}`);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -343,7 +384,11 @@ export default function CreateVendorPage() {
 								</Label>
 								<Select
 									value={communicationPreference}
-									onValueChange={setCommunicationPreference}
+									onValueChange={(value) =>
+										setCommunicationPreference(
+											value ?? "none",
+										)
+									}
 								>
 									<SelectTrigger
 										id="vendor-communication"

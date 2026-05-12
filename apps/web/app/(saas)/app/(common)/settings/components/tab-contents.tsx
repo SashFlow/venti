@@ -58,6 +58,7 @@ type AccountTabContentProps = {
 	theme?: string;
 	mfaEmailEnabled: boolean;
 	mfaAppEnabled: boolean;
+	saving?: boolean;
 	onFullNameChange: (value: string) => void;
 	onEmailChange: (value: string) => void;
 	onThemeChange: (value: string) => void;
@@ -73,6 +74,7 @@ export function AccountTabContent({
 	theme,
 	mfaEmailEnabled,
 	mfaAppEnabled,
+	saving,
 	onFullNameChange,
 	onEmailChange,
 	onThemeChange,
@@ -190,7 +192,9 @@ export function AccountTabContent({
 					</div>
 
 					<div className="flex justify-end">
-						<Button onClick={onSave}>Save Changes</Button>
+						<Button onClick={onSave} disabled={saving}>
+							{saving ? "Saving..." : "Save Changes"}
+						</Button>
 					</div>
 				</CardContent>
 			</Card>

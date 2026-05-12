@@ -114,7 +114,11 @@ export default function UsersPage() {
 					(a, b) =>
 						new Date(a.expiresAt).getTime() -
 						new Date(b.expiresAt).getTime(),
-				) ?? []
+				)
+				.map((invitation) => ({
+					...invitation,
+					expiresAt: new Date(invitation.expiresAt).toISOString(),
+				})) ?? []
 		);
 	}, [selectedOrganization?.invitations]);
 

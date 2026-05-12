@@ -1,139 +1,259 @@
+"use client";
+
+import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
-import { BoxIcon, PlusIcon } from "lucide-react";
+import { Input } from "@repo/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
+import { useSession } from "@saas/auth/hooks/use-session";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { SearchIcon, WarehouseIcon } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
-const DATE_TICKS = [
-	"07/04",
-	"09/04",
-	"11/04",
-	"13/04",
-	"15/04",
-	"17/04",
-	"19/04",
-	"21/04",
-	"23/04",
-	"25/04",
-	"27/04",
-	"29/04",
-	"01/05",
-	"03/05",
-	"05/05",
-	"07/05",
-];
-
-function DashboardPanel({
-	title,
-	children,
-	rightSlot,
-	contentClassName,
-}: {
-	title: string;
-	children?: React.ReactNode;
-	rightSlot?: React.ReactNode;
-	contentClassName?: string;
-}) {
-	return (
-		<Card className="rounded-md">
-			<CardHeader className="flex flex-row items-center justify-between border-b px-4 py-3">
-				<CardTitle className="text-xs font-semibold uppercase tracking-wide text-foreground/90">
-					{title}
-				</CardTitle>
-				{rightSlot}
-			</CardHeader>
-			<CardContent className={contentClassName ?? "p-0"}>
-				{children}
-			</CardContent>
-		</Card>
-	);
-}
-
-function TimelinePlaceholder() {
-	return (
-		<>
-			<div className="flex h-full flex-col px-6 pb-4 pt-5">
-				<div className="h-px w-full bg-border" />
-				<div className="mt-auto grid grid-cols-8 gap-2 text-center text-[10px] font-medium text-muted-foreground sm:grid-cols-16">
-					{DATE_TICKS.map((tick) => (
-						<span key={tick}>{tick}</span>
-					))}
-				</div>
-			</div>
-		</>
-	);
-}
+const PAGE_SIZE = 20;
 
 export default function WarehousePage() {
+	const { organization } = useSession();
+	const queryClient = useQueryClient();
+	const [search, setSearch] = useState("");
+	const [statusView, setStatusView] = useState<"active" | "archived" | "all">(
+		"active",
+	);
+
+	const { data, isPending } = useQuery({
+		...orpc.warehouse.list.queryOptions({
+			input: {
+				organizationId: organization?.id ?? "",
+				query: search.trim() || undefined,
+				status: statusView,
+				limit: PAGE_SIZE,
+				offset: 0,
+			},
+		}),
+		enabled: Boolean(organization?.id),
+	});
+
+	const restoreWarehouseMutation = useMutation(
+		orpc.warehouse.restore.mutationOptions(),
+	);
+
+	const warehouses = data?.warehouses ?? [];
+
+	const handleRestoreWarehouse = async (warehouse: {
+		id: string;
+		name: string;
+	}) => {
+		if (!organization?.id) {
+			return;
+		}
+
+		if (
+			!window.confirm(
+				`Restore warehouse ${warehouse.name}? It will be visible in active lists again.`,
+			)
+		) {
+			return;
+		}
+
+		await restoreWarehouseMutation.mutateAsync({
+			organizationId: organization.id,
+			id: warehouse.id,
+		});
+
+		await queryClient.invalidateQueries({
+			queryKey: orpc.warehouse.list.key(),
+		});
+
+		toast.success("Warehouse restored.");
+	};
+
+	const totals = useMemo(() => {
+		return warehouses.reduce(
+			(acc, warehouse) => {
+				acc.zones += warehouse._count.zones;
+				acc.storageUnits += warehouse._count.storageUnits;
+				acc.inventoryItems += warehouse._count.inventoryItems;
+				return acc;
+			},
+			{ zones: 0, storageUnits: 0, inventoryItems: 0 },
+		);
+	}, [warehouses]);
+
 	return (
-		<div className="container mx-auto max-w-7xl space-y-3 py-3">
-			<div className="grid gap-3 lg:grid-cols-2">
-				<DashboardPanel title="Quick Actions" contentClassName="p-0">
-					<div className="min-h-[352px]">
-						<button
-							type="button"
-							className="flex w-full items-center gap-3 border-b px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80 transition-colors hover:bg-muted/40"
-						>
-							<BoxIcon className="size-4 text-foreground/70" />
-							Fulfill Orders
-						</button>
-						<button
-							type="button"
-							className="flex w-full items-center gap-3 border-b px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80 transition-colors hover:bg-muted/40"
-						>
-							<PlusIcon className="size-4 text-foreground/70" />
-							Adjust Inventory
-						</button>
-					</div>
-				</DashboardPanel>
-
-				<DashboardPanel title="Stock Replenishment" contentClassName="p-0">
-					<div className="min-h-[352px] px-4 pt-3">
-						<div className="grid grid-cols-3 border-b pb-2 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-							<p>Item</p>
-							<p>Source</p>
-							<p>Inventory</p>
-						</div>
-					</div>
-				</DashboardPanel>
+		<div className="container mx-auto max-w-7xl space-y-6 py-6">
+			<div className="flex items-center justify-between gap-3">
+				<div>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						Warehouse
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Live warehouse list connected to backend APIs.
+					</p>
+				</div>
+				<Button asChild>
+					<Link href="/app/warehouse/create">Create Warehouse</Link>
+				</Button>
 			</div>
 
-			<div className="grid gap-3 lg:grid-cols-2">
-				<DashboardPanel
-					title="Outbound"
-					rightSlot={
-						<div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-foreground/85">
-							<p>
-								Created: <span className="text-blue-500">0</span>
-							</p>
-							<p>
-								Fulfilled: <span className="text-amber-500">0</span>
-							</p>
+			<Card className="border">
+				<CardContent className="pt-4">
+					<div className="space-y-3">
+						<Tabs
+							value={statusView}
+							onValueChange={(value) => {
+								setStatusView(
+									value as "active" | "archived" | "all",
+								);
+							}}
+						>
+							<TabsList>
+								<TabsTrigger value="active">Active</TabsTrigger>
+								<TabsTrigger value="archived">
+									Archived
+								</TabsTrigger>
+								<TabsTrigger value="all">All</TabsTrigger>
+							</TabsList>
+						</Tabs>
+						<div className="relative max-w-md">
+							<SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								value={search}
+								onChange={(event) => {
+									setSearch(event.target.value);
+								}}
+								placeholder="Search by warehouse name or code"
+								className="pl-9"
+							/>
 						</div>
-					}
-					contentClassName="h-[318px] p-0"
-				>
-					<div className="h-full">
-						<TimelinePlaceholder />
 					</div>
-				</DashboardPanel>
+				</CardContent>
+			</Card>
 
-				<DashboardPanel
-					title="Inbound"
-					rightSlot={
-						<div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-foreground/85">
-							<p>
-								Created: <span className="text-blue-500">0</span>
-							</p>
-							<p>
-								Checked In: <span className="text-amber-500">0</span>
-							</p>
-						</div>
-					}
-					contentClassName="h-[318px] p-0"
-				>
-					<div className="h-full">
-						<TimelinePlaceholder />
-					</div>
-				</DashboardPanel>
+			<div className="grid gap-3 sm:grid-cols-3">
+				<Card className="border">
+					<CardHeader className="pb-2">
+						<CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+							Warehouses
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="text-2xl font-semibold">
+						{warehouses.length}
+					</CardContent>
+				</Card>
+				<Card className="border">
+					<CardHeader className="pb-2">
+						<CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+							Zones
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="text-2xl font-semibold">
+						{totals.zones}
+					</CardContent>
+				</Card>
+				<Card className="border">
+					<CardHeader className="pb-2">
+						<CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+							Storage Units
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="text-2xl font-semibold">
+						{totals.storageUnits}
+					</CardContent>
+				</Card>
 			</div>
+
+			<Card className="border">
+				<CardHeader>
+					<CardTitle>Warehouse Directory</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-2">
+					{isPending ? (
+						<p className="text-sm text-muted-foreground">
+							Loading warehouses...
+						</p>
+					) : warehouses.length === 0 ? (
+						<p className="text-sm text-muted-foreground">
+							{statusView === "archived"
+								? "No archived warehouses found."
+								: "No warehouses found for this organization."}
+						</p>
+					) : (
+						warehouses.map((warehouse) => {
+							const latestLayout =
+								warehouse.layoutVersions[0] ?? null;
+							const isArchived = warehouse.status === "ARCHIVED";
+
+							const rowContent = (
+								<>
+									<div className="flex items-center gap-3">
+										<div className="rounded-md border bg-muted/40 p-2">
+											<WarehouseIcon className="size-4" />
+										</div>
+										<div>
+											<p className="font-medium">
+												{warehouse.name}
+											</p>
+											<p className="text-xs text-muted-foreground">
+												{warehouse.code} •{" "}
+												{warehouse.status}
+											</p>
+										</div>
+									</div>
+									<div className="flex items-center gap-3 text-right text-xs text-muted-foreground">
+										<div>
+											<p>
+												Items:{" "}
+												{
+													warehouse._count
+														.inventoryItems
+												}
+											</p>
+											<p>
+												Layout: v
+												{latestLayout?.version ?? "-"}
+											</p>
+										</div>
+										{isArchived ? (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+													void handleRestoreWarehouse(
+														{
+															id: warehouse.id,
+															name: warehouse.name,
+														},
+													);
+												}}
+												disabled={
+													restoreWarehouseMutation.isPending
+												}
+											>
+												Restore
+											</Button>
+										) : null}
+									</div>
+								</>
+							);
+
+							return (
+								<Link
+									key={warehouse.id}
+									href={`/app/warehouse/${warehouse.id}`}
+									className="flex items-center justify-between rounded-md border p-4 transition-colors hover:bg-muted/40"
+								>
+									{rowContent}
+								</Link>
+							);
+						})
+					)}
+				</CardContent>
+			</Card>
 		</div>
 	);
 }

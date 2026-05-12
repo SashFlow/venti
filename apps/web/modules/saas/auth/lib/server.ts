@@ -1,33 +1,66 @@
 import "server-only";
 import { auth } from "@repo/auth";
-import { getInvitationById } from "@repo/database";
+import { db, getInvitationById } from "@repo/database";
 import { headers } from "next/headers";
 import { cache } from "react";
 
 export const getSession = cache(async () => {
+	const requestHeaders = await headers();
+
 	const session = await auth.api.getSession({
-		headers: await headers(),
+		headers: requestHeaders,
 		query: {
 			disableCookieCache: true,
 		},
 	});
 
-	return session;
-});
-
-export const getActiveOrganization = cache(async (slug: string) => {
-	try {
-		const activeOrganization = await auth.api.getFullOrganization({
-			query: {
-				organizationSlug: slug,
-			},
-			headers: await headers(),
-		});
-
-		return activeOrganization;
-	} catch {
+	if (!session) {
 		return null;
 	}
+
+	let organization = null;
+	const activeOrganizationId = session.session.activeOrganizationId;
+
+	if (activeOrganizationId) {
+		try {
+			const activeOrganization = await db.organization.findUnique({
+				where: {
+					id: activeOrganizationId,
+				},
+				select: {
+					id: true,
+					name: true,
+					slug: true,
+					logoUploadFile: {
+						select: {
+							bucket: true,
+							path: true,
+						},
+					},
+				},
+			});
+
+			organization = activeOrganization
+				? {
+						id: activeOrganization.id,
+						name: activeOrganization.name,
+						slug: activeOrganization.slug,
+						logoUploadFileUrl: activeOrganization.logoUploadFile
+							? `/image-proxy/${activeOrganization.logoUploadFile.bucket}/${activeOrganization.logoUploadFile.path}`
+							: null,
+						logoUploadFilePath:
+							activeOrganization.logoUploadFile?.path ?? null,
+					}
+				: null;
+		} catch {
+			organization = null;
+		}
+	}
+
+	return {
+		...session,
+		organization,
+	};
 });
 
 export const getOrganizationList = cache(async () => {
@@ -69,21 +102,6 @@ export const getUserPasskeys = cache(async () => {
 export const getInvitation = cache(async (id: string) => {
 	try {
 		return await getInvitationById(id);
-	} catch {
-		return null;
-	}
-});
-
-export const getActiveOrganizationById = cache(async (id: string) => {
-	try {
-		const activeOrganization = await auth.api.getFullOrganization({
-			query: {
-				organizationId: id,
-			},
-			headers: await headers(),
-		});
-
-		return activeOrganization;
 	} catch {
 		return null;
 	}

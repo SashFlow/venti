@@ -62,6 +62,7 @@ import {
 	RoleGroupTabContent,
 	WorkersTabContent,
 } from "./components/tab-contents";
+import { useWorkforceContext } from "./lib/workforce-context";
 
 type PermissionGroup = {
 	key: string;
@@ -953,13 +954,14 @@ function MemberRoleGroupAssignments({
 
 export default function WorkforcePage() {
 	const { organization } = useSession();
+	const { organizationId, invalidateAccessConfig } = useWorkforceContext();
 	const queryClient = useQueryClient();
 
 	const accessConfigQuery = useQuery(
 		orpc.workforce.listAccessConfig.queryOptions({
-			input: organization
+			input: organizationId
 				? {
-						organizationId: organization.id,
+						organizationId,
 					}
 				: skipToken,
 		}),
@@ -981,16 +983,6 @@ export default function WorkforcePage() {
 		orpc.workforce.assignMemberRoleGroup.mutationOptions(),
 	);
 
-	const invalidateAccessConfig = async (organizationId: string) => {
-		await queryClient.invalidateQueries({
-			queryKey: orpc.workforce.listAccessConfig.queryKey({
-				input: {
-					organizationId,
-				},
-			}),
-		});
-	};
-
 	const permissionGroups = accessConfigQuery.data?.permissionGroups ?? [];
 	const warehouses = accessConfigQuery.data?.warehouses ?? [];
 	const roleGroups = accessConfigQuery.data?.roleGroups ?? [];
@@ -1004,7 +996,7 @@ export default function WorkforcePage() {
 				organization.
 			</p>
 
-			{!organization ? (
+			{!organizationId ? (
 				<Card className="mt-6 rounded-2xl border">
 					<CardContent className="p-6 text-sm text-muted-foreground">
 						Loading active organization...
@@ -1039,7 +1031,7 @@ export default function WorkforcePage() {
 					<WorkersTabContent
 						organizationMembers={
 							<OrganizationMembersList
-								organizationId={organization.id}
+								organizationId={organizationId}
 							/>
 						}
 						memberRoleAssignments={
@@ -1051,14 +1043,14 @@ export default function WorkforcePage() {
 									try {
 										await assignRoleGroupMutation.mutateAsync(
 											{
-												organizationId: organization.id,
+												organizationId,
 												memberId,
 												roleGroupId,
 											},
 										);
 
 										await invalidateAccessConfig(
-											organization.id,
+											organizationId,
 										);
 										toast.success("Member access updated.");
 									} catch {
@@ -1073,16 +1065,14 @@ export default function WorkforcePage() {
 
 					<InviteTabContent
 						inviteMemberForm={
-							<InviteMemberForm
-								organizationId={organization.id}
-							/>
+							<InviteMemberForm organizationId={organizationId} />
 						}
 					/>
 
 					<InvitedTabContent
 						organizationInvitations={
 							<OrganizationInvitationsList
-								organizationId={organization.id}
+								organizationId={organizationId}
 							/>
 						}
 					/>
@@ -1103,19 +1093,19 @@ export default function WorkforcePage() {
 								}
 								onCreateRoleGroup={async (payload) => {
 									await createRoleGroupMutation.mutateAsync({
-										organizationId: organization.id,
+										organizationId,
 										name: payload.name,
 										permissions: payload.permissions,
 										warehouseIds: payload.warehouseIds,
 									});
 
 									await invalidateAccessConfig(
-										organization.id,
+										organizationId,
 									);
 								}}
 								onUpdateRoleGroup={async (payload) => {
 									await updateRoleGroupMutation.mutateAsync({
-										organizationId: organization.id,
+										organizationId,
 										roleGroupId: payload.roleGroupId,
 										name: payload.name,
 										description: payload.description,
@@ -1124,17 +1114,17 @@ export default function WorkforcePage() {
 									});
 
 									await invalidateAccessConfig(
-										organization.id,
+										organizationId,
 									);
 								}}
 								onDeleteRoleGroup={async (roleGroupId) => {
 									await deleteRoleGroupMutation.mutateAsync({
-										organizationId: organization.id,
+										organizationId,
 										roleGroupId,
 									});
 
 									await invalidateAccessConfig(
-										organization.id,
+										organizationId,
 									);
 								}}
 							/>

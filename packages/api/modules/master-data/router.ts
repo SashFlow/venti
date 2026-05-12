@@ -2,8 +2,11 @@ import { createSupplierProcedure } from "./procedures/create-supplier";
 import { createUomProcedure } from "./procedures/create-uom";
 import { deleteSupplierProcedure } from "./procedures/delete-supplier";
 import { deleteUomProcedure } from "./procedures/delete-uom";
+import { exportSuppliersProcedure } from "./procedures/export-suppliers";
 import { getSupplierProcedure } from "./procedures/get-supplier";
+import { getSupplierImportTemplateProcedure } from "./procedures/get-supplier-import-template";
 import { getUomProcedure } from "./procedures/get-uom";
+import { importSuppliersProcedure } from "./procedures/import-suppliers";
 import { listSuppliersProcedure } from "./procedures/list-suppliers";
 import { listUomsProcedure } from "./procedures/list-uoms";
 import { updateSupplierProcedure } from "./procedures/update-supplier";
@@ -16,6 +19,9 @@ export const masterDataRouter = {
 		create: createSupplierProcedure,
 		update: updateSupplierProcedure,
 		delete: deleteSupplierProcedure,
+		import: importSuppliersProcedure,
+		importTemplate: getSupplierImportTemplateProcedure,
+		export: exportSuppliersProcedure,
 	},
 	uoms: {
 		list: listUomsProcedure,

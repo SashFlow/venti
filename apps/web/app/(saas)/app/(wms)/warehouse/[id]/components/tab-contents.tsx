@@ -4,13 +4,6 @@ import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@repo/ui/select";
 import { Switch } from "@repo/ui/switch";
 import {
 	Table,
@@ -21,16 +14,21 @@ import {
 	TableRow,
 } from "@repo/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	EllipsisIcon,
 	InfoIcon,
+	PlusIcon,
 	SearchIcon,
 	ShareIcon,
 	Trash2Icon,
 	UploadIcon,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const FILTER_BUTTON_CLASS =
 	"h-8 rounded-md border border-input bg-muted/40 px-3 text-xs font-semibold text-foreground/80";
@@ -67,7 +65,50 @@ function Pager() {
 	);
 }
 
-function SettingsTab() {
+type WarehouseSettingsFormValues = {
+	name: string;
+	code: string;
+	description: string;
+	timezone: string;
+	addressLine1: string;
+	addressLine2: string;
+	city: string;
+	state: string;
+	zip: string;
+	country: string;
+	returnAddressLine1: string;
+	returnAddressLine2: string;
+	returnCity: string;
+	returnState: string;
+	returnZip: string;
+	returnCountry: string;
+};
+
+function SettingsTab({
+	values,
+	onChange,
+	onSave,
+	onDelete,
+	onRestore,
+	saving,
+	deleting,
+	restoring,
+	readOnly,
+	hasDifferentReturnAddress,
+	onDifferentReturnAddressChange,
+}: {
+	values: WarehouseSettingsFormValues;
+	onChange: (patch: Partial<WarehouseSettingsFormValues>) => void;
+	onSave: () => void;
+	onDelete: () => void;
+	onRestore?: () => void;
+	saving: boolean;
+	deleting: boolean;
+	restoring?: boolean;
+	readOnly?: boolean;
+	hasDifferentReturnAddress: boolean;
+	onDifferentReturnAddressChange: (checked: boolean) => void;
+}) {
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
@@ -78,127 +119,308 @@ function SettingsTab() {
 					<Button
 						variant="outline"
 						size="icon"
-						aria-label="Delete warehouse"
+						aria-label="Archive warehouse"
+						onClick={onDelete}
+						disabled={deleting || readOnly}
 					>
 						<Trash2Icon className="size-4" />
 					</Button>
-					<Button size="sm">Save</Button>
+					{readOnly ? (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={onRestore}
+							disabled={restoring}
+						>
+							{restoring ? "Restoring..." : "Restore"}
+						</Button>
+					) : null}
+					<Button
+						size="sm"
+						onClick={onSave}
+						disabled={saving || readOnly}
+					>
+						{saving ? "Saving..." : "Save"}
+					</Button>
 				</div>
 			</div>
 
-			<Card className="border">
-				<CardContent className="space-y-4 p-4">
-					<div className="grid gap-4 md:grid-cols-[1fr_110px]">
+			{readOnly ? (
+				<p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+					This warehouse is archived and currently read-only. Restore
+					it to edit settings.
+				</p>
+			) : null}
+
+			<div
+				className={
+					readOnly ? "pointer-events-none opacity-70" : undefined
+				}
+			>
+				<Card className="border">
+					<CardContent className="space-y-4 p-4">
+						<div className="grid gap-4 md:grid-cols-[1fr_110px]">
+							<div className="space-y-1.5">
+								<Label htmlFor="warehouse-name">
+									Name{" "}
+									<span className="text-destructive">*</span>
+								</Label>
+								<Input
+									id="warehouse-name"
+									value={values.name}
+									onChange={(event) => {
+										onChange({ name: event.target.value });
+									}}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<div className="flex items-center gap-1">
+									<Label htmlFor="warehouse-prefix">
+										Prefix{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<InfoIcon className="size-3.5 text-muted-foreground" />
+								</div>
+								<Input
+									id="warehouse-prefix"
+									value={values.code}
+									onChange={(event) => {
+										onChange({ code: event.target.value });
+									}}
+								/>
+							</div>
+						</div>
 						<div className="space-y-1.5">
-							<Label htmlFor="warehouse-name">
-								Name <span className="text-destructive">*</span>
+							<Label htmlFor="warehouse-description">
+								Description
 							</Label>
 							<Input
-								id="warehouse-name"
-								defaultValue="Bengaluru"
+								id="warehouse-description"
+								value={values.description}
+								onChange={(event) => {
+									onChange({
+										description: event.target.value,
+									});
+								}}
 							/>
 						</div>
 						<div className="space-y-1.5">
-							<div className="flex items-center gap-1">
-								<Label htmlFor="warehouse-prefix">
-									Prefix{" "}
-									<span className="text-destructive">*</span>
-								</Label>
-								<InfoIcon className="size-3.5 text-muted-foreground" />
-							</div>
-							<Input id="warehouse-prefix" defaultValue="BEN" />
+							<Label htmlFor="warehouse-timezone">Timezone</Label>
+							<Input
+								id="warehouse-timezone"
+								value={values.timezone}
+								onChange={(event) => {
+									onChange({ timezone: event.target.value });
+								}}
+								placeholder="UTC"
+							/>
 						</div>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="warehouse-phone">
-							Phone <span className="text-destructive">*</span>
-						</Label>
-						<Input
-							id="warehouse-phone"
-							defaultValue="+91 9958684675"
-						/>
-					</div>
-				</CardContent>
-			</Card>
+					</CardContent>
+				</Card>
 
-			<Card className="border">
-				<CardHeader className="border-b px-4 py-3">
-					<CardTitle className="text-xs font-semibold uppercase tracking-wide">
-						Address
-					</CardTitle>
-				</CardHeader>
-				<CardContent className="grid gap-4 p-4 md:grid-cols-3">
-					<div className="space-y-1.5">
-						<Label htmlFor="warehouse-address-1">
-							Address <span className="text-destructive">*</span>
-						</Label>
-						<Input id="warehouse-address-1" defaultValue="loko" />
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="warehouse-address-2">
-							Address Line 2
-						</Label>
-						<Input id="warehouse-address-2" defaultValue="bob" />
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="warehouse-city">
-							City <span className="text-destructive">*</span>
-						</Label>
-						<Input id="warehouse-city" defaultValue="Bengaluru" />
-					</div>
+				<Card className="border">
+					<CardHeader className="border-b px-4 py-3">
+						<CardTitle className="text-xs font-semibold uppercase tracking-wide">
+							Address
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="grid gap-4 p-4 md:grid-cols-3">
+						<div className="space-y-1.5">
+							<Label htmlFor="warehouse-address-1">
+								Address{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="warehouse-address-1"
+								value={values.addressLine1}
+								onChange={(event) => {
+									onChange({
+										addressLine1: event.target.value,
+									});
+								}}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="warehouse-address-2">
+								Address Line 2
+							</Label>
+							<Input
+								id="warehouse-address-2"
+								value={values.addressLine2}
+								onChange={(event) => {
+									onChange({
+										addressLine2: event.target.value,
+									});
+								}}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="warehouse-city">
+								City <span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="warehouse-city"
+								value={values.city}
+								onChange={(event) => {
+									onChange({ city: event.target.value });
+								}}
+							/>
+						</div>
 
-					<div className="space-y-1.5">
-						<Label htmlFor="warehouse-country">
-							Country <span className="text-destructive">*</span>
-						</Label>
-						<Select defaultValue="india">
-							<SelectTrigger
+						<div className="space-y-1.5">
+							<Label htmlFor="warehouse-country">
+								Country{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
 								id="warehouse-country"
-								className="w-full"
-							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="india">India</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="warehouse-state">
-							State <span className="text-destructive">*</span>
-						</Label>
-						<Select defaultValue="karnataka">
-							<SelectTrigger
+								value={values.country}
+								onChange={(event) => {
+									onChange({ country: event.target.value });
+								}}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="warehouse-state">
+								State{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
 								id="warehouse-state"
-								className="w-full"
-							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="karnataka">
-									Karnataka
-								</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="warehouse-zip">
-							Zip <span className="text-destructive">*</span>
-						</Label>
-						<Input id="warehouse-zip" defaultValue="560057" />
-					</div>
-				</CardContent>
-			</Card>
+								value={values.state}
+								onChange={(event) => {
+									onChange({ state: event.target.value });
+								}}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="warehouse-zip">
+								Zip <span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="warehouse-zip"
+								value={values.zip}
+								onChange={(event) => {
+									onChange({ zip: event.target.value });
+								}}
+							/>
+						</div>
+					</CardContent>
+				</Card>
 
-			<Card className="border">
-				<CardContent className="flex items-center justify-between px-4 py-3">
-					<div className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide">
-						Different Return Address
-						<InfoIcon className="size-3.5 text-muted-foreground" />
-					</div>
-					<Switch defaultChecked={false} />
-				</CardContent>
-			</Card>
+				<Card className="border">
+					<CardContent className="flex items-center justify-between px-4 py-3">
+						<div className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide">
+							Different Return Address
+							<InfoIcon className="size-3.5 text-muted-foreground" />
+						</div>
+						<Switch
+							checked={hasDifferentReturnAddress}
+							onCheckedChange={onDifferentReturnAddressChange}
+						/>
+					</CardContent>
+				</Card>
+
+				{hasDifferentReturnAddress ? (
+					<Card className="border">
+						<CardHeader className="border-b px-4 py-3">
+							<CardTitle className="text-xs font-semibold uppercase tracking-wide">
+								Return Address
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="grid gap-4 p-4 md:grid-cols-3">
+							<div className="space-y-1.5">
+								<Label htmlFor="warehouse-return-address-1">
+									Address
+								</Label>
+								<Input
+									id="warehouse-return-address-1"
+									value={values.returnAddressLine1}
+									onChange={(event) => {
+										onChange({
+											returnAddressLine1:
+												event.target.value,
+										});
+									}}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="warehouse-return-address-2">
+									Address Line 2
+								</Label>
+								<Input
+									id="warehouse-return-address-2"
+									value={values.returnAddressLine2}
+									onChange={(event) => {
+										onChange({
+											returnAddressLine2:
+												event.target.value,
+										});
+									}}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="warehouse-return-city">
+									City
+								</Label>
+								<Input
+									id="warehouse-return-city"
+									value={values.returnCity}
+									onChange={(event) => {
+										onChange({
+											returnCity: event.target.value,
+										});
+									}}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="warehouse-return-country">
+									Country
+								</Label>
+								<Input
+									id="warehouse-return-country"
+									value={values.returnCountry}
+									onChange={(event) => {
+										onChange({
+											returnCountry: event.target.value,
+										});
+									}}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="warehouse-return-state">
+									State
+								</Label>
+								<Input
+									id="warehouse-return-state"
+									value={values.returnState}
+									onChange={(event) => {
+										onChange({
+											returnState: event.target.value,
+										});
+									}}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="warehouse-return-zip">
+									Zip
+								</Label>
+								<Input
+									id="warehouse-return-zip"
+									value={values.returnZip}
+									onChange={(event) => {
+										onChange({
+											returnZip: event.target.value,
+										});
+									}}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				) : null}
+			</div>
 		</div>
 	);
 }
@@ -623,18 +845,415 @@ function CycleCountTab() {
 	);
 }
 
-function LayoutTab() {
+type LayoutNode = {
+	id: string;
+	label: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	color: string;
+};
+
+function LayoutTab({
+	warehouseId,
+	organizationId,
+	warehouseName,
+}: {
+	warehouseId: string;
+	organizationId: string;
+	warehouseName: string;
+}) {
+	const [viewMode, setViewMode] = useState<"2d" | "iso" | "3d">("2d");
+	const [layoutName, setLayoutName] = useState("Main Layout");
+	const [notes, setNotes] = useState("");
+	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+	const [nodes, setNodes] = useState<LayoutNode[]>([
+		{
+			id: "RECV-A",
+			label: "Receiving A",
+			x: 40,
+			y: 36,
+			width: 160,
+			height: 100,
+			color: "#60a5fa",
+		},
+		{
+			id: "STOR-B",
+			label: "Storage B",
+			x: 250,
+			y: 70,
+			width: 210,
+			height: 140,
+			color: "#34d399",
+		},
+	]);
+	const [lastSavedLayoutId, setLastSavedLayoutId] = useState<string | null>(
+		null,
+	);
+
+	const { data: latestLayoutData, isPending: latestLayoutLoading } = useQuery(
+		{
+			...orpc.warehouse.layout.getLatest.queryOptions({
+				input: {
+					organizationId,
+					warehouseId,
+				},
+			}),
+		},
+	);
+
+	useEffect(() => {
+		const scene = latestLayoutData?.layout?.scene;
+		if (!scene) {
+			return;
+		}
+
+		if (scene.viewMode) {
+			setViewMode(scene.viewMode);
+		}
+
+		if (Array.isArray(scene.nodes) && scene.nodes.length > 0) {
+			setNodes(scene.nodes);
+			setSelectedNodeId(scene.nodes[0]?.id ?? null);
+		}
+
+		if (latestLayoutData.layout?.name) {
+			setLayoutName(latestLayoutData.layout.name);
+		}
+
+		setNotes(latestLayoutData.layout?.notes ?? "");
+		setLastSavedLayoutId(latestLayoutData.layout?.id ?? null);
+	}, [latestLayoutData]);
+
+	const saveDraftMutation = useMutation(
+		orpc.warehouse.layout.saveDraft.mutationOptions(),
+	);
+	const publishMutation = useMutation(
+		orpc.warehouse.layout.publish.mutationOptions(),
+	);
+
+	const selectedNode =
+		nodes.find((node) => node.id === selectedNodeId) ?? nodes[0] ?? null;
+
+	const canvasClassName =
+		viewMode === "3d"
+			? "perspective-[900px]"
+			: viewMode === "iso"
+				? "[transform:skewY(-6deg)]"
+				: "";
+
+	const addNode = () => {
+		const nextIndex = nodes.length + 1;
+		const newNode: LayoutNode = {
+			id: `ZONE-${nextIndex}`,
+			label: `Zone ${nextIndex}`,
+			x: 60 + nextIndex * 20,
+			y: 60 + nextIndex * 14,
+			width: 150,
+			height: 90,
+			color: "#f59e0b",
+		};
+
+		setNodes((prev) => [...prev, newNode]);
+		setSelectedNodeId(newNode.id);
+	};
+
+	const updateSelectedNode = (
+		patch: Partial<
+			Pick<LayoutNode, "label" | "x" | "y" | "width" | "height" | "color">
+		>,
+	) => {
+		if (!selectedNode) {
+			return;
+		}
+
+		setNodes((prev) =>
+			prev.map((node) =>
+				node.id === selectedNode.id
+					? {
+							...node,
+							...patch,
+						}
+					: node,
+			),
+		);
+	};
+
+	const saveDraft = async () => {
+		if (nodes.length === 0) {
+			toast.error("Add at least one zone before saving.");
+			return;
+		}
+
+		const result = await saveDraftMutation.mutateAsync({
+			organizationId,
+			warehouseId,
+			name: layoutName.trim() || undefined,
+			notes: notes.trim() || undefined,
+			scene: {
+				viewMode,
+				nodes,
+			},
+		});
+
+		setLastSavedLayoutId(result.layout.id);
+		toast.success(`Saved layout draft v${result.layout.version}.`);
+	};
+
+	const publishLayout = async () => {
+		if (!lastSavedLayoutId) {
+			toast.error("Save a draft before publishing.");
+			return;
+		}
+
+		await publishMutation.mutateAsync({
+			organizationId,
+			warehouseId,
+			layoutVersionId: lastSavedLayoutId,
+		});
+
+		toast.success("Layout version published.");
+	};
+
 	return (
 		<Card className="border">
-			<CardHeader className="border-b">
-				<CardTitle className="text-base">Warehouse Layout</CardTitle>
+			<CardHeader className="space-y-3 border-b">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<div>
+						<CardTitle className="text-base">
+							Warehouse Layout
+						</CardTitle>
+						<p className="text-xs text-muted-foreground">
+							{warehouseName} • 2D / ISO / 3D scene editor
+						</p>
+					</div>
+					<div className="flex items-center gap-2">
+						<Button
+							variant={viewMode === "2d" ? "default" : "outline"}
+							size="sm"
+							onClick={() => {
+								setViewMode("2d");
+							}}
+						>
+							2D
+						</Button>
+						<Button
+							variant={viewMode === "iso" ? "default" : "outline"}
+							size="sm"
+							onClick={() => {
+								setViewMode("iso");
+							}}
+						>
+							ISO
+						</Button>
+						<Button
+							variant={viewMode === "3d" ? "default" : "outline"}
+							size="sm"
+							onClick={() => {
+								setViewMode("3d");
+							}}
+						>
+							3D
+						</Button>
+					</div>
+				</div>
+
+				<div className="grid gap-3 md:grid-cols-2">
+					<div className="space-y-1.5">
+						<Label htmlFor="layout-name">Layout Name</Label>
+						<Input
+							id="layout-name"
+							value={layoutName}
+							onChange={(event) => {
+								setLayoutName(event.target.value);
+							}}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="layout-notes">Notes</Label>
+						<Input
+							id="layout-notes"
+							value={notes}
+							onChange={(event) => {
+								setNotes(event.target.value);
+							}}
+							placeholder="Draft notes"
+						/>
+					</div>
+				</div>
 			</CardHeader>
-			<CardContent className="py-10">
-				<div className="mx-auto max-w-3xl rounded-lg border border-dashed p-10 text-center">
-					<p className="text-sm text-muted-foreground">
-						Layout canvas placeholder. Add zone and bin map widgets
-						here.
-					</p>
+			<CardContent className="grid gap-4 py-6 lg:grid-cols-[1fr_280px]">
+				<div className="space-y-3">
+					<div className="flex items-center justify-between">
+						<p className="text-xs font-medium text-muted-foreground">
+							Scene Canvas ({viewMode.toUpperCase()})
+						</p>
+						<Button variant="outline" size="sm" onClick={addNode}>
+							<PlusIcon className="mr-1 size-4" />
+							Add Zone
+						</Button>
+					</div>
+
+					<div
+						className={`relative h-[440px] overflow-hidden rounded-md border bg-[linear-gradient(to_right,rgba(148,163,184,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.15)_1px,transparent_1px)] bg-size-[24px_24px] ${canvasClassName}`}
+					>
+						{nodes.map((node) => (
+							<button
+								key={node.id}
+								type="button"
+								onClick={() => {
+									setSelectedNodeId(node.id);
+								}}
+								className={`absolute rounded-md border text-left shadow-sm transition-all ${
+									selectedNodeId === node.id
+										? "border-foreground ring-2 ring-foreground/40"
+										: "border-border"
+								}`}
+								style={{
+									left: node.x,
+									top: node.y,
+									width: node.width,
+									height: node.height,
+									backgroundColor: node.color,
+									transform:
+										viewMode === "3d"
+											? "rotateX(16deg) translateZ(10px)"
+											: undefined,
+								}}
+							>
+								<span className="block px-2 py-1 text-xs font-semibold text-slate-900/90">
+									{node.label}
+								</span>
+							</button>
+						))}
+					</div>
+
+					<div className="flex items-center justify-end gap-2">
+						<Button
+							variant="outline"
+							onClick={() => {
+								void publishLayout();
+							}}
+							disabled={publishMutation.isPending}
+						>
+							{publishMutation.isPending
+								? "Publishing..."
+								: "Publish"}
+						</Button>
+						<Button
+							onClick={() => {
+								void saveDraft();
+							}}
+							disabled={saveDraftMutation.isPending}
+						>
+							{saveDraftMutation.isPending
+								? "Saving..."
+								: "Save Draft"}
+						</Button>
+					</div>
+				</div>
+
+				<div className="space-y-3 rounded-md border p-3">
+					<div>
+						<p className="text-sm font-semibold">Node Properties</p>
+						<p className="text-xs text-muted-foreground">
+							{latestLayoutLoading
+								? "Loading latest layout..."
+								: `Latest version: ${latestLayoutData?.layout?.version ?? "-"}`}
+						</p>
+					</div>
+
+					{selectedNode ? (
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<Label htmlFor="node-label">Label</Label>
+								<Input
+									id="node-label"
+									value={selectedNode.label}
+									onChange={(event) => {
+										updateSelectedNode({
+											label: event.target.value,
+										});
+									}}
+								/>
+							</div>
+							<div className="grid grid-cols-2 gap-2">
+								<div className="space-y-1">
+									<Label htmlFor="node-x">X</Label>
+									<Input
+										id="node-x"
+										type="number"
+										value={selectedNode.x}
+										onChange={(event) => {
+											updateSelectedNode({
+												x: Number(event.target.value),
+											});
+										}}
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label htmlFor="node-y">Y</Label>
+									<Input
+										id="node-y"
+										type="number"
+										value={selectedNode.y}
+										onChange={(event) => {
+											updateSelectedNode({
+												y: Number(event.target.value),
+											});
+										}}
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label htmlFor="node-width">Width</Label>
+									<Input
+										id="node-width"
+										type="number"
+										value={selectedNode.width}
+										onChange={(event) => {
+											updateSelectedNode({
+												width: Number(
+													event.target.value,
+												),
+											});
+										}}
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label htmlFor="node-height">Height</Label>
+									<Input
+										id="node-height"
+										type="number"
+										value={selectedNode.height}
+										onChange={(event) => {
+											updateSelectedNode({
+												height: Number(
+													event.target.value,
+												),
+											});
+										}}
+									/>
+								</div>
+							</div>
+							<div className="space-y-1">
+								<Label htmlFor="node-color">Color</Label>
+								<Input
+									id="node-color"
+									value={selectedNode.color}
+									onChange={(event) => {
+										updateSelectedNode({
+											color: event.target.value,
+										});
+									}}
+								/>
+							</div>
+						</div>
+					) : (
+						<p className="text-xs text-muted-foreground">
+							Select a zone node to edit properties.
+						</p>
+					)}
 				</div>
 			</CardContent>
 		</Card>
@@ -946,18 +1565,66 @@ function OrdersTab() {
 	);
 }
 
-export function LayoutTabContent() {
+export function LayoutTabContent({
+	warehouseId,
+	organizationId,
+	warehouseName,
+}: {
+	warehouseId: string;
+	organizationId: string;
+	warehouseName: string;
+}) {
 	return (
 		<TabsContent value="layout" className="space-y-4">
-			<LayoutTab />
+			<LayoutTab
+				warehouseId={warehouseId}
+				organizationId={organizationId}
+				warehouseName={warehouseName}
+			/>
 		</TabsContent>
 	);
 }
 
-export function SettingsTabContent() {
+export function SettingsTabContent({
+	values,
+	onChange,
+	onSave,
+	onDelete,
+	onRestore,
+	saving,
+	deleting,
+	restoring,
+	readOnly,
+	hasDifferentReturnAddress,
+	onDifferentReturnAddressChange,
+}: {
+	values: WarehouseSettingsFormValues;
+	onChange: (patch: Partial<WarehouseSettingsFormValues>) => void;
+	onSave: () => void;
+	onDelete: () => void;
+	onRestore?: () => void;
+	saving: boolean;
+	deleting: boolean;
+	restoring?: boolean;
+	readOnly?: boolean;
+	hasDifferentReturnAddress: boolean;
+	onDifferentReturnAddressChange: (checked: boolean) => void;
+}) {
 	return (
 		<TabsContent value="settings" className="space-y-4">
-			<SettingsTab />
+			<SettingsTab
+				values={values}
+				onChange={onChange}
+				onSave={onSave}
+				onDelete={onDelete}
+				onRestore={onRestore}
+				saving={saving}
+				deleting={deleting}
+				restoring={restoring}
+				readOnly={readOnly}
+				hasDifferentReturnAddress={hasDifferentReturnAddress}
+				onDifferentReturnAddressChange={onDifferentReturnAddressChange}
+			/>
 		</TabsContent>
 	);
 }

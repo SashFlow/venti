@@ -28,10 +28,9 @@ export const addMessageToChat = protectedProcedure
 		// GDPR AI Opt-out Check
 		const fullUser = await getUserById(user.id);
 		if (fullUser?.aiOptOut) {
-			throw new ORPCError(
-				"FORBIDDEN",
-				"AI processing is disabled for this account.",
-			);
+			throw new ORPCError("FORBIDDEN", {
+				message: "AI processing is disabled for this account.",
+			});
 		}
 
 		const chat = await getAiChatById(chatId);

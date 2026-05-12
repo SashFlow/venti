@@ -5,11 +5,14 @@ import { Card, CardContent } from "@repo/ui/card";
 import { Checkbox } from "@repo/ui/checkbox";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation } from "@tanstack/react-query";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useCustomersContext } from "../lib/customers-context";
 
 type CreateCustomerInput = {
 	name: string;
@@ -19,17 +22,12 @@ type CreateCustomerInput = {
 	isWholesaler: boolean;
 };
 
-// TODO: wire up real API
-async function createCustomer(
-	_input: CreateCustomerInput,
-): Promise<{ id: string }> {
-	// TODO: orpc.customers.create.mutate(input)
-	await new Promise((r) => setTimeout(r, 800));
-	return { id: `cust_${Date.now()}` };
-}
-
 export default function CreateCustomerPage() {
 	const router = useRouter();
+	const { organizationId, invalidateCustomers } = useCustomersContext();
+	const createCustomerMutation = useMutation(
+		orpc.customers.create.mutationOptions(),
+	);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const [name, setName] = useState("");
@@ -40,20 +38,42 @@ export default function CreateCustomerPage() {
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
 		if (!name.trim()) {
 			return;
 		}
 		setIsSubmitting(true);
 		try {
-			await toast.promise(
-				createCustomer({ name, email, phone, notes, isWholesaler }),
-				{
-					loading: "Creating customer…",
-					success: "Customer created.",
-					error: "Failed to create customer.",
-				},
-			);
-			router.push("/app/customers");
+			const payload: CreateCustomerInput = {
+				name,
+				email,
+				phone,
+				notes,
+				isWholesaler,
+			};
+
+			const createPromise = createCustomerMutation.mutateAsync({
+				organizationId,
+				name: payload.name.trim(),
+				email: payload.email.trim() || undefined,
+				phone: payload.phone.trim() || undefined,
+				notes: payload.notes.trim() || undefined,
+				isWholesaler: payload.isWholesaler,
+			});
+
+			await toast.promise(createPromise, {
+				loading: "Creating customer…",
+				success: "Customer created.",
+				error: "Failed to create customer.",
+			});
+
+			const result = await createPromise;
+			await invalidateCustomers();
+			router.push(`/app/customers/${result.customer.id}`);
 		} finally {
 			setIsSubmitting(false);
 		}

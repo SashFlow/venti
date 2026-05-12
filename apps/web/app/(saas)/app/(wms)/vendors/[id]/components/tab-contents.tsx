@@ -11,22 +11,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@repo/ui/table";
 import { TabsContent } from "@repo/ui/tabs";
 import {
 	DownloadIcon,
-	EllipsisIcon,
 	FileSpreadsheetIcon,
 	InfoIcon,
-	PlusIcon,
-	SearchIcon,
+	Link2Icon,
 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -52,29 +42,6 @@ export type VendorProfile = {
 	shipping: VendorAddress;
 };
 
-export type VendorItemRow = {
-	id: string;
-	item: string;
-	sku: string;
-	vendorSku: string;
-	step: string;
-	price: string;
-	cost: string;
-	margin: string;
-	qty: number;
-};
-
-export type PurchaseOrderRow = {
-	id: string;
-	status: string;
-	warehouse: string;
-	tags: string;
-	createdAt: string;
-	financialStatus: string;
-	deliveryDate: string;
-	progress: string;
-};
-
 const COMMUNICATION_OPTIONS = [
 	{ value: "none", label: "None" },
 	{ value: "email", label: "Email" },
@@ -93,26 +60,6 @@ const STATE_OPTIONS = [
 	{ value: "ca", label: "California" },
 	{ value: "ny", label: "New York" },
 	{ value: "tx", label: "Texas" },
-];
-
-const ITEM_OPTIONS = [
-	{ value: "item-001", label: "Select an Item" },
-	{ value: "item-002", label: "Organic Flour" },
-	{ value: "item-003", label: "Brown Rice" },
-	{ value: "item-004", label: "Coffee Beans" },
-];
-
-const PAYMENT_STATUS_OPTIONS = [
-	{ value: "all", label: "Payment Status" },
-	{ value: "paid", label: "Paid" },
-	{ value: "pending", label: "Pending" },
-	{ value: "overdue", label: "Overdue" },
-];
-
-const WAREHOUSE_OPTIONS = [
-	{ value: "all", label: "All Warehouses" },
-	{ value: "east", label: "East Warehouse" },
-	{ value: "west", label: "West Warehouse" },
 ];
 
 export function SettingsTabContent({
@@ -450,35 +397,7 @@ export function SettingsTabContent({
 	);
 }
 
-export function ItemsTabContent({
-	selectedItem,
-	setSelectedItem,
-	vendorSku,
-	setVendorSku,
-	unitCost,
-	setUnitCost,
-	step,
-	setStep,
-	itemNote,
-	setItemNote,
-	itemSearch,
-	setItemSearch,
-	filteredItems,
-}: {
-	selectedItem: string;
-	setSelectedItem: Dispatch<SetStateAction<string>>;
-	vendorSku: string;
-	setVendorSku: Dispatch<SetStateAction<string>>;
-	unitCost: string;
-	setUnitCost: Dispatch<SetStateAction<string>>;
-	step: string;
-	setStep: Dispatch<SetStateAction<string>>;
-	itemNote: string;
-	setItemNote: Dispatch<SetStateAction<string>>;
-	itemSearch: string;
-	setItemSearch: Dispatch<SetStateAction<string>>;
-	filteredItems: VendorItemRow[];
-}) {
+export function ItemsTabContent({ vendorName }: { vendorName: string }) {
 	return (
 		<TabsContent value="items" className="space-y-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -498,101 +417,51 @@ export function ItemsTabContent({
 					>
 						<FileSpreadsheetIcon className="size-4" />
 					</Button>
-					<Button>Create Order</Button>
+					<Button variant="outline">Request Item Feed</Button>
 				</div>
 			</div>
 
 			<Card className="rounded-2xl border">
 				<CardHeader className="flex flex-row items-center justify-between pb-3">
 					<CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-						Add Item
+						Coverage
 					</CardTitle>
-					<Button size="sm">
-						<PlusIcon className="size-4" />
-						Add Item
+					<Button size="sm" variant="outline">
+						<Link2Icon className="size-4" />
+						Link Catalog Feed
 					</Button>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<div className="space-y-1.5">
-						<Label htmlFor="item-select">Item *</Label>
-						<Select
-							value={selectedItem}
-							onValueChange={(value) =>
-								setSelectedItem(value ?? "item-001")
-							}
-						>
-							<SelectTrigger id="item-select" className="w-full">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{ITEM_OPTIONS.map((option) => (
-									<SelectItem
-										key={option.value}
-										value={option.value}
-									>
-										{option.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-
+					<p className="text-sm text-muted-foreground">
+						Item associations for {vendorName.toLowerCase()} are not
+						available through the current supplier API yet. Use this
+						tab to review readiness and request catalog linkage.
+					</p>
 					<div className="grid gap-4 md:grid-cols-3">
-						<div className="space-y-1.5">
-							<Label htmlFor="vendor-sku">Vendor SKU</Label>
-							<Input
-								id="vendor-sku"
-								value={vendorSku}
-								onChange={(event) =>
-									setVendorSku(event.target.value)
-								}
-							/>
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">
+								Catalog linkage
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Awaiting supplier-to-SKU relation procedures.
+							</p>
 						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="unit-cost">Unit Cost *</Label>
-							<div className="relative">
-								<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-									$
-								</span>
-								<Input
-									id="unit-cost"
-									className="pl-7"
-									value={unitCost}
-									onChange={(event) =>
-										setUnitCost(event.target.value)
-									}
-								/>
-							</div>
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">Price history</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Margin and cost trend data will appear once item
+								feeds are available.
+							</p>
 						</div>
-						<div className="space-y-1.5">
-							<Label
-								htmlFor="item-step"
-								className="flex items-center gap-1"
-							>
-								Step
-								<InfoIcon className="size-3.5 text-muted-foreground" />
-							</Label>
-							<Input
-								id="item-step"
-								value={step}
-								onChange={(event) =>
-									setStep(event.target.value)
-								}
-							/>
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">
+								Bulk onboarding
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Use the template actions to prepare a future
+								import batch.
+							</p>
 						</div>
-					</div>
-
-					<div className="space-y-1.5">
-						<Label htmlFor="item-note">Item Note</Label>
-						<textarea
-							id="item-note"
-							className="flex min-h-[94px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
-							placeholder="Notes about the item that this vendor carriers"
-							value={itemNote}
-							onChange={(event) =>
-								setItemNote(event.target.value)
-							}
-						/>
 					</div>
 				</CardContent>
 			</Card>
@@ -600,115 +469,18 @@ export function ItemsTabContent({
 			<Card className="rounded-2xl border">
 				<CardHeader className="pb-3">
 					<CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-						Margin History
+						Next Step
 					</CardTitle>
 				</CardHeader>
-				<CardContent>
-					<div className="h-40 rounded-md border border-dashed bg-muted/20" />
-				</CardContent>
-			</Card>
-
-			<Card className="rounded-2xl border">
-				<CardContent className="p-0">
-					<div className="flex flex-col gap-3 border-b px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-						<div className="relative w-full lg:max-w-md">
-							<SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								className="pl-9"
-								placeholder="Search"
-								value={itemSearch}
-								onChange={(event) =>
-									setItemSearch(event.target.value)
-								}
-							/>
-						</div>
-						<div className="flex items-center gap-2">
-							<Select defaultValue="all">
-								<SelectTrigger className="w-[170px]">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{WAREHOUSE_OPTIONS.map((option) => (
-										<SelectItem
-											key={option.value}
-											value={option.value}
-										>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<div className="inline-flex items-center gap-1 rounded-md border px-2 py-1">
-								<Button
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2"
-								>
-									&lt;
-								</Button>
-								<span className="text-sm font-medium">1</span>
-								<Button
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2"
-								>
-									&gt;
-								</Button>
-							</div>
-							<Button
-								variant="outline"
-								size="icon"
-								aria-label="More item options"
-							>
-								<EllipsisIcon className="size-4" />
-							</Button>
-						</div>
+				<CardContent className="space-y-3">
+					<p className="text-sm text-muted-foreground">
+						When the supplier item contract is exposed, this tab
+						should support item linkage, unit-cost updates,
+						import/export, and purchase coverage analytics.
+					</p>
+					<div className="rounded-md border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+						No vendor items are available yet.
 					</div>
-
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Item</TableHead>
-								<TableHead>SKU</TableHead>
-								<TableHead>Vendor SKU</TableHead>
-								<TableHead>Step</TableHead>
-								<TableHead>Price</TableHead>
-								<TableHead>Cost</TableHead>
-								<TableHead>Margin</TableHead>
-								<TableHead className="text-right">
-									Qty
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{filteredItems.map((row) => (
-								<TableRow key={row.id}>
-									<TableCell className="font-medium">
-										{row.item}
-									</TableCell>
-									<TableCell>{row.sku}</TableCell>
-									<TableCell>{row.vendorSku}</TableCell>
-									<TableCell>{row.step}</TableCell>
-									<TableCell>{row.price}</TableCell>
-									<TableCell>{row.cost}</TableCell>
-									<TableCell>{row.margin}</TableCell>
-									<TableCell className="text-right">
-										{row.qty}
-									</TableCell>
-								</TableRow>
-							))}
-							{filteredItems.length === 0 && (
-								<TableRow>
-									<TableCell
-										colSpan={8}
-										className="h-16 text-muted-foreground"
-									>
-										No items available for this vendor.
-									</TableCell>
-								</TableRow>
-							)}
-						</TableBody>
-					</Table>
 				</CardContent>
 			</Card>
 		</TabsContent>
@@ -716,13 +488,9 @@ export function ItemsTabContent({
 }
 
 export function PurchaseOrdersTabContent({
-	purchaseOrderSearch,
-	setPurchaseOrderSearch,
-	filteredPurchaseOrders,
+	vendorName,
 }: {
-	purchaseOrderSearch: string;
-	setPurchaseOrderSearch: Dispatch<SetStateAction<string>>;
-	filteredPurchaseOrders: PurchaseOrderRow[];
+	vendorName: string;
 }) {
 	return (
 		<TabsContent value="purchase-orders" className="space-y-4">
@@ -738,146 +506,43 @@ export function PurchaseOrdersTabContent({
 					>
 						<FileSpreadsheetIcon className="size-4" />
 					</Button>
-					<Button>Create Order</Button>
+					<Button variant="outline">Request PO Feed</Button>
 				</div>
 			</div>
 
 			<Card className="rounded-2xl border">
 				<CardContent className="space-y-4 p-4 md:p-6">
-					<p className="text-sm font-medium text-muted-foreground">
-						No Filters
+					<p className="text-sm text-muted-foreground">
+						Purchase orders for {vendorName.toLowerCase()} are not
+						yet queryable from the supplier API. This tab is ready
+						for live data once purchase-order relations are exposed.
 					</p>
-					<div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-						<div className="relative w-full xl:max-w-sm">
-							<SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								placeholder="Search"
-								className="pl-9"
-								value={purchaseOrderSearch}
-								onChange={(event) =>
-									setPurchaseOrderSearch(event.target.value)
-								}
-							/>
+					<div className="grid gap-4 md:grid-cols-3">
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">Order history</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								PO timelines and financial statuses will appear
+								here.
+							</p>
 						</div>
-						<div className="flex flex-1 flex-wrap items-center gap-2">
-							<Button variant="outline" size="sm">
-								Create Date
-							</Button>
-							<Button variant="outline" size="sm">
-								Order Tags
-							</Button>
-							<Select defaultValue="status-all">
-								<SelectTrigger className="w-[150px]">
-									<SelectValue placeholder="Order Status" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="status-all">
-										Order Status
-									</SelectItem>
-									<SelectItem value="status-open">
-										Open
-									</SelectItem>
-									<SelectItem value="status-closed">
-										Closed
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<Select defaultValue="all">
-								<SelectTrigger className="w-[170px]">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{PAYMENT_STATUS_OPTIONS.map((option) => (
-										<SelectItem
-											key={option.value}
-											value={option.value}
-										>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<Select defaultValue="all">
-								<SelectTrigger className="w-[170px]">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{WAREHOUSE_OPTIONS.map((option) => (
-										<SelectItem
-											key={option.value}
-											value={option.value}
-										>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<div className="inline-flex items-center gap-1 rounded-md border px-2 py-1">
-								<Button
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2"
-								>
-									&lt;
-								</Button>
-								<span className="text-sm font-medium">1</span>
-								<Button
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2"
-								>
-									&gt;
-								</Button>
-							</div>
-							<Button
-								variant="outline"
-								size="icon"
-								aria-label="More order options"
-							>
-								<EllipsisIcon className="size-4" />
-							</Button>
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">Filters</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Warehouse, payment, and progress filters are
+								staged for the live feed.
+							</p>
+						</div>
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">Exports</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								CSV export is ready to connect once the query
+								endpoint is available.
+							</p>
 						</div>
 					</div>
-
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Status</TableHead>
-								<TableHead>Warehouse</TableHead>
-								<TableHead>Tags</TableHead>
-								<TableHead>ID</TableHead>
-								<TableHead>Created At</TableHead>
-								<TableHead>Financial Status</TableHead>
-								<TableHead>Delivery Date</TableHead>
-								<TableHead>Progress</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{filteredPurchaseOrders.map((row) => (
-								<TableRow key={row.id}>
-									<TableCell>{row.status}</TableCell>
-									<TableCell>{row.warehouse}</TableCell>
-									<TableCell>{row.tags}</TableCell>
-									<TableCell>{row.id}</TableCell>
-									<TableCell>{row.createdAt}</TableCell>
-									<TableCell>{row.financialStatus}</TableCell>
-									<TableCell>{row.deliveryDate}</TableCell>
-									<TableCell>{row.progress}</TableCell>
-								</TableRow>
-							))}
-							{filteredPurchaseOrders.length === 0 && (
-								<TableRow>
-									<TableCell
-										colSpan={8}
-										className="h-14 text-muted-foreground"
-									>
-										No purchase orders found for this
-										vendor.
-									</TableCell>
-								</TableRow>
-							)}
-						</TableBody>
-					</Table>
+					<div className="rounded-md border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+						No purchase orders are available for this vendor yet.
+					</div>
 				</CardContent>
 			</Card>
 		</TabsContent>

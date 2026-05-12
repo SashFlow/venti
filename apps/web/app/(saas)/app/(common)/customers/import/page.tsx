@@ -10,10 +10,19 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/table";
-import { ArrowLeftIcon, CheckIcon, DownloadIcon, UploadIcon } from "lucide-react";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+	ArrowLeftIcon,
+	CheckIcon,
+	DownloadIcon,
+	Loader2Icon,
+	UploadIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useCustomersContext } from "../lib/customers-context";
 
 type ImportField = {
 	column: string;
@@ -43,41 +52,157 @@ const IMPORT_FIELDS: ImportField[] = [
 	{ column: "Zip", description: "—", required: false },
 ];
 
-// TODO: wire up real import API
-async function importCustomers(_file: File): Promise<{ imported: number }> {
-	// TODO: orpc.customers.import.mutate({ file })
-	await new Promise((r) => setTimeout(r, 1200));
-	return { imported: 0 };
+type CustomerImportRow = {
+	name: string;
+	email?: string;
+	phone?: string;
+	notes?: string;
+	isWholesaler?: boolean;
+	address1?: string;
+	address2?: string;
+	city?: string;
+	state?: string;
+	zip?: string;
+	country?: string;
+};
+
+function splitCsvLine(line: string) {
+	const values: string[] = [];
+	let current = "";
+	let inQuotes = false;
+
+	for (let index = 0; index < line.length; index += 1) {
+		const char = line[index];
+		const next = line[index + 1];
+
+		if (char === '"' && inQuotes && next === '"') {
+			current += '"';
+			index += 1;
+			continue;
+		}
+
+		if (char === '"') {
+			inQuotes = !inQuotes;
+			continue;
+		}
+
+		if (char === "," && !inQuotes) {
+			values.push(current.trim());
+			current = "";
+			continue;
+		}
+
+		current += char;
+	}
+
+	values.push(current.trim());
+	return values;
 }
 
-// TODO: wire up template download
-function downloadTemplate() {
-	// TODO: fetch signed URL from orpc.customers.importTemplate.query()
-	const csvHeader = IMPORT_FIELDS.map((f) => f.column).join(",");
-	const blob = new Blob([`${csvHeader}\n`], { type: "text/csv" });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement("a");
-	a.href = url;
-	a.download = "customers_import_template.csv";
-	a.click();
-	URL.revokeObjectURL(url);
+function parseBoolean(value: string | undefined) {
+	if (!value) {
+		return false;
+	}
+
+	return ["true", "1", "yes", "y"].includes(value.toLowerCase());
+}
+
+function buildImportRow(record: Record<string, string>): CustomerImportRow {
+	return {
+		name: record["Name"] || record.name || "",
+		email: record["Email"] || record.email || undefined,
+		phone: record["Phone"] || record.phone || undefined,
+		notes: record["Note"] || record.notes || undefined,
+		isWholesaler: parseBoolean(record["Wholesale"] || record.wholesale),
+		address1: record["Street Address"] || record.address1 || undefined,
+		address2: record["Apt/Suite"] || record.address2 || undefined,
+		city: record["City"] || record.city || undefined,
+		state: record["State"] || record.state || undefined,
+		zip: record["Zip"] || record.zip || undefined,
+		country: record["Country"] || record.country || undefined,
+	};
+}
+
+async function parseImportRows(file: File) {
+	const fileName = file.name.toLowerCase();
+	const content = await file.text();
+
+	if (fileName.endsWith(".json")) {
+		const parsed = JSON.parse(content);
+		if (!Array.isArray(parsed)) {
+			throw new Error("JSON import file must be an array of rows.");
+		}
+
+		return parsed
+			.map((row) => {
+				if (!row || typeof row !== "object" || Array.isArray(row)) {
+					return null;
+				}
+
+				const mapped = buildImportRow(
+					Object.fromEntries(
+						Object.entries(row as Record<string, unknown>).map(
+							([key, value]) => [
+								key,
+								typeof value === "string" ? value : "",
+							],
+						),
+					),
+				);
+
+				return mapped.name.trim() ? mapped : null;
+			})
+			.filter((row): row is CustomerImportRow => Boolean(row));
+	}
+
+	if (!fileName.endsWith(".csv")) {
+		throw new Error(
+			"Only CSV or JSON import files are currently supported.",
+		);
+	}
+
+	const lines = content
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter(Boolean);
+
+	if (lines.length === 0) {
+		return [];
+	}
+
+	const headers = splitCsvLine(lines[0]);
+	const rows = lines.slice(1).map((line) => {
+		const values = splitCsvLine(line);
+		const record: Record<string, string> = {};
+
+		headers.forEach((header, index) => {
+			record[header] = values[index] ?? "";
+		});
+
+		return buildImportRow(record);
+	});
+
+	return rows.filter((row) => row.name.trim());
 }
 
 export default function ImportCustomersPage() {
+	const queryClient = useQueryClient();
+	const { organizationId, invalidateCustomers } = useCustomersContext();
+	const importCustomersMutation = useMutation(
+		orpc.customers.import.mutationOptions(),
+	);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [isImporting, setIsImporting] = useState(false);
 
 	function handleFile(file: File) {
-		const allowed = [
-			"text/csv",
-			"application/vnd.ms-excel",
-			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-			"application/json",
-		];
-		if (!allowed.includes(file.type) && !file.name.match(/\.(csv|xlsx|xls|json)$/i)) {
-			toast.error("Only CSV, Excel, or JSON files are supported.");
+		const allowed = ["text/csv", "application/json"];
+		if (
+			!allowed.includes(file.type) &&
+			!file.name.match(/\.(csv|json)$/i)
+		) {
+			toast.error("Only CSV or JSON files are supported.");
 			return;
 		}
 		setSelectedFile(file);
@@ -96,18 +221,65 @@ export default function ImportCustomersPage() {
 		if (!selectedFile) {
 			return;
 		}
+
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
 		setIsImporting(true);
 		try {
-			await toast.promise(importCustomers(selectedFile), {
-				loading: `Importing ${selectedFile.name}…`,
-				success: (res) => `Imported ${res.imported} customers.`,
-				error: "Import failed. Check the file format and try again.",
-			});
+			const rows = await parseImportRows(selectedFile);
+			if (rows.length === 0) {
+				toast.error("No valid rows found in the selected file.");
+				return;
+			}
+
+			await toast.promise(
+				importCustomersMutation.mutateAsync({
+					organizationId,
+					rows,
+				}),
+				{
+					loading: `Importing ${selectedFile.name}...`,
+					success: (result) => {
+						const errorSuffix =
+							result.errors.length > 0
+								? ` (${result.errors.length} rows failed)`
+								: "";
+						return `Imported ${result.created} new and updated ${result.updated} customers${errorSuffix}.`;
+					},
+					error: "Import failed. Check the file format and try again.",
+				},
+			);
+
+			await invalidateCustomers();
 			setSelectedFile(null);
 		} finally {
 			setIsImporting(false);
 		}
 	}
+
+	const downloadTemplate = async () => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		const template = await queryClient.fetchQuery(
+			orpc.customers.importTemplate.queryOptions({
+				input: { organizationId },
+			}),
+		);
+
+		const blob = new Blob([template.csv], { type: "text/csv" });
+		const url = URL.createObjectURL(blob);
+		const anchor = document.createElement("a");
+		anchor.href = url;
+		anchor.download = template.fileName;
+		anchor.click();
+		URL.revokeObjectURL(url);
+	};
 
 	return (
 		<div className="container py-8 max-w-3xl mx-auto space-y-6">
@@ -139,7 +311,11 @@ export default function ImportCustomersPage() {
 			>
 				{selectedFile ? (
 					<div className="space-y-3">
-						<UploadIcon className="size-8 mx-auto text-primary" />
+						{isImporting ? (
+							<Loader2Icon className="size-8 mx-auto text-primary animate-spin" />
+						) : (
+							<UploadIcon className="size-8 mx-auto text-primary" />
+						)}
 						<p className="font-medium">{selectedFile.name}</p>
 						<p className="text-sm text-muted-foreground">
 							{(selectedFile.size / 1024).toFixed(1)} KB
@@ -155,7 +331,7 @@ export default function ImportCustomersPage() {
 							<Button
 								size="sm"
 								onClick={handleImport}
-																disabled={isImporting}
+								disabled={isImporting}
 							>
 								Import
 							</Button>
@@ -164,7 +340,7 @@ export default function ImportCustomersPage() {
 				) : (
 					<div className="space-y-4">
 						<p className="font-semibold text-base">
-							Drop a CSV, Excel, or JSON file here
+							Drop a CSV or JSON file here
 						</p>
 						<div className="flex items-center gap-2 justify-center text-xs text-muted-foreground">
 							<span className="h-px w-12 bg-border" />
@@ -178,7 +354,7 @@ export default function ImportCustomersPage() {
 							ref={inputRef}
 							id="file-upload-input"
 							type="file"
-							accept=".csv,.xlsx,.xls,.json"
+							accept=".csv,.json"
 							className="sr-only"
 							onChange={(e) => {
 								const file = e.target.files?.[0];
@@ -213,7 +389,9 @@ export default function ImportCustomersPage() {
 							<TableRow>
 								<TableHead className="w-40">Column</TableHead>
 								<TableHead>Description</TableHead>
-								<TableHead className="w-24 text-right">Required</TableHead>
+								<TableHead className="w-24 text-right">
+									Required
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -230,11 +408,17 @@ export default function ImportCustomersPage() {
 											{field.required ? (
 												<span className="flex size-5 items-center justify-center rounded-full bg-primary">
 													<CheckIcon className="size-3 text-primary-foreground" />
-													<span className="sr-only">{field.column} is required</span>
+													<span className="sr-only">
+														{field.column} is
+														required
+													</span>
 												</span>
 											) : (
 												<span className="flex size-5 items-center justify-center rounded-full border border-input">
-													<span className="sr-only">{field.column} is optional</span>
+													<span className="sr-only">
+														{field.column} is
+														optional
+													</span>
 												</span>
 											)}
 										</div>

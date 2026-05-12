@@ -171,11 +171,64 @@ model Organization {
     skuCategories      SKUCategory[]
     purchaseOrders     PurchaseOrder[]
     salesOrders        SalesOrder[]
+    customers          Customer[]
+    packageTypes       PackageType[]
     uploadFiles        UploadFile[]        @relation("OrganizationUploads")
 
     @@unique([slug])
     @@index([logoUploadFileId])
     @@map("organization")
+}
+
+model Customer {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    name         String    @db.VarChar(255)
+    email        String?   @db.VarChar(255)
+    phone        String?   @db.VarChar(50)
+    isWholesaler Boolean   @default(false)
+    notes        String?   @db.Text
+    lastOrderAt  DateTime?
+    totalOrders  Int       @default(0)
+    metadata     Json?
+
+    @@index([organizationId])
+    @@index([organizationId, createdAt])
+    @@index([organizationId, name])
+    @@index([organizationId, email])
+    @@map("customer")
+}
+
+model PackageType {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    name                 String  @db.VarChar(255)
+    description          String? @db.Text
+    packageType          String  @db.VarChar(50)
+    price                Decimal @default(0) @db.Decimal(12, 2)
+    length               Decimal @default(1) @db.Decimal(12, 2)
+    width                Decimal @default(1) @db.Decimal(12, 2)
+    height               Decimal @default(1) @db.Decimal(12, 2)
+    weight               Decimal @default(1) @db.Decimal(12, 2)
+    dimensionUnit        String  @default("in") @db.VarChar(10)
+    weightUnit           String  @default("lb") @db.VarChar(10)
+    applyToAllWarehouses Boolean @default(true)
+    metadata             Json?
+
+    @@index([organizationId])
+    @@index([organizationId, createdAt])
+    @@index([organizationId, name])
+    @@map("package_type")
 }
 
 model Member {

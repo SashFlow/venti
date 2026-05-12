@@ -10,15 +10,19 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/table";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	ArrowLeftIcon,
 	CheckIcon,
 	DownloadIcon,
+	Loader2Icon,
 	UploadIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useVendorsContext } from "../lib/vendors-context";
 
 type ImportField = {
 	column: string;
@@ -61,42 +65,157 @@ const IMPORT_FIELDS: ImportField[] = [
 	{ column: "Zip", description: "-", required: false },
 ];
 
-// TODO: wire up real import API
-async function importVendors(_file: File): Promise<{ imported: number }> {
-	await new Promise((resolve) => setTimeout(resolve, 1200));
-	return { imported: 0 };
+type SupplierImportRow = {
+	name: string;
+	prefix?: string;
+	email?: string;
+	phone?: string;
+	accountNumber?: string;
+	representativeName?: string;
+	brands?: string;
+	notes?: string;
+	address1?: string;
+	address2?: string;
+	city?: string;
+	state?: string;
+	zip?: string;
+	country?: string;
+};
+
+function splitCsvLine(line: string) {
+	const values: string[] = [];
+	let current = "";
+	let inQuotes = false;
+
+	for (let index = 0; index < line.length; index += 1) {
+		const char = line[index];
+		const next = line[index + 1];
+
+		if (char === '"' && inQuotes && next === '"') {
+			current += '"';
+			index += 1;
+			continue;
+		}
+
+		if (char === '"') {
+			inQuotes = !inQuotes;
+			continue;
+		}
+
+		if (char === "," && !inQuotes) {
+			values.push(current.trim());
+			current = "";
+			continue;
+		}
+
+		current += char;
+	}
+
+	values.push(current.trim());
+	return values;
 }
 
-// TODO: wire up template download
-function downloadTemplate() {
-	const csvHeader = IMPORT_FIELDS.map((field) => field.column).join(",");
-	const blob = new Blob([`${csvHeader}\n`], { type: "text/csv" });
-	const url = URL.createObjectURL(blob);
-	const anchor = document.createElement("a");
-	anchor.href = url;
-	anchor.download = "vendors_import_template.csv";
-	anchor.click();
-	URL.revokeObjectURL(url);
+function buildImportRow(record: Record<string, string>): SupplierImportRow {
+	return {
+		name: record["Name"] || record.name || "",
+		prefix: record["Prefix"] || record.prefix || undefined,
+		email: record["Email"] || record.email || undefined,
+		phone: record["Phone"] || record.phone || undefined,
+		accountNumber:
+			record["Account Number"] || record.accountNumber || undefined,
+		representativeName:
+			record["Rep Name"] || record.representativeName || undefined,
+		brands: record["Brands"] || record.brands || undefined,
+		notes: record["Note"] || record.notes || undefined,
+		address1: record["Street Address"] || record.address1 || undefined,
+		address2: record["Apt/Suite"] || record.address2 || undefined,
+		city: record["City"] || record.city || undefined,
+		state: record["State"] || record.state || undefined,
+		zip: record["Zip"] || record.zip || undefined,
+		country: record["Country"] || record.country || undefined,
+	};
+}
+
+async function parseImportRows(file: File) {
+	const fileName = file.name.toLowerCase();
+	const content = await file.text();
+
+	if (fileName.endsWith(".json")) {
+		const parsed = JSON.parse(content);
+		if (!Array.isArray(parsed)) {
+			throw new Error("JSON import file must be an array of rows.");
+		}
+
+		return parsed
+			.map((row) => {
+				if (!row || typeof row !== "object" || Array.isArray(row)) {
+					return null;
+				}
+
+				const mapped = buildImportRow(
+					Object.fromEntries(
+						Object.entries(row as Record<string, unknown>).map(
+							([key, value]) => [
+								key,
+								typeof value === "string" ? value : "",
+							],
+						),
+					),
+				);
+
+				return mapped.name.trim() ? mapped : null;
+			})
+			.filter((row): row is SupplierImportRow => Boolean(row));
+	}
+
+	if (!fileName.endsWith(".csv")) {
+		throw new Error(
+			"Only CSV or JSON import files are currently supported.",
+		);
+	}
+
+	const lines = content
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter(Boolean);
+
+	if (lines.length === 0) {
+		return [];
+	}
+
+	const headers = splitCsvLine(lines[0]);
+	const rows = lines.slice(1).map((line) => {
+		const values = splitCsvLine(line);
+		const record: Record<string, string> = {};
+
+		headers.forEach((header, index) => {
+			record[header] = values[index] ?? "";
+		});
+
+		return buildImportRow(record);
+	});
+
+	return rows.filter((row) => row.name.trim());
 }
 
 export default function ImportVendorsPage() {
+	const queryClient = useQueryClient();
+	const { organizationId, invalidateVendors } = useVendorsContext();
+	const importSuppliersMutation = useMutation(
+		orpc.masterData.suppliers.import.mutationOptions(),
+	);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [isImporting, setIsImporting] = useState(false);
 
 	function handleFile(file: File) {
-		const allowed = [
-			"text/csv",
-			"application/vnd.ms-excel",
-			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-			"application/json",
-		];
+		const allowed = ["text/csv", "application/json"];
 		if (
 			!allowed.includes(file.type) &&
-			!file.name.match(/\.(csv|xlsx|xls|json)$/i)
+			!file.name.match(/\.(csv|json)$/i)
 		) {
-			toast.error("Only CSV, Excel, or JSON files are supported.");
+			toast.error("Only CSV or JSON files are supported.");
 			return;
 		}
 		setSelectedFile(file);
@@ -115,18 +234,64 @@ export default function ImportVendorsPage() {
 		if (!selectedFile) {
 			return;
 		}
+
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
 		setIsImporting(true);
 		try {
-			await toast.promise(importVendors(selectedFile), {
-				loading: `Importing ${selectedFile.name}...`,
-				success: (result) => `Imported ${result.imported} vendors.`,
-				error: "Import failed. Check the file format and try again.",
-			});
+			const rows = await parseImportRows(selectedFile);
+			if (rows.length === 0) {
+				toast.error("No valid rows found in the selected file.");
+				return;
+			}
+
+			await toast.promise(
+				importSuppliersMutation.mutateAsync({
+					organizationId: organizationId ?? "",
+					rows,
+				}),
+				{
+					loading: `Importing ${selectedFile.name}...`,
+					success: (result) => {
+						const errorSuffix =
+							result.errors.length > 0
+								? ` (${result.errors.length} rows failed)`
+								: "";
+						return `Imported ${result.created} new and updated ${result.updated} vendors${errorSuffix}.`;
+					},
+					error: "Import failed. Check the file format and try again.",
+				},
+			);
+			await invalidateVendors();
 			setSelectedFile(null);
 		} finally {
 			setIsImporting(false);
 		}
 	}
+
+	const downloadTemplate = async () => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		const template = await queryClient.fetchQuery(
+			orpc.masterData.suppliers.importTemplate.queryOptions({
+				input: { organizationId },
+			}),
+		);
+
+		const blob = new Blob([template.csv], { type: "text/csv" });
+		const url = URL.createObjectURL(blob);
+		const anchor = document.createElement("a");
+		anchor.href = url;
+		anchor.download = template.fileName;
+		anchor.click();
+		URL.revokeObjectURL(url);
+	};
 
 	return (
 		<div className="container py-8 max-w-7xl mx-auto space-y-6">
@@ -157,7 +322,11 @@ export default function ImportVendorsPage() {
 			>
 				{selectedFile ? (
 					<div className="space-y-3">
-						<UploadIcon className="size-8 mx-auto text-primary" />
+						{isImporting ? (
+							<Loader2Icon className="size-8 mx-auto text-primary animate-spin" />
+						) : (
+							<UploadIcon className="size-8 mx-auto text-primary" />
+						)}
 						<p className="font-medium">{selectedFile.name}</p>
 						<p className="text-sm text-muted-foreground">
 							{(selectedFile.size / 1024).toFixed(1)} KB
@@ -196,7 +365,7 @@ export default function ImportVendorsPage() {
 							ref={inputRef}
 							id="vendor-upload-input"
 							type="file"
-							accept=".csv,.xlsx,.xls,.json"
+							accept=".csv,.json"
 							className="sr-only"
 							onChange={(event) => {
 								const file = event.target.files?.[0];

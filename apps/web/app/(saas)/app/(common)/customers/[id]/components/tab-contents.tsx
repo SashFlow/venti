@@ -11,7 +11,7 @@ import {
 } from "@repo/ui/select";
 import { Switch } from "@repo/ui/switch";
 import { TabsContent } from "@repo/ui/tabs";
-import { Ellipsis, Search } from "lucide-react";
+import { Link2Icon } from "lucide-react";
 
 export type ScheduleMode = "weekly" | "monthly" | "quarterly" | "yearly";
 
@@ -26,6 +26,8 @@ type SettingsTabContentProps = {
 	onCustomerPhoneChange: (value: string) => void;
 	onCustomerNotesChange: (value: string) => void;
 	onWholesalerChange: (value: boolean) => void;
+	onSave?: () => void;
+	saving?: boolean;
 };
 
 export function SettingsTabContent({
@@ -39,13 +41,17 @@ export function SettingsTabContent({
 	onCustomerPhoneChange,
 	onCustomerNotesChange,
 	onWholesalerChange,
+	onSave,
+	saving,
 }: SettingsTabContentProps) {
 	return (
 		<TabsContent value="settings" className="space-y-4">
 			<Card className="rounded-xl border">
 				<CardHeader className="flex flex-row items-center justify-between pb-2">
 					<CardTitle className="text-lg">Settings</CardTitle>
-					<Button size="sm">Save</Button>
+					<Button size="sm" onClick={onSave} disabled={saving}>
+						Save
+					</Button>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div className="space-y-2">
@@ -147,104 +153,56 @@ export function SettingsTabContent({
 	);
 }
 
-type OrdersTabContentProps = {
-	emptyTableHeaders: string[];
-};
-
-function OrdersSection({
-	title,
-	emptyTableHeaders,
-}: {
-	title: string;
-	emptyTableHeaders: string[];
-}) {
-	return (
-		<Card className="rounded-xl border">
-			<CardHeader className="pb-3">
-				<CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-					{title}
-				</CardTitle>
-			</CardHeader>
-			<CardContent className="space-y-4">
-				<div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-					<div className="relative flex-1">
-						<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-						<Input
-							value=""
-							onChange={() => undefined}
-							placeholder="Search"
-							className="pl-9"
-						/>
-					</div>
-					<div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-						<Button type="button" variant="outline" size="sm">
-							Create Date
-						</Button>
-						<Button type="button" variant="outline" size="sm">
-							Order Tags
-						</Button>
-						<Select defaultValue="any-warehouse">
-							<SelectTrigger className="w-[170px]">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="any-warehouse">
-									Any Warehouse
-								</SelectItem>
-								<SelectItem value="north">North</SelectItem>
-								<SelectItem value="south">South</SelectItem>
-							</SelectContent>
-						</Select>
-						<div className="inline-flex items-center gap-1 rounded-md border px-2 py-1">
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								className="h-7 px-2"
-							>
-								&lt;
-							</Button>
-							<span className="min-w-6 text-center text-sm">
-								1
-							</span>
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								className="h-7 px-2"
-							>
-								&gt;
-							</Button>
-						</div>
-						<Button type="button" variant="outline" size="icon">
-							<Ellipsis className="size-4" />
-						</Button>
-					</div>
-				</div>
-
-				<div className="grid grid-cols-9 gap-2 border-t pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-					{emptyTableHeaders.map((header) => (
-						<div key={header} className="truncate">
-							{header}
-						</div>
-					))}
-				</div>
-			</CardContent>
-		</Card>
-	);
-}
-
-export function OrdersTabContent({ emptyTableHeaders }: OrdersTabContentProps) {
+export function OrdersTabContent({ customerName }: { customerName: string }) {
 	return (
 		<TabsContent value="orders" className="space-y-4">
-			<OrdersSection
-				title="Pending Orders"
-				emptyTableHeaders={emptyTableHeaders}
-			/>
-			<OrdersSection
-				title="Completed Orders"
-				emptyTableHeaders={emptyTableHeaders}
-			/>
+			<Card className="rounded-xl border">
+				<CardHeader className="flex flex-row items-center justify-between pb-2">
+					<CardTitle className="text-lg">Orders</CardTitle>
+					<Button variant="outline" size="sm">
+						<Link2Icon className="mr-2 size-4" />
+						Connect Order Feed
+					</Button>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<p className="text-sm text-muted-foreground">
+						Order history for {customerName.toLowerCase()} is not
+						exposed through the current customer detail API yet.
+						This tab is staged for live order history, filters, and
+						timeline metrics.
+					</p>
+					<div className="grid gap-4 md:grid-cols-3">
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">
+								Pending orders
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Awaiting customer-order relation queries.
+							</p>
+						</div>
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">
+								Completed orders
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Shipment and delivery summaries will appear
+								here.
+							</p>
+						</div>
+						<div className="rounded-xl border p-4">
+							<p className="text-sm font-medium">Filters</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Date, warehouse, and tag filters are reserved
+								for the live feed.
+							</p>
+						</div>
+					</div>
+					<div className="rounded-md border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+						No customer orders are available in this detail view
+						yet.
+					</div>
+				</CardContent>
+			</Card>
 		</TabsContent>
 	);
 }
@@ -270,6 +228,8 @@ type DeliveryTabContentProps = {
 		field: "start" | "end",
 		value: string,
 	) => void;
+	onSave?: () => void;
+	saving?: boolean;
 };
 
 export function DeliveryTabContent({
@@ -289,13 +249,17 @@ export function DeliveryTabContent({
 	onYearlyDateChange,
 	onDayOpenChange,
 	onDayWindowChange,
+	onSave,
+	saving,
 }: DeliveryTabContentProps) {
 	return (
 		<TabsContent value="delivery" className="space-y-4">
 			<Card className="rounded-xl border">
 				<CardHeader className="flex flex-row items-center justify-between pb-2">
 					<CardTitle className="text-lg">Delivery</CardTitle>
-					<Button size="sm">Save</Button>
+					<Button size="sm" onClick={onSave} disabled={saving}>
+						Save
+					</Button>
 				</CardHeader>
 				<CardContent className="space-y-5">
 					<div className="space-y-2">

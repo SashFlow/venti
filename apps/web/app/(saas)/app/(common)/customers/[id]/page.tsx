@@ -1,7 +1,16 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
-import { useMemo, useState } from "react";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
+	buildCustomerMetadata,
+	readCustomerMetadata,
+} from "../lib/customer-utils";
+import { useCustomersContext } from "../lib/customers-context";
 import {
 	DeliveryTabContent,
 	OrdersTabContent,
@@ -29,27 +38,19 @@ const WEEK_DAYS: Weekday[] = [
 	"Sunday",
 ];
 
-const EMPTY_TABLE_HEADERS = [
-	"Status",
-	"Test",
-	"ID",
-	"Created At",
-	"Total",
-	"Deliver At",
-	"Tags",
-	"Source",
-	"Progress",
-];
-
 export default function CustomerDetailPage() {
+	const params = useParams();
+	const customerId = params.id as string;
+	const { organizationId, invalidateCustomers } = useCustomersContext();
+
 	const [activeTab, setActiveTab] = useState<PageTab>("orders");
 	const [scheduleMode, setScheduleMode] = useState<ScheduleMode>("weekly");
 
-	const [customerName, setCustomerName] = useState("REE");
+	const [customerName, setCustomerName] = useState("");
 	const [customerEmail, setCustomerEmail] = useState("");
-	const [customerPhone, setCustomerPhone] = useState("+1 123-456-7890");
+	const [customerPhone, setCustomerPhone] = useState("");
 	const [customerNotes, setCustomerNotes] = useState("");
-	const [isWholesaler, setIsWholesaler] = useState(true);
+	const [isWholesaler, setIsWholesaler] = useState(false);
 
 	const [deliveryNotes, setDeliveryNotes] = useState("");
 	const [monthlyDay, setMonthlyDay] = useState("1");
@@ -78,6 +79,57 @@ export default function CustomerDetailPage() {
 		Sunday: { start: "09:00", end: "17:00" },
 	});
 
+	const { data } = useQuery({
+		...orpc.customers.get.queryOptions({
+			input: {
+				organizationId: organizationId ?? "",
+				id: customerId,
+			},
+		}),
+		enabled: Boolean(organizationId && customerId),
+	});
+
+	const updateCustomerMutation = useMutation(
+		orpc.customers.update.mutationOptions(),
+	);
+
+	useEffect(() => {
+		const customer = data?.customer;
+		if (!customer) {
+			return;
+		}
+
+		setCustomerName(customer.name);
+		setCustomerEmail(customer.email ?? "");
+		setCustomerPhone(customer.phone ?? "");
+		setCustomerNotes(customer.notes ?? "");
+		setIsWholesaler(customer.isWholesaler);
+
+		const metadata = readCustomerMetadata(customer.metadata);
+		setDeliveryNotes(metadata.deliveryNotes);
+		setScheduleMode((metadata.scheduleMode as ScheduleMode) || "weekly");
+		setMonthlyDay(metadata.monthlyDay || "1");
+		setQuarterlyMonth(metadata.quarterlyMonth || "q1-first-month");
+		setYearlyDate(metadata.yearlyDate || "2026-01-15");
+
+		if (Object.keys(metadata.openByDay).length > 0) {
+			setOpenByDay((previous) => ({
+				...previous,
+				...(metadata.openByDay as Record<Weekday, boolean>),
+			}));
+		}
+
+		if (Object.keys(metadata.windowByDay).length > 0) {
+			setWindowByDay((previous) => ({
+				...previous,
+				...(metadata.windowByDay as Record<
+					Weekday,
+					{ start: string; end: string }
+				>),
+			}));
+		}
+	}, [data?.customer]);
+
 	const activeDaysCount = useMemo(
 		() => WEEK_DAYS.filter((day) => openByDay[day]).length,
 		[openByDay],
@@ -95,6 +147,46 @@ export default function CustomerDetailPage() {
 				[field]: value,
 			},
 		}));
+	};
+
+	const saveCustomer = async () => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		if (!customerName.trim()) {
+			toast.error("Customer name is required.");
+			return;
+		}
+
+		await toast.promise(
+			updateCustomerMutation.mutateAsync({
+				organizationId,
+				id: customerId,
+				name: customerName.trim(),
+				email: customerEmail.trim() || undefined,
+				phone: customerPhone.trim() || undefined,
+				notes: customerNotes.trim() || undefined,
+				isWholesaler,
+				metadata: buildCustomerMetadata({
+					deliveryNotes,
+					scheduleMode,
+					monthlyDay,
+					quarterlyMonth,
+					yearlyDate,
+					openByDay,
+					windowByDay,
+				}),
+			}),
+			{
+				loading: "Saving customer...",
+				success: "Customer saved.",
+				error: "Failed to save customer.",
+			},
+		);
+
+		await invalidateCustomers();
 	};
 
 	return (
@@ -137,9 +229,15 @@ export default function CustomerDetailPage() {
 					onCustomerPhoneChange={setCustomerPhone}
 					onCustomerNotesChange={setCustomerNotes}
 					onWholesalerChange={setIsWholesaler}
+					onSave={() => {
+						void saveCustomer();
+					}}
+					saving={updateCustomerMutation.isPending}
 				/>
 
-				<OrdersTabContent emptyTableHeaders={EMPTY_TABLE_HEADERS} />
+				<OrdersTabContent
+					customerName={customerName || "This customer"}
+				/>
 
 				<DeliveryTabContent
 					scheduleMode={scheduleMode}
@@ -165,6 +263,10 @@ export default function CustomerDetailPage() {
 					onDayWindowChange={(day, field, value) =>
 						updateDayWindow(day as Weekday, field, value)
 					}
+					onSave={() => {
+						void saveCustomer();
+					}}
+					saving={updateCustomerMutation.isPending}
 				/>
 			</Tabs>
 		</div>

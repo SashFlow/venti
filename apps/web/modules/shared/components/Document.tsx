@@ -3,7 +3,6 @@ import { TooltipProvider } from "@repo/ui/tooltip";
 import { cn } from "@repo/ui/utils";
 import { ClientProviders } from "@shared/components/ClientProviders";
 import { ConsentProvider } from "@shared/components/ConsentProvider";
-import { cookies } from "next/headers";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import type { PropsWithChildren } from "react";
 
@@ -12,9 +11,6 @@ export async function Document({
 	locale,
 	className,
 }: PropsWithChildren<{ locale: string; className?: string }>) {
-	const cookieStore = await cookies();
-	const consentCookie = cookieStore.get("consent");
-
 	return (
 		<html
 			lang={locale}
@@ -29,9 +25,7 @@ export async function Document({
 			>
 				<TooltipProvider>
 					<NuqsAdapter>
-						<ConsentProvider
-							initialConsent={consentCookie?.value === "true"}
-						>
+						<ConsentProvider>
 							<ClientProviders>{children}</ClientProviders>
 						</ConsentProvider>
 					</NuqsAdapter>

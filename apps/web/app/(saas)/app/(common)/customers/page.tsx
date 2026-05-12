@@ -12,11 +12,22 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/table";
+import { useConfirmationAlert } from "@saas/shared/components/ConfirmationAlertProvider";
 import { Pagination } from "@saas/shared/components/Pagination";
-import { PlusIcon, SearchIcon, UserIcon } from "lucide-react";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	DownloadIcon,
+	FileSpreadsheetIcon,
+	PlusIcon,
+	SearchIcon,
+	UploadIcon,
+	UserIcon,
+} from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
+import { useCustomersContext } from "./lib/customers-context";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -32,113 +43,167 @@ type Customer = {
 	createdAt: string;
 };
 
-// TODO: replace with real API data
-const PLACEHOLDER_CUSTOMERS: Customer[] = [
-	{
-		id: "cust_1",
-		name: "Acme Corp",
-		email: "billing@acmecorp.com",
-		phone: "+1 555-010-0001",
-		isWholesaler: true,
-		notes: "Key wholesale account",
-		lastOrderDate: "2026-04-28",
-		totalOrders: 142,
-		createdAt: "2023-01-15",
-	},
-	{
-		id: "cust_2",
-		name: "Jane Smith",
-		email: "jane.smith@example.com",
-		phone: "+1 555-010-0002",
-		isWholesaler: false,
-		notes: null,
-		lastOrderDate: "2026-05-01",
-		totalOrders: 8,
-		createdAt: "2024-03-22",
-	},
-	{
-		id: "cust_3",
-		name: "GlobalTech Distribution",
-		email: "orders@globaltech.io",
-		phone: "+1 555-010-0003",
-		isWholesaler: true,
-		notes: "Net 30 payment terms",
-		lastOrderDate: "2026-04-15",
-		totalOrders: 67,
-		createdAt: "2023-07-09",
-	},
-	{
-		id: "cust_4",
-		name: "Michael Torres",
-		email: "m.torres@email.com",
-		phone: null,
-		isWholesaler: false,
-		notes: null,
-		lastOrderDate: "2026-03-20",
-		totalOrders: 3,
-		createdAt: "2025-01-05",
-	},
-	{
-		id: "cust_5",
-		name: "RetailPlus LLC",
-		email: "purchasing@retailplus.com",
-		phone: "+1 555-010-0005",
-		isWholesaler: true,
-		notes: "Preferred vendor status",
-		lastOrderDate: "2026-05-03",
-		totalOrders: 201,
-		createdAt: "2022-11-30",
-	},
-];
-
-// TODO: wire up real API calls
-async function deleteCustomer(_customerId: string): Promise<void> {
-	// TODO: orpc.customers.delete.mutate({ id: customerId })
-	await new Promise((r) => setTimeout(r, 600));
+function downloadCsvFile(params: { fileName: string; csv: string }) {
+	const blob = new Blob([params.csv], { type: "text/csv;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = params.fileName;
+	anchor.click();
+	URL.revokeObjectURL(url);
 }
 
 export default function CustomersPage() {
-	const [search, setSearch] = useState("");
-	const [page, setPage] = useState(1);
+	const queryClient = useQueryClient();
+	const { confirm } = useConfirmationAlert();
+	const {
+		organizationId,
+		search,
+		setSearch,
+		page,
+		setPage,
+		invalidateCustomers,
+	} = useCustomersContext();
 
-	// TODO: replace local state + placeholder with useQuery(orpc.customers.list.queryOptions(...))
-	const isLoading = false;
-
-	const filtered = PLACEHOLDER_CUSTOMERS.filter((c) => {
-		if (!search) {
-			return true;
-		}
-		const q = search.toLowerCase();
-		return (
-			c.name.toLowerCase().includes(q) ||
-			c.email?.toLowerCase().includes(q) ||
-			c.phone?.includes(q)
-		);
+	const { data, isPending: isLoading } = useQuery({
+		...orpc.customers.list.queryOptions({
+			input: {
+				organizationId: organizationId ?? "",
+				query: search.trim() || undefined,
+				limit: ITEMS_PER_PAGE,
+				offset: (page - 1) * ITEMS_PER_PAGE,
+			},
+		}),
+		enabled: Boolean(organizationId),
 	});
 
-	const paginated = filtered.slice(
-		(page - 1) * ITEMS_PER_PAGE,
-		page * ITEMS_PER_PAGE,
+	const deleteCustomerMutation = useMutation(
+		orpc.customers.delete.mutationOptions(),
 	);
 
+	const customers = useMemo<Customer[]>(() => {
+		return (data?.customers ?? []).map((customer: any) => ({
+			id: customer.id,
+			name: customer.name,
+			email: customer.email,
+			phone: customer.phone,
+			isWholesaler: customer.isWholesaler,
+			notes: customer.notes,
+			lastOrderDate: customer.lastOrderAt
+				? customer.lastOrderAt.toISOString().slice(0, 10)
+				: null,
+			totalOrders: customer.totalOrders,
+			createdAt: customer.createdAt.toISOString().slice(0, 10),
+		}));
+	}, [data?.customers]);
+
+	const total = data?.total ?? 0;
+	const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
+	useEffect(() => {
+		if (page > totalPages) {
+			setPage(totalPages);
+		}
+	}, [page, setPage, totalPages]);
+
 	function handleDelete(customer: Customer) {
-		toast.promise(deleteCustomer(customer.id), {
-			loading: `Deleting ${customer.name}…`,
-			success: `${customer.name} deleted.`,
-			error: `Failed to delete ${customer.name}.`,
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		confirm({
+			title: "Delete customer",
+			message: `Delete ${customer.name}? This action cannot be undone.`,
+			destructive: true,
+			onConfirm: async () => {
+				await deleteCustomerMutation.mutateAsync({
+					organizationId,
+					id: customer.id,
+				});
+
+				await invalidateCustomers();
+				toast.success(`${customer.name} deleted.`);
+			},
 		});
 	}
+
+	const onDownloadTemplate = async () => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		const result = await queryClient.fetchQuery(
+			orpc.customers.importTemplate.queryOptions({
+				input: { organizationId },
+			}),
+		);
+
+		downloadCsvFile({ fileName: result.fileName, csv: result.csv });
+	};
+
+	const onExport = async () => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		const result = await queryClient.fetchQuery(
+			orpc.customers.export.queryOptions({
+				input: {
+					organizationId,
+					query: search.trim() || undefined,
+				},
+			}),
+		);
+
+		downloadCsvFile({ fileName: result.fileName, csv: result.csv });
+		toast.success(`Exported ${result.count} customers.`);
+	};
 
 	return (
 		<div className="container py-8 max-w-7xl mx-auto space-y-6">
 			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-semibold tracking-tight">Customers</h1>
-				<Button asChild>
-					<Link href="/app/customers/create">
-						<PlusIcon className="size-4" />
-						Create Customer
-					</Link>
-				</Button>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					Customers
+				</h1>
+				<div className="flex items-center gap-2">
+					<Button variant="outline" size="icon" asChild>
+						<Link
+							href="/app/customers/import"
+							aria-label="Import customers"
+						>
+							<UploadIcon className="size-4" />
+						</Link>
+					</Button>
+					<Button
+						variant="outline"
+						size="icon"
+						aria-label="Download customer template"
+						onClick={() => {
+							void onDownloadTemplate();
+						}}
+					>
+						<DownloadIcon className="size-4" />
+					</Button>
+					<Button
+						variant="outline"
+						size="icon"
+						aria-label="Export customers"
+						onClick={() => {
+							void onExport();
+						}}
+					>
+						<FileSpreadsheetIcon className="size-4" />
+					</Button>
+					<Button asChild>
+						<Link href="/app/customers/create">
+							<PlusIcon className="size-4" />
+							Create Customer
+						</Link>
+					</Button>
+				</div>
 			</div>
 
 			<Card className="rounded-2xl border">
@@ -163,7 +228,9 @@ export default function CustomersPage() {
 								<TableHead>Email</TableHead>
 								<TableHead>Phone</TableHead>
 								<TableHead>Last Order</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
+								<TableHead className="text-right">
+									Actions
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -187,7 +254,7 @@ export default function CustomersPage() {
 											</TableCell>
 										</TableRow>
 									))
-								: paginated.map((customer) => (
+								: customers.map((customer) => (
 										<TableRow key={customer.id}>
 											<TableCell className="font-medium">
 												<div className="flex items-center gap-2">
@@ -225,7 +292,7 @@ export default function CustomersPage() {
 														asChild
 													>
 														<Link
-															href={`/app/customers/${customer.id}/edit`}
+															href={`/app/customers/${customer.id}`}
 														>
 															Edit
 														</Link>
@@ -235,7 +302,9 @@ export default function CustomersPage() {
 														size="sm"
 														className="text-destructive hover:text-destructive"
 														onClick={() =>
-															handleDelete(customer)
+															handleDelete(
+																customer,
+															)
 														}
 													>
 														Delete
@@ -244,7 +313,7 @@ export default function CustomersPage() {
 											</TableCell>
 										</TableRow>
 									))}
-							{!isLoading && paginated.length === 0 && (
+							{!isLoading && customers.length === 0 && (
 								<TableRow>
 									<TableCell
 										colSpan={5}
@@ -263,10 +332,10 @@ export default function CustomersPage() {
 						</TableBody>
 					</Table>
 
-					{filtered.length > ITEMS_PER_PAGE && (
+					{total > ITEMS_PER_PAGE && (
 						<div className="border-t px-4 py-3">
 							<Pagination
-								totalItems={filtered.length}
+								totalItems={total}
 								itemsPerPage={ITEMS_PER_PAGE}
 								currentPage={page}
 								onChangeCurrentPage={setPage}

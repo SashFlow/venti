@@ -11,23 +11,32 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/table";
+import { useConfirmationAlert } from "@saas/shared/components/ConfirmationAlertProvider";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ArrowRightIcon,
 	DownloadIcon,
 	EllipsisIcon,
 	FileSpreadsheetIcon,
+	Loader2Icon,
 	PlayIcon,
 	PlusIcon,
 	SearchIcon,
+	Trash2Icon,
 	UploadIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { toast } from "sonner";
+import { readVendorMetadata } from "./lib/vendor-utils";
+import { useVendorsContext } from "./lib/vendors-context";
 
 const ITEMS_PER_PAGE = 20;
 
 type Vendor = {
 	id: string;
+	code: string;
 	name: string;
 	email: string | null;
 	phone: string | null;
@@ -35,33 +44,124 @@ type Vendor = {
 	openOrders: number;
 };
 
-// TODO: replace with real vendor list query
-const PLACEHOLDER_VENDORS: Vendor[] = [];
+function downloadCsvFile(params: { fileName: string; csv: string }) {
+	const blob = new Blob([params.csv], { type: "text/csv;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = params.fileName;
+	anchor.click();
+	URL.revokeObjectURL(url);
+}
 
 export default function VendorsPage() {
-	const [search, setSearch] = useState("");
-	const [page, setPage] = useState(1);
+	const queryClient = useQueryClient();
+	const { confirm } = useConfirmationAlert();
+	const {
+		organizationId,
+		search,
+		setSearch,
+		page,
+		setPage,
+		invalidateVendors,
+	} = useVendorsContext();
 
-	const filteredVendors = useMemo(() => {
-		if (!search) {
-			return PLACEHOLDER_VENDORS;
+	const { data, isPending } = useQuery({
+		...orpc.masterData.suppliers.list.queryOptions({
+			input: {
+				organizationId: organizationId ?? "",
+				query: search.trim() || undefined,
+				limit: ITEMS_PER_PAGE,
+				offset: (page - 1) * ITEMS_PER_PAGE,
+			},
+		}),
+		enabled: Boolean(organizationId),
+	});
+
+	const deleteSupplierMutation = useMutation(
+		orpc.masterData.suppliers.delete.mutationOptions(),
+	);
+
+	const vendors = useMemo<Vendor[]>(() => {
+		return (data?.suppliers ?? []).map((supplier) => {
+			const metadata = readVendorMetadata(supplier.metadata);
+
+			return {
+				id: supplier.id,
+				code: supplier.code,
+				name: supplier.name,
+				email: supplier.email,
+				phone: supplier.phone,
+				accountNumber: metadata.accountNumber || null,
+				openOrders: 0,
+			};
+		});
+	}, [data?.suppliers]);
+
+	const total = data?.total ?? 0;
+	const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
+	useEffect(() => {
+		if (page > totalPages) {
+			setPage(totalPages);
+		}
+	}, [page, setPage, totalPages]);
+
+	const onDelete = (vendor: Vendor) => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
 		}
 
-		const q = search.toLowerCase();
-		return PLACEHOLDER_VENDORS.filter((vendor) => {
-			return (
-				vendor.name.toLowerCase().includes(q) ||
-				vendor.email?.toLowerCase().includes(q) ||
-				vendor.phone?.includes(q) ||
-				vendor.accountNumber?.toLowerCase().includes(q)
-			);
-		});
-	}, [search]);
+		confirm({
+			title: "Delete vendor",
+			message: `Delete ${vendor.name}? This action cannot be undone.`,
+			destructive: true,
+			onConfirm: async () => {
+				await deleteSupplierMutation.mutateAsync({
+					organizationId,
+					id: vendor.id,
+				});
 
-	const paginatedVendors = filteredVendors.slice(
-		(page - 1) * ITEMS_PER_PAGE,
-		page * ITEMS_PER_PAGE,
-	);
+				await invalidateVendors();
+				toast.success("Vendor deleted.");
+			},
+		});
+	};
+
+	const onDownloadTemplate = async () => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		const result = await queryClient.fetchQuery(
+			orpc.masterData.suppliers.importTemplate.queryOptions({
+				input: { organizationId },
+			}),
+		);
+
+		downloadCsvFile({ fileName: result.fileName, csv: result.csv });
+	};
+
+	const onExport = async () => {
+		if (!organizationId) {
+			toast.error("No active organization selected.");
+			return;
+		}
+
+		const result = await queryClient.fetchQuery(
+			orpc.masterData.suppliers.export.queryOptions({
+				input: {
+					organizationId,
+					query: search.trim() || undefined,
+				},
+			}),
+		);
+
+		downloadCsvFile({ fileName: result.fileName, csv: result.csv });
+		toast.success(`Exported ${result.count} vendors.`);
+	};
 
 	return (
 		<div className="container py-8 max-w-7xl mx-auto space-y-6">
@@ -70,17 +170,21 @@ export default function VendorsPage() {
 					Vendors
 				</h1>
 				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="icon"
-						aria-label="Upload vendors"
-					>
-						<UploadIcon className="size-4" />
+					<Button variant="outline" size="icon" asChild>
+						<Link
+							href="/app/vendors/import"
+							aria-label="Upload vendors"
+						>
+							<UploadIcon className="size-4" />
+						</Link>
 					</Button>
 					<Button
 						variant="outline"
 						size="icon"
 						aria-label="Download vendor template"
+						onClick={() => {
+							void onDownloadTemplate();
+						}}
 					>
 						<DownloadIcon className="size-4" />
 					</Button>
@@ -88,6 +192,9 @@ export default function VendorsPage() {
 						variant="outline"
 						size="icon"
 						aria-label="Export vendor CSV"
+						onClick={() => {
+							void onExport();
+						}}
 					>
 						<FileSpreadsheetIcon className="size-4" />
 					</Button>
@@ -119,19 +226,39 @@ export default function VendorsPage() {
 						<TableHeader>
 							<TableRow>
 								<TableHead>Name</TableHead>
+								<TableHead>Code</TableHead>
 								<TableHead>Email</TableHead>
 								<TableHead>Phone</TableHead>
 								<TableHead>Account Number</TableHead>
 								<TableHead className="text-right">
 									Open Orders
 								</TableHead>
+								<TableHead className="w-16" />
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{paginatedVendors.map((vendor) => (
+							{isPending && (
+								<TableRow>
+									<TableCell colSpan={7} className="h-14">
+										<div className="flex items-center gap-2 text-muted-foreground">
+											<Loader2Icon className="size-4 animate-spin" />
+											Loading vendors...
+										</div>
+									</TableCell>
+								</TableRow>
+							)}
+							{vendors.map((vendor) => (
 								<TableRow key={vendor.id}>
 									<TableCell className="font-medium">
-										{vendor.name}
+										<Link
+											href={`/app/vendors/${vendor.id}`}
+											className="hover:underline"
+										>
+											{vendor.name}
+										</Link>
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										{vendor.code}
 									</TableCell>
 									<TableCell className="text-muted-foreground">
 										{vendor.email ?? "-"}
@@ -145,12 +272,22 @@ export default function VendorsPage() {
 									<TableCell className="text-right">
 										{vendor.openOrders}
 									</TableCell>
+									<TableCell className="text-right">
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => onDelete(vendor)}
+											aria-label={`Delete ${vendor.name}`}
+										>
+											<Trash2Icon className="size-4" />
+										</Button>
+									</TableCell>
 								</TableRow>
 							))}
-							{paginatedVendors.length === 0 && (
+							{!isPending && vendors.length === 0 && (
 								<TableRow>
 									<TableCell
-										colSpan={5}
+										colSpan={7}
 										className="h-14 text-muted-foreground"
 									>
 										No vendors yet.
@@ -172,14 +309,14 @@ export default function VendorsPage() {
 							<span aria-hidden>‹</span>
 							<span className="sr-only">Previous page</span>
 						</Button>
-						<span className="font-medium">{page}</span>
+						<span className="font-medium">
+							{page} / {totalPages}
+						</span>
 						<Button
 							variant="outline"
 							size="icon"
 							onClick={() => setPage((current) => current + 1)}
-							disabled={
-								filteredVendors.length <= page * ITEMS_PER_PAGE
-							}
+							disabled={page >= totalPages}
 						>
 							<span aria-hidden>›</span>
 							<span className="sr-only">Next page</span>

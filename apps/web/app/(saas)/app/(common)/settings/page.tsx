@@ -1,5 +1,6 @@
 "use client";
 
+import { authClient } from "@repo/auth/client";
 import { Button } from "@repo/ui/button";
 import {
 	Dialog,
@@ -21,7 +22,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
 	AccountTabContent,
 	type ApiToken,
@@ -56,18 +58,30 @@ const WEBHOOK_TOPIC_OPTIONS: Option[] = [
 	{ value: "order.created", label: "order.created" },
 ];
 
+const SETTINGS_STORAGE_KEY = "venti.settings.staged";
+
+type StagedSettings = {
+	mfaEmailEnabled: boolean;
+	mfaAppEnabled: boolean;
+	notificationRules: NotificationRule[];
+	apiTokens: ApiToken[];
+	webhooks: WebhookEndpoint[];
+};
+
 function getOptionLabel(options: Option[], value: string) {
 	return options.find((option) => option.value === value)?.label ?? value;
 }
 
 export default function SettingsPage() {
-	const { user } = useSession();
+	const { user, reloadSession } = useSession();
 	const [activeTab, setActiveTab] = useState("account");
-	const [fullName, setFullName] = useState(user?.name);
-	const [email, setEmail] = useState(user?.email);
+	const [fullName, setFullName] = useState(user?.name ?? "");
+	const [email, setEmail] = useState(user?.email ?? "");
 	const { theme, setTheme } = useTheme();
 	const [mfaEmailEnabled, setMfaEmailEnabled] = useState(true);
 	const [mfaAppEnabled, setMfaAppEnabled] = useState(false);
+	const [accountSaving, setAccountSaving] = useState(false);
+	const [passwordSaving, setPasswordSaving] = useState(false);
 
 	const [notificationScope, setNotificationScope] = useState(
 		"bengaluru-bengaluru-ka",
@@ -102,8 +116,88 @@ export default function SettingsPage() {
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 
-	const handleAccountSave = () => {
-		// TODO: Integrate with account settings update API.
+	useEffect(() => {
+		setFullName(user?.name ?? "");
+		setEmail(user?.email ?? "");
+	}, [user?.email, user?.name]);
+
+	useEffect(() => {
+		const stored = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+		if (!stored) {
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse(stored) as Partial<StagedSettings>;
+			setMfaEmailEnabled(parsed.mfaEmailEnabled ?? true);
+			setMfaAppEnabled(parsed.mfaAppEnabled ?? false);
+			setNotificationRules(parsed.notificationRules ?? []);
+			setApiTokens(parsed.apiTokens ?? []);
+			setWebhooks(parsed.webhooks ?? []);
+		} catch {
+			window.localStorage.removeItem(SETTINGS_STORAGE_KEY);
+		}
+	}, []);
+
+	useEffect(() => {
+		const stagedSettings: StagedSettings = {
+			mfaEmailEnabled,
+			mfaAppEnabled,
+			notificationRules,
+			apiTokens,
+			webhooks,
+		};
+
+		window.localStorage.setItem(
+			SETTINGS_STORAGE_KEY,
+			JSON.stringify(stagedSettings),
+		);
+	}, [
+		apiTokens,
+		mfaAppEnabled,
+		mfaEmailEnabled,
+		notificationRules,
+		webhooks,
+	]);
+
+	const handleAccountSave = async () => {
+		if (!fullName.trim()) {
+			toast.error("Name is required.");
+			return;
+		}
+
+		setAccountSaving(true);
+
+		try {
+			if (fullName.trim() !== (user?.name ?? "")) {
+				const { error } = await authClient.updateUser({
+					name: fullName.trim(),
+				});
+
+				if (error) {
+					toast.error("Failed to update your name.");
+					return;
+				}
+			}
+
+			if (email.trim() && email.trim() !== (user?.email ?? "")) {
+				const { error } = await authClient.changeEmail({
+					newEmail: email.trim(),
+				});
+
+				if (error) {
+					toast.error("Failed to update your email.");
+					return;
+				}
+			}
+
+			await reloadSession();
+			toast.success(
+				"Account updated. Local security preferences are staged in this browser.",
+			);
+		} finally {
+			setAccountSaving(false);
+		}
 	};
 
 	const handleChangePassword = () => {
@@ -148,8 +242,8 @@ export default function SettingsPage() {
 			]);
 		}
 
-		// TODO: Integrate notification settings create/update APIs.
 		setNotificationModalOpen(false);
+		toast.success("Notification rule saved locally.");
 	};
 
 	const handleCreateApiToken = () => {
@@ -170,6 +264,7 @@ export default function SettingsPage() {
 
 	const handleSaveApiToken = () => {
 		if (!tokenName.trim()) {
+			toast.error("Token name is required.");
 			return;
 		}
 
@@ -200,8 +295,8 @@ export default function SettingsPage() {
 			]);
 		}
 
-		// TODO: Integrate API token create/update endpoints.
 		setTokenModalOpen(false);
+		toast.success("API token saved locally.");
 	};
 
 	const handleCreateWebhook = () => {
@@ -222,6 +317,7 @@ export default function SettingsPage() {
 
 	const handleSaveWebhook = () => {
 		if (!webhookName.trim() || !webhookUrl.trim()) {
+			toast.error("Webhook name and endpoint URL are required.");
 			return;
 		}
 
@@ -252,24 +348,40 @@ export default function SettingsPage() {
 			]);
 		}
 
-		// TODO: Integrate webhook create/update endpoints.
 		setWebhookModalOpen(false);
+		toast.success("Webhook saved locally.");
 	};
 
-	const handleSavePassword = () => {
+	const handleSavePassword = async () => {
 		if (
 			!currentPassword ||
 			!newPassword ||
 			newPassword !== confirmPassword
 		) {
+			toast.error("Confirm the new password to continue.");
 			return;
 		}
 
-		// TODO: Integrate change-password endpoint.
+		setPasswordSaving(true);
+
+		const { error } = await authClient.changePassword({
+			currentPassword,
+			newPassword,
+			revokeOtherSessions: true,
+		});
+
+		setPasswordSaving(false);
+
+		if (error) {
+			toast.error("Failed to update password.");
+			return;
+		}
+
 		setCurrentPassword("");
 		setNewPassword("");
 		setConfirmPassword("");
 		setPasswordModalOpen(false);
+		toast.success("Password updated.");
 	};
 
 	return (
@@ -333,6 +445,7 @@ export default function SettingsPage() {
 						onMfaAppChange={setMfaAppEnabled}
 						onChangePassword={handleChangePassword}
 						onSave={handleAccountSave}
+						saving={accountSaving}
 					/>
 
 					<NotificationSettingsTabContent
@@ -420,10 +533,16 @@ export default function SettingsPage() {
 						<Button
 							variant="outline"
 							onClick={() => setPasswordModalOpen(false)}
+							disabled={passwordSaving}
 						>
 							Cancel
 						</Button>
-						<Button onClick={handleSavePassword}>Save</Button>
+						<Button
+							onClick={() => void handleSavePassword()}
+							disabled={passwordSaving}
+						>
+							{passwordSaving ? "Saving..." : "Save"}
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

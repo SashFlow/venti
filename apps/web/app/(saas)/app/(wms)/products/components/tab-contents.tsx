@@ -11,6 +11,7 @@ import {
 } from "@repo/ui/table";
 import { TabsContent } from "@repo/ui/tabs";
 import { Textarea } from "@repo/ui/textarea";
+import { Loader2Icon, Trash2Icon } from "lucide-react";
 
 export type ImportField = {
 	column: string;
@@ -18,7 +19,28 @@ export type ImportField = {
 	required: boolean;
 };
 
-export function SkuTabContent() {
+export type SKURow = {
+	id: string;
+	name: string;
+	skuCode: string;
+	lifecycle: string;
+};
+
+type SkuTabContentProps = {
+	skus: SKURow[];
+	isLoading: boolean;
+	search: string;
+	onSearchChange: (value: string) => void;
+	onDelete: (sku: SKURow) => void;
+};
+
+export function SkuTabContent({
+	skus,
+	isLoading,
+	search,
+	onSearchChange,
+	onDelete,
+}: SkuTabContentProps) {
 	return (
 		<TabsContent value="sku" className="space-y-4">
 			<Card className="border">
@@ -32,42 +54,70 @@ export function SkuTabContent() {
 					</div>
 				</CardHeader>
 				<CardContent className="space-y-4 p-4">
-					<div className="grid gap-3 md:grid-cols-5">
-						<Input placeholder="Search" />
-						<Input placeholder="Status" />
-						<Input placeholder="Product Type" />
-						<Input placeholder="Product Tags" />
-						<Input placeholder="Price" />
+					<div className="grid gap-3 md:grid-cols-2">
+						<Input
+							placeholder="Search"
+							value={search}
+							onChange={(e) => onSearchChange(e.target.value)}
+						/>
+						<Input placeholder="Status" disabled />
 					</div>
 
 					<Table>
 						<TableHeader>
 							<TableRow>
 								<TableHead>Product</TableHead>
-								<TableHead>Product Type</TableHead>
 								<TableHead>SKU</TableHead>
-								<TableHead>Price</TableHead>
-								<TableHead>Unit Costs</TableHead>
-								<TableHead>ABC</TableHead>
+								<TableHead>Status</TableHead>
 								<TableHead className="text-right">
-									Qty
+									Actions
 								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							<TableRow>
-								<TableCell className="font-medium underline underline-offset-2">
-									Chappal
-								</TableCell>
-								<TableCell>-</TableCell>
-								<TableCell>KKIE</TableCell>
-								<TableCell>$1.00</TableCell>
-								<TableCell>$0.05</TableCell>
-								<TableCell>-</TableCell>
-								<TableCell className="text-right">
-									101
-								</TableCell>
-							</TableRow>
+							{isLoading && (
+								<TableRow>
+									<TableCell colSpan={4} className="h-14">
+										<div className="flex items-center gap-2 text-muted-foreground">
+											<Loader2Icon className="size-4 animate-spin" />
+											Loading SKUs...
+										</div>
+									</TableCell>
+								</TableRow>
+							)}
+							{!isLoading && skus.length === 0 && (
+								<TableRow>
+									<TableCell
+										colSpan={4}
+										className="h-14 text-muted-foreground"
+									>
+										No SKUs found.
+									</TableCell>
+								</TableRow>
+							)}
+							{skus.map((sku) => (
+								<TableRow key={sku.id}>
+									<TableCell className="font-medium underline underline-offset-2">
+										{sku.name}
+									</TableCell>
+									<TableCell>{sku.skuCode}</TableCell>
+									<TableCell className="text-sm">
+										<span className="rounded-full bg-green-100 px-2.5 py-0.5 text-green-800">
+											{sku.lifecycle}
+										</span>
+									</TableCell>
+									<TableCell className="text-right">
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => onDelete(sku)}
+											aria-label={`Delete ${sku.name}`}
+										>
+											<Trash2Icon className="size-4" />
+										</Button>
+									</TableCell>
+								</TableRow>
+							))}
 						</TableBody>
 					</Table>
 				</CardContent>

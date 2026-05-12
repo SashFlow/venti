@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
+import { useSession } from "@saas/auth/hooks/use-session";
 import {
 	FulfillTabContent,
 	InboundTabContent,
@@ -10,6 +11,9 @@ import {
 } from "./components/tab-contents";
 
 export default function OrdersPage() {
+	const { organization } = useSession();
+	const organizationId = organization?.id ?? "";
+
 	return (
 		<div className="container py-8 max-w-7xl mx-auto space-y-6">
 			<div className="space-y-1">
@@ -44,11 +48,11 @@ export default function OrdersPage() {
 					</TabsTrigger>
 				</TabsList>
 
-				<InboundTabContent />
-				<OutboundTabContent />
-				<TransferTabContent />
-				<ManifestTabContent />
-				<FulfillTabContent />
+				<InboundTabContent organizationId={organizationId} />
+				<OutboundTabContent organizationId={organizationId} />
+				<TransferTabContent organizationId={organizationId} />
+				<ManifestTabContent organizationId={organizationId} />
+				<FulfillTabContent organizationId={organizationId} />
 			</Tabs>
 		</div>
 	);
