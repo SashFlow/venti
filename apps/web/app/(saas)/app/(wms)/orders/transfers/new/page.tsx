@@ -42,16 +42,27 @@ export default function CreateTransferPage() {
 		enabled: Boolean(organizationId),
 	});
 
-	const createMutation = useMutation(orpc.orders.createTransfer.mutationOptions());
+	const createMutation = useMutation(
+		orpc.orders.createTransfer.mutationOptions(),
+	);
 
 	const warehouses = warehousesQuery.data?.warehouses ?? [];
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!warehouseId) { toast.error("Warehouse is required."); return; }
-		if (!inventoryItemId.trim()) { toast.error("Inventory Item ID is required."); return; }
-		if (!quantity || Number(quantity) <= 0) { toast.error("Quantity must be greater than zero."); return; }
+		if (!warehouseId) {
+			toast.error("Warehouse is required.");
+			return;
+		}
+		if (!inventoryItemId.trim()) {
+			toast.error("Inventory Item ID is required.");
+			return;
+		}
+		if (!quantity || Number(quantity) <= 0) {
+			toast.error("Quantity must be greater than zero.");
+			return;
+		}
 
 		setIsSubmitting(true);
 		try {
@@ -66,8 +77,12 @@ export default function CreateTransferPage() {
 				notes: notes.trim() || undefined,
 			});
 
-			await queryClient.invalidateQueries({ queryKey: orpc.orders.listTransfers.key() });
-			toast.success(`Transfer ${result.transfer.referenceNumber ?? result.transfer.id.slice(0, 10)} created.`);
+			await queryClient.invalidateQueries({
+				queryKey: orpc.orders.listTransfers.key(),
+			});
+			toast.success(
+				`Transfer ${result.transfer.referenceNumber ?? result.transfer.id.slice(0, 10)} created.`,
+			);
 			router.push(`/app/orders/transfers/${result.transfer.id}`);
 		} catch {
 			toast.error("Failed to create transfer.");
@@ -85,78 +100,106 @@ export default function CreateTransferPage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">New Transfer</h1>
-					<p className="text-sm text-muted-foreground">Create an internal inventory transfer movement.</p>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						New Transfer
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Create an internal inventory transfer movement.
+					</p>
 				</div>
 			</div>
 
 			<form onSubmit={handleSubmit} className="space-y-6">
 				<Card className="border rounded-2xl">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base">Transfer Details</CardTitle>
+						<CardTitle className="text-base">
+							Transfer Details
+						</CardTitle>
 					</CardHeader>
 					<CardContent className="grid gap-4 md:grid-cols-2">
 						<div className="space-y-2">
 							<Label htmlFor="warehouseId">
-								Warehouse <span className="text-destructive">*</span>
+								Warehouse{" "}
+								<span className="text-destructive">*</span>
 							</Label>
-							<Select value={warehouseId} onValueChange={setWarehouseId}>
+							<Select
+								value={warehouseId}
+								onValueChange={setWarehouseId}
+							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse" />
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (
-										<SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+										<SelectItem key={w.id} value={w.id}>
+											{w.name}
+										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="referenceNumber">Reference Number</Label>
+							<Label htmlFor="referenceNumber">
+								Reference Number
+							</Label>
 							<Input
 								id="referenceNumber"
 								value={referenceNumber}
-								onChange={(e) => setReferenceNumber(e.target.value)}
+								onChange={(e) =>
+									setReferenceNumber(e.target.value)
+								}
 								placeholder="e.g. TRF-2026-001"
 							/>
 						</div>
 
 						<div className="space-y-2 md:col-span-2">
 							<Label htmlFor="inventoryItemId">
-								Inventory Item ID <span className="text-destructive">*</span>
+								Inventory Item ID{" "}
+								<span className="text-destructive">*</span>
 							</Label>
 							<Input
 								id="inventoryItemId"
 								value={inventoryItemId}
-								onChange={(e) => setInventoryItemId(e.target.value)}
+								onChange={(e) =>
+									setInventoryItemId(e.target.value)
+								}
 								placeholder="Paste inventory item ID"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="fromStorageUnitId">From Storage Unit ID</Label>
+							<Label htmlFor="fromStorageUnitId">
+								From Storage Unit ID
+							</Label>
 							<Input
 								id="fromStorageUnitId"
 								value={fromStorageUnitId}
-								onChange={(e) => setFromStorageUnitId(e.target.value)}
+								onChange={(e) =>
+									setFromStorageUnitId(e.target.value)
+								}
 								placeholder="Origin storage unit ID"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="toStorageUnitId">To Storage Unit ID</Label>
+							<Label htmlFor="toStorageUnitId">
+								To Storage Unit ID
+							</Label>
 							<Input
 								id="toStorageUnitId"
 								value={toStorageUnitId}
-								onChange={(e) => setToStorageUnitId(e.target.value)}
+								onChange={(e) =>
+									setToStorageUnitId(e.target.value)
+								}
 								placeholder="Destination storage unit ID"
 							/>
 						</div>
 
 						<div className="space-y-2">
 							<Label htmlFor="quantity">
-								Quantity <span className="text-destructive">*</span>
+								Quantity{" "}
+								<span className="text-destructive">*</span>
 							</Label>
 							<Input
 								id="quantity"

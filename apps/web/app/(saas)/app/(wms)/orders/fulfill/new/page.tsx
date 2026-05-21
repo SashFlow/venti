@@ -55,7 +55,9 @@ export default function CreateWavePage() {
 		enabled: Boolean(organizationId),
 	});
 
-	const createMutation = useMutation(orpc.orders.createWave.mutationOptions());
+	const createMutation = useMutation(
+		orpc.orders.createWave.mutationOptions(),
+	);
 
 	const warehouses = warehousesQuery.data?.warehouses ?? [];
 	const salesOrders = outboundQuery.data?.orders ?? [];
@@ -69,9 +71,18 @@ export default function CreateWavePage() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!warehouseId) { toast.error("Warehouse is required."); return; }
-		if (!waveNumber.trim()) { toast.error("Wave number is required."); return; }
-		if (selectedOrderIds.length === 0) { toast.error("Select at least one sales order."); return; }
+		if (!warehouseId) {
+			toast.error("Warehouse is required.");
+			return;
+		}
+		if (!waveNumber.trim()) {
+			toast.error("Wave number is required.");
+			return;
+		}
+		if (selectedOrderIds.length === 0) {
+			toast.error("Select at least one sales order.");
+			return;
+		}
 
 		setIsSubmitting(true);
 		try {
@@ -84,7 +95,9 @@ export default function CreateWavePage() {
 				notes: notes.trim() || undefined,
 			});
 
-			await queryClient.invalidateQueries({ queryKey: orpc.orders.listFulfillmentBatches.key() });
+			await queryClient.invalidateQueries({
+				queryKey: orpc.orders.listFulfillmentBatches.key(),
+			});
 			toast.success(`Wave ${result.wave.waveNumber} created.`);
 			router.push(`/app/orders/fulfill/${result.wave.id}`);
 		} catch {
@@ -103,28 +116,40 @@ export default function CreateWavePage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">New Wave</h1>
-					<p className="text-sm text-muted-foreground">Create a fulfillment wave from open sales orders.</p>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						New Wave
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Create a fulfillment wave from open sales orders.
+					</p>
 				</div>
 			</div>
 
 			<form onSubmit={handleSubmit} className="space-y-6">
 				<Card className="border rounded-2xl">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base">Wave Details</CardTitle>
+						<CardTitle className="text-base">
+							Wave Details
+						</CardTitle>
 					</CardHeader>
 					<CardContent className="grid gap-4 md:grid-cols-2">
 						<div className="space-y-2">
 							<Label htmlFor="warehouseId">
-								Warehouse <span className="text-destructive">*</span>
+								Warehouse{" "}
+								<span className="text-destructive">*</span>
 							</Label>
-							<Select value={warehouseId} onValueChange={setWarehouseId}>
+							<Select
+								value={warehouseId}
+								onValueChange={setWarehouseId}
+							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse" />
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (
-										<SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+										<SelectItem key={w.id} value={w.id}>
+											{w.name}
+										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
@@ -132,7 +157,8 @@ export default function CreateWavePage() {
 
 						<div className="space-y-2">
 							<Label htmlFor="waveNumber">
-								Wave Number <span className="text-destructive">*</span>
+								Wave Number{" "}
+								<span className="text-destructive">*</span>
 							</Label>
 							<Input
 								id="waveNumber"
@@ -144,13 +170,21 @@ export default function CreateWavePage() {
 
 						<div className="space-y-2">
 							<Label htmlFor="waveType">Wave Type</Label>
-							<Select value={waveType} onValueChange={setWaveType}>
+							<Select
+								value={waveType}
+								onValueChange={setWaveType}
+							>
 								<SelectTrigger id="waveType">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
 									{WAVE_TYPES.map((t) => (
-										<SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+										<SelectItem
+											key={t.value}
+											value={t.value}
+										>
+											{t.label}
+										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
@@ -179,7 +213,9 @@ export default function CreateWavePage() {
 					</CardHeader>
 					<CardContent className="space-y-2 max-h-72 overflow-y-auto">
 						{salesOrders.length === 0 && (
-							<p className="text-sm text-muted-foreground">No open sales orders found.</p>
+							<p className="text-sm text-muted-foreground">
+								No open sales orders found.
+							</p>
 						)}
 						{salesOrders.map((o) => (
 							<label
@@ -190,11 +226,17 @@ export default function CreateWavePage() {
 									checked={selectedOrderIds.includes(o.id)}
 									onCheckedChange={() => toggleOrder(o.id)}
 								/>
-								<span className="text-sm font-medium">{o.orderNumber}</span>
+								<span className="text-sm font-medium">
+									{o.orderNumber}
+								</span>
 								{o.customerName && (
-									<span className="text-sm text-muted-foreground">— {o.customerName}</span>
+									<span className="text-sm text-muted-foreground">
+										— {o.customerName}
+									</span>
 								)}
-								<span className="ml-auto text-xs text-muted-foreground">{o.status}</span>
+								<span className="ml-auto text-xs text-muted-foreground">
+									{o.status}
+								</span>
 							</label>
 						))}
 					</CardContent>

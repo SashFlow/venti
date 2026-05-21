@@ -42,7 +42,7 @@ export function Stepper(props: {
 
 			const labelClassName = cn({
 				"px-1.5 py-2 text-xs": !isNumberVariant,
-				"hidden": isDotsVariant,
+				hidden: isDotsVariant,
 			});
 
 			const { label, number } = getStepLabel(labelOrKey, index);

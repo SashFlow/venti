@@ -15,7 +15,9 @@ export const createWaveProcedure = protectedProcedure
 			organizationId: z.string(),
 			warehouseId: z.string(),
 			waveNumber: z.string().min(1).max(100),
-			type: z.enum(["SINGLE_ORDER", "BATCH", "ZONE", "CLUSTER"]).default("BATCH"),
+			type: z
+				.enum(["SINGLE_ORDER", "BATCH", "ZONE", "CLUSTER"])
+				.default("BATCH"),
 			salesOrderIds: z.array(z.string()).min(1),
 			notes: z.string().optional(),
 		}),

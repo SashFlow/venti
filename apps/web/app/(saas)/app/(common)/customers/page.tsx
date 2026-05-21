@@ -283,7 +283,9 @@ export default function CustomersPage() {
 											</TableCell>
 											<TableCell className="text-right">
 												<DropdownMenu>
-													<DropdownMenuTrigger asChild>
+													<DropdownMenuTrigger
+														asChild
+													>
 														<Button
 															variant="ghost"
 															size="icon"
@@ -293,14 +295,18 @@ export default function CustomersPage() {
 														</Button>
 													</DropdownMenuTrigger>
 													<DropdownMenuContent align="end">
-														<DropdownMenuItem asChild>
+														<DropdownMenuItem
+															asChild
+														>
 															<Link
 																href={`/app/customers/${customer.id}`}
 															>
 																View
 															</Link>
 														</DropdownMenuItem>
-														<DropdownMenuItem asChild>
+														<DropdownMenuItem
+															asChild
+														>
 															<Link
 																href={`/app/customers/${customer.id}`}
 															>

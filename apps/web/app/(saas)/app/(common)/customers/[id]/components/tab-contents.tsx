@@ -171,8 +171,7 @@ export function SettingsTabContent({
 				address: {
 					...locationForm.address,
 					addressLine2:
-						locationForm.address.addressLine2?.trim() ||
-						undefined,
+						locationForm.address.addressLine2?.trim() || undefined,
 				},
 			});
 			setLocationForm(EMPTY_LOCATION_FORM);
@@ -308,8 +307,8 @@ export function SettingsTabContent({
 									<Label>Address Line 2</Label>
 									<Input
 										value={
-											locationForm.address
-												.addressLine2 ?? ""
+											locationForm.address.addressLine2 ??
+											""
 										}
 										onChange={(e) =>
 											setLocationForm((f) => ({
@@ -374,9 +373,7 @@ export function SettingsTabContent({
 									<div className="space-y-2">
 										<Label>Country</Label>
 										<Input
-											value={
-												locationForm.address.country
-											}
+											value={locationForm.address.country}
 											onChange={(e) =>
 												setLocationForm((f) => ({
 													...f,
@@ -417,9 +414,7 @@ export function SettingsTabContent({
 							<DialogFooter>
 								<Button
 									variant="outline"
-									onClick={() =>
-										setLocationDialogOpen(false)
-									}
+									onClick={() => setLocationDialogOpen(false)}
 								>
 									Cancel
 								</Button>
@@ -534,9 +529,10 @@ export function SettingsTabContent({
 										className="w-1/3"
 										onChange={(e) => {
 											const newKey = e.target.value;
-											const entries = Object.entries(
-												customAttributes,
-											);
+											const entries =
+												Object.entries(
+													customAttributes,
+												);
 											entries[index] = [newKey, value];
 											const next = Object.fromEntries(
 												entries,

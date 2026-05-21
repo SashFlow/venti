@@ -29,7 +29,13 @@ type OrderLine = {
 };
 
 function newLine(): OrderLine {
-	return { id: crypto.randomUUID(), skuId: "", orderedQty: "", unitCost: "", expectedDate: "" };
+	return {
+		id: crypto.randomUUID(),
+		skuId: "",
+		orderedQty: "",
+		unitCost: "",
+		expectedDate: "",
+	};
 }
 
 export default function CreateInboundOrderPage() {
@@ -67,7 +73,9 @@ export default function CreateInboundOrderPage() {
 		enabled: Boolean(organizationId),
 	});
 
-	const createMutation = useMutation(orpc.orders.createPurchaseOrder.mutationOptions());
+	const createMutation = useMutation(
+		orpc.orders.createPurchaseOrder.mutationOptions(),
+	);
 
 	const warehouses = warehousesQuery.data?.warehouses ?? [];
 	const suppliers = suppliersQuery.data?.suppliers ?? [];
@@ -82,7 +90,10 @@ export default function CreateInboundOrderPage() {
 		id: string,
 		field: K,
 		value: OrderLine[K],
-	) => setLines((prev) => prev.map((l) => (l.id === id ? { ...l, [field]: value } : l)));
+	) =>
+		setLines((prev) =>
+			prev.map((l) => (l.id === id ? { ...l, [field]: value } : l)),
+		);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -119,11 +130,15 @@ export default function CreateInboundOrderPage() {
 					skuId: l.skuId,
 					orderedQty: Number(l.orderedQty),
 					unitCost: l.unitCost ? Number(l.unitCost) : undefined,
-					expectedDate: l.expectedDate ? new Date(l.expectedDate) : undefined,
+					expectedDate: l.expectedDate
+						? new Date(l.expectedDate)
+						: undefined,
 				})),
 			});
 
-			await queryClient.invalidateQueries({ queryKey: orpc.orders.listInbound.key() });
+			await queryClient.invalidateQueries({
+				queryKey: orpc.orders.listInbound.key(),
+			});
 			toast.success(`Purchase order ${result.order.poNumber} created.`);
 			router.push(`/app/orders/inbound/${result.order.id}`);
 		} catch {
@@ -142,20 +157,27 @@ export default function CreateInboundOrderPage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">New Purchase Order</h1>
-					<p className="text-sm text-muted-foreground">Create an inbound purchase order from a supplier.</p>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						New Purchase Order
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Create an inbound purchase order from a supplier.
+					</p>
 				</div>
 			</div>
 
 			<form onSubmit={handleSubmit} className="space-y-6">
 				<Card className="border rounded-2xl">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base">Order Details</CardTitle>
+						<CardTitle className="text-base">
+							Order Details
+						</CardTitle>
 					</CardHeader>
 					<CardContent className="grid gap-4 md:grid-cols-2">
 						<div className="space-y-2">
 							<Label htmlFor="poNumber">
-								PO Number <span className="text-destructive">*</span>
+								PO Number{" "}
+								<span className="text-destructive">*</span>
 							</Label>
 							<Input
 								id="poNumber"
@@ -167,9 +189,13 @@ export default function CreateInboundOrderPage() {
 
 						<div className="space-y-2">
 							<Label htmlFor="warehouseId">
-								Warehouse <span className="text-destructive">*</span>
+								Warehouse{" "}
+								<span className="text-destructive">*</span>
 							</Label>
-							<Select value={warehouseId} onValueChange={setWarehouseId}>
+							<Select
+								value={warehouseId}
+								onValueChange={setWarehouseId}
+							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse" />
 								</SelectTrigger>
@@ -185,9 +211,13 @@ export default function CreateInboundOrderPage() {
 
 						<div className="space-y-2">
 							<Label htmlFor="supplierId">
-								Supplier <span className="text-destructive">*</span>
+								Supplier{" "}
+								<span className="text-destructive">*</span>
 							</Label>
-							<Select value={supplierId} onValueChange={setSupplierId}>
+							<Select
+								value={supplierId}
+								onValueChange={setSupplierId}
+							>
 								<SelectTrigger id="supplierId">
 									<SelectValue placeholder="Select supplier" />
 								</SelectTrigger>
@@ -202,12 +232,16 @@ export default function CreateInboundOrderPage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="expectedDate">Expected Delivery Date</Label>
+							<Label htmlFor="expectedDate">
+								Expected Delivery Date
+							</Label>
 							<Input
 								id="expectedDate"
 								type="date"
 								value={expectedDate}
-								onChange={(e) => setExpectedDate(e.target.value)}
+								onChange={(e) =>
+									setExpectedDate(e.target.value)
+								}
 							/>
 						</div>
 
@@ -226,28 +260,48 @@ export default function CreateInboundOrderPage() {
 				<Card className="border rounded-2xl">
 					<CardHeader className="flex flex-row items-center justify-between pb-3">
 						<CardTitle className="text-base">Line Items</CardTitle>
-						<Button type="button" variant="outline" size="sm" onClick={handleAddLine}>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={handleAddLine}
+						>
 							<PlusIcon className="mr-1.5 size-4" />
 							Add Line
 						</Button>
 					</CardHeader>
 					<CardContent className="space-y-3">
 						{lines.map((line, index) => (
-							<div key={line.id} className="grid items-end gap-3 border rounded-xl p-3 md:grid-cols-4">
+							<div
+								key={line.id}
+								className="grid items-end gap-3 border rounded-xl p-3 md:grid-cols-4"
+							>
 								<div className="space-y-2 md:col-span-2">
 									<Label>
-										SKU <span className="text-destructive">*</span>
+										SKU{" "}
+										<span className="text-destructive">
+											*
+										</span>
 									</Label>
 									<Select
 										value={line.skuId}
-										onValueChange={(v) => handleLineChange(line.id, "skuId", v)}
+										onValueChange={(v) =>
+											handleLineChange(
+												line.id,
+												"skuId",
+												v,
+											)
+										}
 									>
 										<SelectTrigger>
 											<SelectValue placeholder="Select product" />
 										</SelectTrigger>
 										<SelectContent>
 											{skus.map((s) => (
-												<SelectItem key={s.id} value={s.id}>
+												<SelectItem
+													key={s.id}
+													value={s.id}
+												>
 													{s.name} ({s.sku})
 												</SelectItem>
 											))}
@@ -257,14 +311,23 @@ export default function CreateInboundOrderPage() {
 
 								<div className="space-y-2">
 									<Label>
-										Qty <span className="text-destructive">*</span>
+										Qty{" "}
+										<span className="text-destructive">
+											*
+										</span>
 									</Label>
 									<Input
 										type="number"
 										min="0.0001"
 										step="any"
 										value={line.orderedQty}
-										onChange={(e) => handleLineChange(line.id, "orderedQty", e.target.value)}
+										onChange={(e) =>
+											handleLineChange(
+												line.id,
+												"orderedQty",
+												e.target.value,
+											)
+										}
 										placeholder="0"
 									/>
 								</div>
@@ -276,7 +339,13 @@ export default function CreateInboundOrderPage() {
 										min="0"
 										step="any"
 										value={line.unitCost}
-										onChange={(e) => handleLineChange(line.id, "unitCost", e.target.value)}
+										onChange={(e) =>
+											handleLineChange(
+												line.id,
+												"unitCost",
+												e.target.value,
+											)
+										}
 										placeholder="0.00"
 									/>
 								</div>
@@ -286,7 +355,13 @@ export default function CreateInboundOrderPage() {
 									<Input
 										type="date"
 										value={line.expectedDate}
-										onChange={(e) => handleLineChange(line.id, "expectedDate", e.target.value)}
+										onChange={(e) =>
+											handleLineChange(
+												line.id,
+												"expectedDate",
+												e.target.value,
+											)
+										}
 									/>
 								</div>
 
@@ -295,7 +370,9 @@ export default function CreateInboundOrderPage() {
 										type="button"
 										variant="ghost"
 										size="icon"
-										onClick={() => handleRemoveLine(line.id)}
+										onClick={() =>
+											handleRemoveLine(line.id)
+										}
 										disabled={lines.length === 1}
 										aria-label={`Remove line ${index + 1}`}
 									>

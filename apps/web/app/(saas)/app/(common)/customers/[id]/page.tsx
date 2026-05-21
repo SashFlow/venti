@@ -154,7 +154,12 @@ export default function CustomerDetailPage() {
 		setYearlyDate(metadata.yearlyDate || "2026-01-15");
 
 		const raw = customer.metadata as Record<string, unknown> | null;
-		if (raw && typeof raw.customAttributes === "object" && raw.customAttributes !== null && !Array.isArray(raw.customAttributes)) {
+		if (
+			raw &&
+			typeof raw.customAttributes === "object" &&
+			raw.customAttributes !== null &&
+			!Array.isArray(raw.customAttributes)
+		) {
 			setCustomAttributes(raw.customAttributes as Record<string, string>);
 		}
 
@@ -389,4 +394,3 @@ export default function CustomerDetailPage() {
 		</div>
 	);
 }
-

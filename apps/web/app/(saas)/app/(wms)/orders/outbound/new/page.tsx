@@ -35,7 +35,12 @@ type OrderLine = {
 };
 
 function newLine(): OrderLine {
-	return { id: crypto.randomUUID(), skuId: "", orderedQty: "", unitPrice: "" };
+	return {
+		id: crypto.randomUUID(),
+		skuId: "",
+		orderedQty: "",
+		unitPrice: "",
+	};
 }
 
 export default function CreateOutboundOrderPage() {
@@ -78,7 +83,9 @@ export default function CreateOutboundOrderPage() {
 		enabled: Boolean(organizationId),
 	});
 
-	const createMutation = useMutation(orpc.orders.createSalesOrder.mutationOptions());
+	const createMutation = useMutation(
+		orpc.orders.createSalesOrder.mutationOptions(),
+	);
 
 	const warehouses = warehousesQuery.data?.warehouses ?? [];
 	const customers = customersQuery.data?.customers ?? [];
@@ -91,15 +98,27 @@ export default function CreateOutboundOrderPage() {
 		id: string,
 		field: K,
 		value: OrderLine[K],
-	) => setLines((prev) => prev.map((l) => (l.id === id ? { ...l, [field]: value } : l)));
+	) =>
+		setLines((prev) =>
+			prev.map((l) => (l.id === id ? { ...l, [field]: value } : l)),
+		);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!orderNumber.trim()) { toast.error("Order number is required."); return; }
-		if (!warehouseId) { toast.error("Warehouse is required."); return; }
+		if (!orderNumber.trim()) {
+			toast.error("Order number is required.");
+			return;
+		}
+		if (!warehouseId) {
+			toast.error("Warehouse is required.");
+			return;
+		}
 		const validLines = lines.filter((l) => l.skuId && l.orderedQty);
-		if (validLines.length === 0) { toast.error("At least one valid line item is required."); return; }
+		if (validLines.length === 0) {
+			toast.error("At least one valid line item is required.");
+			return;
+		}
 
 		setIsSubmitting(true);
 		try {
@@ -112,8 +131,12 @@ export default function CreateOutboundOrderPage() {
 				customerEmail: customerEmail.trim() || undefined,
 				customerRef: customerRef.trim() || undefined,
 				priority: priority as "CRITICAL" | "HIGH" | "NORMAL" | "LOW",
-				requestedShipDate: requestedShipDate ? new Date(requestedShipDate) : undefined,
-				requiredByDate: requiredByDate ? new Date(requiredByDate) : undefined,
+				requestedShipDate: requestedShipDate
+					? new Date(requestedShipDate)
+					: undefined,
+				requiredByDate: requiredByDate
+					? new Date(requiredByDate)
+					: undefined,
 				notes: notes.trim() || undefined,
 				lines: validLines.map((l) => ({
 					skuId: l.skuId,
@@ -122,7 +145,9 @@ export default function CreateOutboundOrderPage() {
 				})),
 			});
 
-			await queryClient.invalidateQueries({ queryKey: orpc.orders.listOutbound.key() });
+			await queryClient.invalidateQueries({
+				queryKey: orpc.orders.listOutbound.key(),
+			});
 			toast.success(`Sales order ${result.order.orderNumber} created.`);
 			router.push(`/app/orders/outbound/${result.order.id}`);
 		} catch {
@@ -141,20 +166,27 @@ export default function CreateOutboundOrderPage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">New Sales Order</h1>
-					<p className="text-sm text-muted-foreground">Create an outbound order for a customer.</p>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						New Sales Order
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Create an outbound order for a customer.
+					</p>
 				</div>
 			</div>
 
 			<form onSubmit={handleSubmit} className="space-y-6">
 				<Card className="border rounded-2xl">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base">Order Details</CardTitle>
+						<CardTitle className="text-base">
+							Order Details
+						</CardTitle>
 					</CardHeader>
 					<CardContent className="grid gap-4 md:grid-cols-2">
 						<div className="space-y-2">
 							<Label htmlFor="orderNumber">
-								Order Number <span className="text-destructive">*</span>
+								Order Number{" "}
+								<span className="text-destructive">*</span>
 							</Label>
 							<Input
 								id="orderNumber"
@@ -166,15 +198,21 @@ export default function CreateOutboundOrderPage() {
 
 						<div className="space-y-2">
 							<Label htmlFor="warehouseId">
-								Warehouse <span className="text-destructive">*</span>
+								Warehouse{" "}
+								<span className="text-destructive">*</span>
 							</Label>
-							<Select value={warehouseId} onValueChange={setWarehouseId}>
+							<Select
+								value={warehouseId}
+								onValueChange={setWarehouseId}
+							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse" />
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (
-										<SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+										<SelectItem key={w.id} value={w.id}>
+											{w.name}
+										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
@@ -195,7 +233,9 @@ export default function CreateOutboundOrderPage() {
 								</SelectTrigger>
 								<SelectContent>
 									{customers.map((c) => (
-										<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+										<SelectItem key={c.id} value={c.id}>
+											{c.name}
+										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
@@ -203,13 +243,21 @@ export default function CreateOutboundOrderPage() {
 
 						<div className="space-y-2">
 							<Label htmlFor="priority">Priority</Label>
-							<Select value={priority} onValueChange={setPriority}>
+							<Select
+								value={priority}
+								onValueChange={setPriority}
+							>
 								<SelectTrigger id="priority">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
 									{PRIORITY_OPTIONS.map((o) => (
-										<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+										<SelectItem
+											key={o.value}
+											value={o.value}
+										>
+											{o.label}
+										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
@@ -220,24 +268,32 @@ export default function CreateOutboundOrderPage() {
 							<Input
 								id="customerName"
 								value={customerName}
-								onChange={(e) => setCustomerName(e.target.value)}
+								onChange={(e) =>
+									setCustomerName(e.target.value)
+								}
 								placeholder="Override or enter manually"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="customerEmail">Customer Email</Label>
+							<Label htmlFor="customerEmail">
+								Customer Email
+							</Label>
 							<Input
 								id="customerEmail"
 								type="email"
 								value={customerEmail}
-								onChange={(e) => setCustomerEmail(e.target.value)}
+								onChange={(e) =>
+									setCustomerEmail(e.target.value)
+								}
 								placeholder="customer@example.com"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="customerRef">Customer Reference</Label>
+							<Label htmlFor="customerRef">
+								Customer Reference
+							</Label>
 							<Input
 								id="customerRef"
 								value={customerRef}
@@ -247,22 +303,30 @@ export default function CreateOutboundOrderPage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="requestedShipDate">Requested Ship Date</Label>
+							<Label htmlFor="requestedShipDate">
+								Requested Ship Date
+							</Label>
 							<Input
 								id="requestedShipDate"
 								type="date"
 								value={requestedShipDate}
-								onChange={(e) => setRequestedShipDate(e.target.value)}
+								onChange={(e) =>
+									setRequestedShipDate(e.target.value)
+								}
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="requiredByDate">Required By Date</Label>
+							<Label htmlFor="requiredByDate">
+								Required By Date
+							</Label>
 							<Input
 								id="requiredByDate"
 								type="date"
 								value={requiredByDate}
-								onChange={(e) => setRequiredByDate(e.target.value)}
+								onChange={(e) =>
+									setRequiredByDate(e.target.value)
+								}
 							/>
 						</div>
 
@@ -281,26 +345,48 @@ export default function CreateOutboundOrderPage() {
 				<Card className="border rounded-2xl">
 					<CardHeader className="flex flex-row items-center justify-between pb-3">
 						<CardTitle className="text-base">Line Items</CardTitle>
-						<Button type="button" variant="outline" size="sm" onClick={handleAddLine}>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={handleAddLine}
+						>
 							<PlusIcon className="mr-1.5 size-4" />
 							Add Line
 						</Button>
 					</CardHeader>
 					<CardContent className="space-y-3">
 						{lines.map((line, index) => (
-							<div key={line.id} className="grid items-end gap-3 border rounded-xl p-3 md:grid-cols-4">
+							<div
+								key={line.id}
+								className="grid items-end gap-3 border rounded-xl p-3 md:grid-cols-4"
+							>
 								<div className="space-y-2 md:col-span-2">
-									<Label>SKU <span className="text-destructive">*</span></Label>
+									<Label>
+										SKU{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
 									<Select
 										value={line.skuId}
-										onValueChange={(v) => handleLineChange(line.id, "skuId", v)}
+										onValueChange={(v) =>
+											handleLineChange(
+												line.id,
+												"skuId",
+												v,
+											)
+										}
 									>
 										<SelectTrigger>
 											<SelectValue placeholder="Select product" />
 										</SelectTrigger>
 										<SelectContent>
 											{skus.map((s) => (
-												<SelectItem key={s.id} value={s.id}>
+												<SelectItem
+													key={s.id}
+													value={s.id}
+												>
 													{s.name} ({s.sku})
 												</SelectItem>
 											))}
@@ -309,13 +395,24 @@ export default function CreateOutboundOrderPage() {
 								</div>
 
 								<div className="space-y-2">
-									<Label>Qty <span className="text-destructive">*</span></Label>
+									<Label>
+										Qty{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
 									<Input
 										type="number"
 										min="0.0001"
 										step="any"
 										value={line.orderedQty}
-										onChange={(e) => handleLineChange(line.id, "orderedQty", e.target.value)}
+										onChange={(e) =>
+											handleLineChange(
+												line.id,
+												"orderedQty",
+												e.target.value,
+											)
+										}
 										placeholder="0"
 									/>
 								</div>
@@ -327,7 +424,13 @@ export default function CreateOutboundOrderPage() {
 										min="0"
 										step="any"
 										value={line.unitPrice}
-										onChange={(e) => handleLineChange(line.id, "unitPrice", e.target.value)}
+										onChange={(e) =>
+											handleLineChange(
+												line.id,
+												"unitPrice",
+												e.target.value,
+											)
+										}
 										placeholder="0.00"
 									/>
 								</div>
@@ -337,7 +440,9 @@ export default function CreateOutboundOrderPage() {
 										type="button"
 										variant="ghost"
 										size="icon"
-										onClick={() => handleRemoveLine(line.id)}
+										onClick={() =>
+											handleRemoveLine(line.id)
+										}
 										disabled={lines.length === 1}
 										aria-label={`Remove line ${index + 1}`}
 									>

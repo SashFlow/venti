@@ -1,10 +1,7 @@
 "use client";
 
 import { authClient } from "@repo/auth/client";
-import {
-	sessionQueryKey,
-	useSessionQuery,
-} from "@saas/auth/lib/api";
+import { sessionQueryKey, useSessionQuery } from "@saas/auth/lib/api";
 import { orpcClient } from "@shared/lib/orpc-client";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";

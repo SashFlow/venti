@@ -1,21 +1,29 @@
 {
 	"dependencies": {
+		"@repo/auth": "workspace:*",
 		"@repo/database": "workspace:*",
 		"@repo/logs": "workspace:*",
-		"@repo/auth": "workspace:*",
 		"@repo/utils": "workspace:*"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.4",
+		"@faker-js/faker": "^10.4.0",
 		"@repo/tsconfig": "workspace:*",
 		"@types/node": "^24.6.0",
+		"@types/pg": "^8.20.0",
+		"@types/pg-copy-streams": "^1.2.5",
+		"csv-writer": "^1.6.0",
 		"nanoid": "^5.1.6",
+		"pg": "^8.21.0",
+		"pg-copy-streams": "^7.0.0",
 		"tsx": "^4.20.6"
 	},
 	"name": "@repo/scripts",
 	"private": true,
 	"scripts": {
 		"create:user": "dotenv -c -e ../../.env -- tsx ./src/create-user.ts",
+		"generate-seed": "dotenv -c -e ../../.env -- tsx ./src/seeder/simulate.ts",
+		"load-seed": "dotenv -c -e ../../.env -- tsx ./src/seeder/load.ts",
 		"type-check": "tsc --noEmit"
 	},
 	"version": "0.0.0"

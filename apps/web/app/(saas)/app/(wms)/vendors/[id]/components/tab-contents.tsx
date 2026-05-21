@@ -421,10 +421,18 @@ export function ItemsTabContent({
 									<TableHead>SKU Code</TableHead>
 									<TableHead>Name</TableHead>
 									<TableHead>Vendor Code</TableHead>
-									<TableHead className="text-right">Unit Price</TableHead>
-									<TableHead className="text-right">MOQ</TableHead>
-									<TableHead className="text-right">Lead Time</TableHead>
-									<TableHead className="text-center">Primary</TableHead>
+									<TableHead className="text-right">
+										Unit Price
+									</TableHead>
+									<TableHead className="text-right">
+										MOQ
+									</TableHead>
+									<TableHead className="text-right">
+										Lead Time
+									</TableHead>
+									<TableHead className="text-center">
+										Primary
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -443,7 +451,9 @@ export function ItemsTabContent({
 												: "—"}
 										</TableCell>
 										<TableCell className="text-right">
-											{row.moq != null ? String(row.moq) : "—"}
+											{row.moq != null
+												? String(row.moq)
+												: "—"}
 										</TableCell>
 										<TableCell className="text-right">
 											{row.leadTimeDays != null
@@ -454,7 +464,9 @@ export function ItemsTabContent({
 											{row.isPrimary ? (
 												<CheckIcon className="mx-auto size-4 text-green-600" />
 											) : (
-												<span className="text-muted-foreground">—</span>
+												<span className="text-muted-foreground">
+													—
+												</span>
 											)}
 										</TableCell>
 									</TableRow>
@@ -562,7 +574,9 @@ export function PurchaseOrdersTabContent({
 									<TableHead>PO Number</TableHead>
 									<TableHead>Status</TableHead>
 									<TableHead>Warehouse</TableHead>
-									<TableHead className="text-right">Lines</TableHead>
+									<TableHead className="text-right">
+										Lines
+									</TableHead>
 									<TableHead>Expected Date</TableHead>
 									<TableHead>Created</TableHead>
 								</TableRow>
@@ -578,7 +592,9 @@ export function PurchaseOrdersTabContent({
 												{formatPoStatus(order.status)}
 											</Badge>
 										</TableCell>
-										<TableCell>{order.warehouse.name}</TableCell>
+										<TableCell>
+											{order.warehouse.name}
+										</TableCell>
 										<TableCell className="text-right">
 											{order._count.lines}
 										</TableCell>

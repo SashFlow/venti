@@ -61,7 +61,11 @@ export async function listInboundOrders(params: InboundFilterParams) {
 		...(params.supplierId ? { supplierId: params.supplierId } : {}),
 		...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
 		...(params.status && params.status.length > 0
-			? { status: { in: params.status as Prisma.EnumPurchaseOrderStatusFilter["in"] } }
+			? {
+					status: {
+						in: params.status as Prisma.EnumPurchaseOrderStatusFilter["in"],
+					},
+				}
 			: {}),
 		...(params.startDate || params.endDate
 			? {
@@ -135,9 +139,18 @@ export async function listOutboundOrders(params: OutboundFilterParams) {
 		organizationId: params.organizationId,
 		...(params.customerId ? { customerId: params.customerId } : {}),
 		...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
-		...(params.priority ? { priority: params.priority as Prisma.EnumSalesOrderPriorityFilter } : {}),
+		...(params.priority
+			? {
+					priority:
+						params.priority as Prisma.EnumSalesOrderPriorityFilter,
+				}
+			: {}),
 		...(params.status && params.status.length > 0
-			? { status: { in: params.status as Prisma.EnumSalesOrderStatusFilter["in"] } }
+			? {
+					status: {
+						in: params.status as Prisma.EnumSalesOrderStatusFilter["in"],
+					},
+				}
 			: {}),
 		...(params.startDate || params.endDate
 			? {
@@ -211,7 +224,11 @@ export async function listTransfers(params: TransferFilterParams) {
 		},
 		transactionType: "INTERNAL_TRANSFER" as const,
 		...(params.status && params.status.length > 0
-			? { status: { in: params.status as Prisma.EnumInventoryMovementStatusFilter["in"] } }
+			? {
+					status: {
+						in: params.status as Prisma.EnumInventoryMovementStatusFilter["in"],
+					},
+				}
 			: {}),
 		...(params.startDate || params.endDate
 			? {
@@ -326,7 +343,11 @@ export async function listFulfillmentBatches(params: BatchFilterParams) {
 			organizationId: params.organizationId,
 		},
 		...(params.status && params.status.length > 0
-			? { status: { in: params.status as Prisma.EnumWaveStatusFilter["in"] } }
+			? {
+					status: {
+						in: params.status as Prisma.EnumWaveStatusFilter["in"],
+					},
+				}
 			: {}),
 	};
 
@@ -361,9 +382,10 @@ export async function listFulfillmentShipments(params: ShipmentFilterParams) {
 		warehouse: {
 			organizationId: params.organizationId,
 		},
-		status: params.status && params.status.length > 0
-			? { in: params.status as Prisma.EnumShipmentStatusFilter["in"] }
-			: { in: ["PENDING", "READY_TO_SHIP"] },
+		status:
+			params.status && params.status.length > 0
+				? { in: params.status as Prisma.EnumShipmentStatusFilter["in"] }
+				: { in: ["PENDING", "READY_TO_SHIP"] },
 	};
 
 	const [shipments, total] = await Promise.all([
@@ -645,7 +667,9 @@ export async function getPurchaseOrderById(params: {
 					status: true,
 					expectedDate: true,
 					sku: { select: { id: true, name: true, sku: true } },
-					uom: { select: { id: true, name: true, abbreviation: true } },
+					uom: {
+						select: { id: true, name: true, abbreviation: true },
+					},
 				},
 			},
 		},
@@ -689,7 +713,9 @@ export async function getSalesOrderById(params: {
 					unitPrice: true,
 					status: true,
 					sku: { select: { id: true, name: true, sku: true } },
-					uom: { select: { id: true, name: true, abbreviation: true } },
+					uom: {
+						select: { id: true, name: true, abbreviation: true },
+					},
 				},
 			},
 		},
@@ -813,7 +839,9 @@ export async function getWaveById(params: {
 					salesOrderLine: {
 						select: {
 							lineNumber: true,
-							sku: { select: { id: true, name: true, sku: true } },
+							sku: {
+								select: { id: true, name: true, sku: true },
+							},
 							salesOrder: { select: { orderNumber: true } },
 						},
 					},

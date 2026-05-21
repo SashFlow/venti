@@ -16,7 +16,12 @@ import { TabsContent } from "@repo/ui/tabs";
 import { Textarea } from "@repo/ui/textarea";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation } from "@tanstack/react-query";
-import { ChevronLeftIcon, ChevronRightIcon, Loader2Icon, Trash2Icon } from "lucide-react";
+import {
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	Loader2Icon,
+	Trash2Icon,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -250,13 +255,14 @@ export function InventoryTabContent({
 			<form onSubmit={onSubmit} className="space-y-4">
 				<Card className="border">
 					<CardHeader className="flex flex-row items-center justify-between border-b pb-3">
-						<CardTitle className="text-xl">Create Product</CardTitle>
+						<CardTitle className="text-xl">
+							Create Product
+						</CardTitle>
 						<Button
 							type="submit"
 							size="sm"
 							disabled={
-								createSKUMutation.isPending ||
-								!organizationId
+								createSKUMutation.isPending || !organizationId
 							}
 						>
 							{createSKUMutation.isPending ? (
@@ -286,7 +292,9 @@ export function InventoryTabContent({
 								<Input placeholder="Product Tag" disabled />
 							</div>
 							<div className="space-y-2">
-								<p className="text-sm font-medium">Description</p>
+								<p className="text-sm font-medium">
+									Description
+								</p>
 								<Input {...form.register("description")} />
 							</div>
 						</div>
@@ -308,10 +316,7 @@ export function InventoryTabContent({
 								placeholder="SKU"
 								{...form.register("skuCode")}
 							/>
-							<Input
-								placeholder="$ 9.99"
-								disabled
-							/>
+							<Input placeholder="$ 9.99" disabled />
 							<Input
 								placeholder="Length (mm)"
 								type="number"
@@ -336,11 +341,7 @@ export function InventoryTabContent({
 									valueAsNumber: true,
 								})}
 							/>
-							<Button
-								variant="outline"
-								size="icon"
-								type="button"
-							>
+							<Button variant="outline" size="icon" type="button">
 								+
 							</Button>
 						</div>

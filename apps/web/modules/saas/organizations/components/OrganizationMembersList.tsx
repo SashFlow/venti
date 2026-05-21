@@ -160,10 +160,7 @@ export function OrganizationMembersList({
 								/>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<Button
-											size="icon"
-											variant="ghost"
-										>
+										<Button size="icon" variant="ghost">
 											<MoreVerticalIcon className="size-4" />
 										</Button>
 									</DropdownMenuTrigger>

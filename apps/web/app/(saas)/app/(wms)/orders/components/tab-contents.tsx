@@ -379,7 +379,11 @@ export function InboundTabContent({
 									<TableRow
 										key={order.id}
 										className="hover:bg-muted/30 cursor-pointer"
-										onClick={() => router.push(`/app/orders/inbound/${order.id}`)}
+										onClick={() =>
+											router.push(
+												`/app/orders/inbound/${order.id}`,
+											)
+										}
 									>
 										<TableCell>
 											{statusPill(order.status)}
@@ -706,7 +710,21 @@ export function OutboundTabContent({
 									<TableRow
 										key={order.id}
 										className="hover:bg-muted/30 cursor-pointer"
-										onClick={(e) => { if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).tagName === 'BUTTON') return; router.push(`/app/orders/outbound/${order.id}`); }}
+										onClick={(e) => {
+											if (
+												(
+													e.target as HTMLElement
+												).closest(
+													'[role="checkbox"]',
+												) ||
+												(e.target as HTMLElement)
+													.tagName === "BUTTON"
+											)
+												return;
+											router.push(
+												`/app/orders/outbound/${order.id}`,
+											);
+										}}
 									>
 										<TableCell>
 											<Checkbox
@@ -894,7 +912,9 @@ export function TransferTabContent({
 							Discrepancies
 						</Button>
 						<Button size="sm" asChild>
-							<Link href="/app/orders/transfers/new">Create Transfer</Link>
+							<Link href="/app/orders/transfers/new">
+								Create Transfer
+							</Link>
 						</Button>
 					</div>
 				</div>
@@ -992,7 +1012,16 @@ export function TransferTabContent({
 									<TableRow
 										key={transfer.id}
 										className="hover:bg-muted/30 cursor-pointer"
-										onClick={(e) => { if ((e.target as HTMLElement).tagName === 'BUTTON') return; router.push(`/app/orders/transfers/${transfer.id}`); }}
+										onClick={(e) => {
+											if (
+												(e.target as HTMLElement)
+													.tagName === "BUTTON"
+											)
+												return;
+											router.push(
+												`/app/orders/transfers/${transfer.id}`,
+											);
+										}}
 									>
 										<TableCell>
 											{statusPill(transfer.status)}
@@ -1108,7 +1137,9 @@ export function ManifestTabContent({
 						</p>
 					</div>
 					<Button size="sm" asChild>
-						<Link href="/app/orders/manifests/new">Create Shipment</Link>
+						<Link href="/app/orders/manifests/new">
+							Create Shipment
+						</Link>
 					</Button>
 				</div>
 
@@ -1152,7 +1183,11 @@ export function ManifestTabContent({
 									<TableRow
 										key={manifest.id}
 										className="hover:bg-muted/30 cursor-pointer"
-										onClick={() => router.push(`/app/orders/manifests/${manifest.id}`)}
+										onClick={() =>
+											router.push(
+												`/app/orders/manifests/${manifest.id}`,
+											)
+										}
 									>
 										<TableCell>
 											{formatDate(manifest.createdAt)}
@@ -1451,7 +1486,9 @@ export function FulfillTabContent({
 									Merge Batches
 								</Button>
 								<Button size="sm" asChild>
-									<Link href="/app/orders/fulfill/new">New Wave</Link>
+									<Link href="/app/orders/fulfill/new">
+										New Wave
+									</Link>
 								</Button>
 							</div>
 						</div>
@@ -1538,7 +1575,11 @@ export function FulfillTabContent({
 									<TableRow
 										key={batch.id}
 										className="hover:bg-muted/30 cursor-pointer"
-										onClick={() => router.push(`/app/orders/fulfill/${batch.id}`)}
+										onClick={() =>
+											router.push(
+												`/app/orders/fulfill/${batch.id}`,
+											)
+										}
 									>
 										<TableCell className="font-medium">
 											{batch.waveNumber}
@@ -1693,7 +1734,21 @@ export function FulfillTabContent({
 									<TableRow
 										key={shipment.id}
 										className="hover:bg-muted/30 cursor-pointer"
-										onClick={(e) => { if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).tagName === 'BUTTON') return; router.push(`/app/orders/manifests/${shipment.id}`); }}
+										onClick={(e) => {
+											if (
+												(
+													e.target as HTMLElement
+												).closest(
+													'[role="checkbox"]',
+												) ||
+												(e.target as HTMLElement)
+													.tagName === "BUTTON"
+											)
+												return;
+											router.push(
+												`/app/orders/manifests/${shipment.id}`,
+											);
+										}}
 									>
 										<TableCell>
 											<Checkbox

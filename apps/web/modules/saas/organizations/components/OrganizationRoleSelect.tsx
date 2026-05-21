@@ -52,16 +52,21 @@ export function OrganizationRoleSelect({
 			}}
 			disabled={disabled || (!!organizationId && isLoading)}
 		>
-			<SelectTrigger className = "h-10">
+			<SelectTrigger className="h-10">
 				<SelectValue placeholder={placeholder}>
 					{value
-						? (roleOptions.find((o) => o.value === value)?.label ?? value)
+						? (roleOptions.find((o) => o.value === value)?.label ??
+							value)
 						: undefined}
 				</SelectValue>
 			</SelectTrigger>
 			<SelectContent>
 				{roleOptions.map((option) => (
-					<SelectItem key={option.value} value={option.value} className = "h-10">
+					<SelectItem
+						key={option.value}
+						value={option.value}
+						className="h-10"
+					>
 						{option.label}
 					</SelectItem>
 				))}

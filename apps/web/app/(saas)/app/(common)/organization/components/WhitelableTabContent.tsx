@@ -67,16 +67,20 @@ export function WhitelableTabContent({
 								onChange={onUploadLogo}
 								className="hidden"
 								disabled={
-									uploadingWhiteLabelLogo || !activeOrganization
+									uploadingWhiteLabelLogo ||
+									!activeOrganization
 								}
 							/>
 							<Button
 								type="button"
 								variant="outline"
 								disabled={
-									uploadingWhiteLabelLogo || !activeOrganization
+									uploadingWhiteLabelLogo ||
+									!activeOrganization
 								}
-								onClick={() => fileInputReference.current?.click()}
+								onClick={() =>
+									fileInputReference.current?.click()
+								}
 							>
 								{uploadingWhiteLabelLogo
 									? "Uploading..."

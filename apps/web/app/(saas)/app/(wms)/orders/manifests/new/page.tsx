@@ -49,7 +49,9 @@ export default function CreateManifestPage() {
 		enabled: Boolean(organizationId),
 	});
 
-	const createMutation = useMutation(orpc.orders.createShipment.mutationOptions());
+	const createMutation = useMutation(
+		orpc.orders.createShipment.mutationOptions(),
+	);
 
 	const warehouses = warehousesQuery.data?.warehouses ?? [];
 	const salesOrders = outboundQuery.data?.orders ?? [];
@@ -57,9 +59,18 @@ export default function CreateManifestPage() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!warehouseId) { toast.error("Warehouse is required."); return; }
-		if (!salesOrderId) { toast.error("Sales order is required."); return; }
-		if (!shipmentNumber.trim()) { toast.error("Shipment number is required."); return; }
+		if (!warehouseId) {
+			toast.error("Warehouse is required.");
+			return;
+		}
+		if (!salesOrderId) {
+			toast.error("Sales order is required.");
+			return;
+		}
+		if (!shipmentNumber.trim()) {
+			toast.error("Shipment number is required.");
+			return;
+		}
 
 		setIsSubmitting(true);
 		try {
@@ -74,9 +85,15 @@ export default function CreateManifestPage() {
 				notes: notes.trim() || undefined,
 			});
 
-			await queryClient.invalidateQueries({ queryKey: orpc.orders.listManifests.key() });
-			await queryClient.invalidateQueries({ queryKey: orpc.orders.listFulfillmentShipments.key() });
-			toast.success(`Shipment ${result.shipment.shipmentNumber} created.`);
+			await queryClient.invalidateQueries({
+				queryKey: orpc.orders.listManifests.key(),
+			});
+			await queryClient.invalidateQueries({
+				queryKey: orpc.orders.listFulfillmentShipments.key(),
+			});
+			toast.success(
+				`Shipment ${result.shipment.shipmentNumber} created.`,
+			);
 			router.push(`/app/orders/manifests/${result.shipment.id}`);
 		} catch {
 			toast.error("Failed to create shipment.");
@@ -94,28 +111,40 @@ export default function CreateManifestPage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">New Shipment</h1>
-					<p className="text-sm text-muted-foreground">Create a shipment/manifest linked to a sales order.</p>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						New Shipment
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Create a shipment/manifest linked to a sales order.
+					</p>
 				</div>
 			</div>
 
 			<form onSubmit={handleSubmit} className="space-y-6">
 				<Card className="border rounded-2xl">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base">Shipment Details</CardTitle>
+						<CardTitle className="text-base">
+							Shipment Details
+						</CardTitle>
 					</CardHeader>
 					<CardContent className="grid gap-4 md:grid-cols-2">
 						<div className="space-y-2">
 							<Label htmlFor="warehouseId">
-								Warehouse <span className="text-destructive">*</span>
+								Warehouse{" "}
+								<span className="text-destructive">*</span>
 							</Label>
-							<Select value={warehouseId} onValueChange={setWarehouseId}>
+							<Select
+								value={warehouseId}
+								onValueChange={setWarehouseId}
+							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse" />
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (
-										<SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+										<SelectItem key={w.id} value={w.id}>
+											{w.name}
+										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
@@ -123,16 +152,23 @@ export default function CreateManifestPage() {
 
 						<div className="space-y-2">
 							<Label htmlFor="salesOrderId">
-								Sales Order <span className="text-destructive">*</span>
+								Sales Order{" "}
+								<span className="text-destructive">*</span>
 							</Label>
-							<Select value={salesOrderId} onValueChange={setSalesOrderId}>
+							<Select
+								value={salesOrderId}
+								onValueChange={setSalesOrderId}
+							>
 								<SelectTrigger id="salesOrderId">
 									<SelectValue placeholder="Select sales order" />
 								</SelectTrigger>
 								<SelectContent>
 									{salesOrders.map((o) => (
 										<SelectItem key={o.id} value={o.id}>
-											{o.orderNumber} {o.customerName ? `— ${o.customerName}` : ""}
+											{o.orderNumber}{" "}
+											{o.customerName
+												? `— ${o.customerName}`
+												: ""}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -141,28 +177,37 @@ export default function CreateManifestPage() {
 
 						<div className="space-y-2">
 							<Label htmlFor="shipmentNumber">
-								Shipment Number <span className="text-destructive">*</span>
+								Shipment Number{" "}
+								<span className="text-destructive">*</span>
 							</Label>
 							<Input
 								id="shipmentNumber"
 								value={shipmentNumber}
-								onChange={(e) => setShipmentNumber(e.target.value)}
+								onChange={(e) =>
+									setShipmentNumber(e.target.value)
+								}
 								placeholder="e.g. SHIP-2026-001"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="trackingNumber">Tracking Number</Label>
+							<Label htmlFor="trackingNumber">
+								Tracking Number
+							</Label>
 							<Input
 								id="trackingNumber"
 								value={trackingNumber}
-								onChange={(e) => setTrackingNumber(e.target.value)}
+								onChange={(e) =>
+									setTrackingNumber(e.target.value)
+								}
 								placeholder="Carrier tracking number"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="scheduledAt">Scheduled Dispatch</Label>
+							<Label htmlFor="scheduledAt">
+								Scheduled Dispatch
+							</Label>
 							<Input
 								id="scheduledAt"
 								type="datetime-local"

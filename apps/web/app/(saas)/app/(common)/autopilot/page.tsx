@@ -290,8 +290,10 @@ export default function AutopilotPage() {
 				}
 				className="space-y-4 flex flex-col"
 			>
-				<TabsList 						variant="default"
-						className="h-auto w-full justify-start overflow-x-auto">
+				<TabsList
+					variant="default"
+					className="h-auto w-full justify-start overflow-x-auto"
+				>
 					<TabsTrigger value="rules" className="px-3">
 						Rules
 					</TabsTrigger>

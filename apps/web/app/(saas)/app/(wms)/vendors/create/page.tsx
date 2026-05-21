@@ -103,7 +103,9 @@ function AddressFields({
 					id={`${prefix}-country`}
 					placeholder="e.g. United States"
 					value={address.country}
-					onChange={(event) => onChange({ country: event.target.value })}
+					onChange={(event) =>
+						onChange({ country: event.target.value })
+					}
 				/>
 			</div>
 			<div className="space-y-1.5">
@@ -112,7 +114,9 @@ function AddressFields({
 					id={`${prefix}-state`}
 					placeholder="e.g. California"
 					value={address.state}
-					onChange={(event) => onChange({ state: event.target.value })}
+					onChange={(event) =>
+						onChange({ state: event.target.value })
+					}
 				/>
 			</div>
 			<div className="space-y-1.5">
