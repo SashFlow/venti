@@ -32,7 +32,7 @@ export default async function MarketingLayout({
 
 	const messages = await getMessages();
 	return (
-		<Document locale={locale} className="bg-[#1E1E1E]">
+		<Document locale={locale}>
 			<SmoothScroll>
 				<FumadocsNextProvider>
 					<FumadocsRootProvider
