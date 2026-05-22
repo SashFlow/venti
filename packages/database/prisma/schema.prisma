@@ -2133,6 +2133,14 @@ model Wave {
     @@map("wave")
 }
 
+enum WaveLineStatus {
+    PENDING
+    IN_PROGRESS
+    PICKED
+    SHORT_PICKED
+    CANCELLED
+}
+
 model WaveLine {
     id        String   @id @default(cuid())
     createdAt DateTime @default(now())
@@ -2144,12 +2152,19 @@ model WaveLine {
     salesOrderLineId String
     salesOrderLine   SalesOrderLine @relation(fields: [salesOrderLineId], references: [id], onDelete: Restrict)
 
-    qtyToPick Decimal @db.Decimal(12, 4)
-    qtyPicked Decimal @default(0) @db.Decimal(12, 4)
+    qtyToPick Decimal         @db.Decimal(12, 4)
+    qtyPicked Decimal         @default(0) @db.Decimal(12, 4)
+    shortQty  Decimal?        @db.Decimal(12, 4)
+    status    WaveLineStatus  @default(PENDING)
+
+    // Sequence assigned by TSP route optimizer
+    pickSequence Int?
 
     @@unique([waveId, salesOrderLineId])
     @@index([waveId])
     @@index([salesOrderLineId])
+    @@index([status])
+    @@index([pickSequence])
     @@map("wave_line")
 }
 

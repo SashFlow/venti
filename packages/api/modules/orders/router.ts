@@ -1,6 +1,8 @@
 import { bulkUpdateOutboundStatusProcedure } from "./procedures/bulk-update-outbound-status";
 import { bulkUpdateShipmentStatusesProcedure } from "./procedures/bulk-update-shipment-statuses";
 import { completeTransferProcedure } from "./procedures/complete-transfer";
+import { computeWaveRouteProcedure } from "./procedures/compute-wave-route";
+import { confirmPickLineProcedure } from "./procedures/confirm-pick-line";
 import { createPurchaseOrderProcedure } from "./procedures/create-purchase-order";
 import { createSalesOrderProcedure } from "./procedures/create-sales-order";
 import { createShipmentProcedure } from "./procedures/create-shipment";
@@ -10,6 +12,7 @@ import { getPurchaseOrderProcedure } from "./procedures/get-purchase-order";
 import { getSalesOrderProcedure } from "./procedures/get-sales-order";
 import { getShipmentProcedure } from "./procedures/get-shipment";
 import { getTransferProcedure } from "./procedures/get-transfer";
+import { getPickListProcedure } from "./procedures/get-pick-list";
 import { getWaveProcedure } from "./procedures/get-wave";
 import { listFulfillmentBatchesProcedure } from "./procedures/list-fulfillment-batches";
 import { listFulfillmentShipmentsProcedure } from "./procedures/list-fulfillment-shipments";
@@ -46,4 +49,8 @@ export const ordersRouter = {
 	updateOutboundStatus: updateOutboundOrderStatusProcedure,
 	completeTransfer: completeTransferProcedure,
 	updateShipmentStatus: updateShipmentStatusProcedure,
+	// Scanner – Pick List
+	getPickList: getPickListProcedure,
+	confirmPickLine: confirmPickLineProcedure,
+	computeWaveRoute: computeWaveRouteProcedure,
 };

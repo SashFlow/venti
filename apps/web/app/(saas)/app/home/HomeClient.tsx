@@ -7,10 +7,14 @@ import {
 	AlertTriangle,
 	CheckCircle,
 	Clock,
+	ClipboardList,
 	Package,
+	QrCode,
+	ScanLine,
 	TrendingUp,
 	Truck,
 } from "lucide-react";
+import Link from "next/link";
 // import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import React, { useState } from "react";
@@ -681,6 +685,38 @@ export default function HomeClient() {
 							</p>
 						</CardContent>
 					</Card>
+				</div>
+
+				{/* Scanner Quick Access */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<Link
+						href="/app/scanner/pick-list"
+						className="flex items-center gap-4 rounded-xl border bg-card p-5 hover:bg-muted/50 transition-colors shadow-sm"
+					>
+						<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white flex-shrink-0">
+							<ClipboardList className="w-6 h-6" />
+						</div>
+						<div>
+							<p className="font-bold">Pick List</p>
+							<p className="text-xs text-muted-foreground">
+								Route-optimized wave picking
+							</p>
+						</div>
+					</Link>
+					<Link
+						href="/app/scanner/quick-scan"
+						className="flex items-center gap-4 rounded-xl border bg-card p-5 hover:bg-muted/50 transition-colors shadow-sm"
+					>
+						<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-600 text-white flex-shrink-0">
+							<ScanLine className="w-6 h-6" />
+						</div>
+						<div>
+							<p className="font-bold">Quick Scan</p>
+							<p className="text-xs text-muted-foreground">
+								Move · Receive · Transfer · Check Stock
+							</p>
+						</div>
+					</Link>
 				</div>
 
 				{/* Tasks */}

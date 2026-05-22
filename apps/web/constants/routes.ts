@@ -7,6 +7,7 @@ import {
 	Package,
 	PackageOpen,
 	Plug,
+	ScanLine,
 	ShoppingCart,
 	Store,
 	UserCheck,
@@ -61,6 +62,11 @@ export const NAV_ROUTES = {
 			title: "Packaging",
 			url: "/app/packaging",
 			icon: PackageOpen,
+		},
+		{
+			title: "Scanner",
+			url: "/app/scanner",
+			icon: ScanLine,
 		},
 	],
 	management: [
