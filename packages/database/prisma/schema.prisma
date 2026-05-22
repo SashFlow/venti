@@ -39,12 +39,10 @@ model User {
     purchases                  Purchase[]
     members                    Member[]
     twofactors                 TwoFactor[]
-    aiChats                    AiChat[]
     auditLogs                  AuditLog[]
     tasksAssigned              Task[]              @relation("TaskAssignedTo")
     tasksCreated               Task[]              @relation("TaskAssignedBy")
     inventoryMovements         InventoryMovement[] @relation("MovementPerformedBy")
-    layoutVersionsPublished    LayoutVersion[]     @relation("LayoutVersionPublishedBy")
     cycleCountSessionsAssigned CycleCountSession[] @relation("CycleCountAssignedTo")
     cycleCountSessionsApproved CycleCountSession[] @relation("CycleCountApprovedBy")
     cycleCountLinesCounted     CycleCountLine[]    @relation("CycleCountLineCountedBy")
@@ -160,7 +158,6 @@ model Organization {
     members            Member[]
     invitations        Invitation[]
     purchases          Purchase[]
-    aiChats            AiChat[]
     roleGroups         RoleGroup[]
     warehouses         Warehouse[]
     orgConfig          OrganizationConfig?
@@ -179,83 +176,6 @@ model Organization {
     @@unique([slug])
     @@index([logoUploadFileId])
     @@map("organization")
-}
-
-model Customer {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-    name         String    @db.VarChar(255)
-    email        String?   @db.VarChar(255)
-    phone        String?   @db.VarChar(50)
-    isWholesaler Boolean   @default(false)
-    notes        String?   @db.Text
-    lastOrderAt  DateTime?
-    totalOrders  Int       @default(0)
-    metadata     Json?
-
-    locations   CustomerLocation[]
-    salesOrders SalesOrder[]
-
-    @@index([organizationId])
-    @@index([organizationId, createdAt])
-    @@index([organizationId, name])
-    @@index([organizationId, email])
-    @@map("customer")
-}
-
-model CustomerLocation {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    customerId String
-    customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-    addressId String  @unique
-    address   Address @relation("CustomerLocationAddress", fields: [addressId], references: [id], onDelete: Restrict)
-
-    name      String  @db.VarChar(255)
-    isDefault Boolean @default(false)
-    notes     String? @db.Text
-
-    @@index([customerId])
-    @@index([organizationId])
-    @@map("customer_location")
-}
-
-model PackageType {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-    name                 String  @db.VarChar(255)
-    description          String? @db.Text
-    packageType          String  @db.VarChar(50)
-    price                Decimal @default(0) @db.Decimal(12, 2)
-    length               Decimal @default(1) @db.Decimal(12, 2)
-    width                Decimal @default(1) @db.Decimal(12, 2)
-    height               Decimal @default(1) @db.Decimal(12, 2)
-    weight               Decimal @default(1) @db.Decimal(12, 2)
-    dimensionUnit        String  @default("in") @db.VarChar(10)
-    weightUnit           String  @default("lb") @db.VarChar(10)
-    applyToAllWarehouses Boolean @default(true)
-    metadata             Json?
-
-    @@index([organizationId])
-    @@index([organizationId, createdAt])
-    @@index([organizationId, name])
-    @@map("package_type")
 }
 
 model Member {
@@ -316,50 +236,6 @@ model Purchase {
     @@index([organizationId])
     @@index([userId])
     @@map("purchase")
-}
-
-model AiChat {
-    id             String        @id @default(cuid())
-    organizationId String?
-    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    userId         String?
-    user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-    title          String?
-    /// [ChatMessages]
-    messages       Json          @default("[]")
-    createdAt      DateTime      @default(now())
-    updatedAt      DateTime      @updatedAt
-
-    @@index([userId])
-    @@index([organizationId])
-    @@map("ai_chat")
-}
-
-model NoteTag {
-    id        String   @id @default(cuid())
-    name      String
-    notes     Note[]
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@unique([name])
-    @@map("note_tag")
-}
-
-model Note {
-    id          String   @id @default(cuid())
-    title       String
-    content     Json
-    imageUrl    String?
-    description String?
-    published   Boolean  @default(false)
-    noteTagId   String
-    noteTag     NoteTag  @relation(fields: [noteTagId], references: [id], onDelete: Cascade)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-
-    @@index([noteTagId])
-    @@map("note")
 }
 
 model AuditLog {
@@ -840,17 +716,10 @@ model Warehouse {
     status WarehouseStatus @default(ACTIVE)
 
     floors WarehouseFloor[]
-    zones  Zone[]
 
-    storageUnits StorageUnit[]
+    inventoryItems     InventoryItem[]
+    inventoryMovements InventoryMovement[]
 
-    layoutVersions LayoutVersion[]
-
-    handlingUnits HandlingUnit[]
-
-    inventoryItems InventoryItem[]
-
-    inventoryMovements   InventoryMovement[]
     roleGroups           RoleGroup[]           @relation("RoleGroupWarehouses")
     tasks                Task[]
     inventoryAllocations InventoryAllocation[]
@@ -908,8 +777,6 @@ model WarehouseFloor {
     metadata Json?
 
     storageUnits StorageUnit[]
-
-    layoutVersions LayoutVersion[]
 
     @@unique([warehouseId, floorNumber])
     @@unique([warehouseId, code])
@@ -1413,46 +1280,6 @@ model InventoryMovement {
     @@index([transferGroupId])
     @@index([performedByUserId])
     @@map("inventory_movement")
-}
-
-// ============================================================================
-// 3D LAYOUT VERSIONING
-// ============================================================================
-
-model LayoutVersion {
-    id String @id @default(cuid())
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    warehouseId String
-
-    warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-
-    floorId String?
-
-    floor WarehouseFloor? @relation(fields: [floorId], references: [id], onDelete: SetNull)
-
-    version Int @default(autoincrement())
-
-    name String? @db.VarChar(255)
-
-    status LayoutVersionStatus @default(DRAFT)
-
-    publishedAt       DateTime?
-    publishedByUserId String?
-    publishedBy       User?     @relation("LayoutVersionPublishedBy", fields: [publishedByUserId], references: [id], onDelete: SetNull)
-
-    sceneDataUrl String? @db.Text
-
-    notes String? @db.Text
-
-    @@unique([warehouseId, version])
-    @@index([publishedByUserId])
-    @@index([warehouseId])
-    @@index([floorId])
-    @@index([status])
-    @@map("layout_version")
 }
 
 // ============================================================================
@@ -2152,10 +1979,10 @@ model WaveLine {
     salesOrderLineId String
     salesOrderLine   SalesOrderLine @relation(fields: [salesOrderLineId], references: [id], onDelete: Restrict)
 
-    qtyToPick Decimal         @db.Decimal(12, 4)
-    qtyPicked Decimal         @default(0) @db.Decimal(12, 4)
-    shortQty  Decimal?        @db.Decimal(12, 4)
-    status    WaveLineStatus  @default(PENDING)
+    qtyToPick Decimal        @db.Decimal(12, 4)
+    qtyPicked Decimal        @default(0) @db.Decimal(12, 4)
+    shortQty  Decimal?       @db.Decimal(12, 4)
+    status    WaveLineStatus @default(PENDING)
 
     // Sequence assigned by TSP route optimizer
     pickSequence Int?

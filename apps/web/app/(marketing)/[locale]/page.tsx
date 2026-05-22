@@ -936,7 +936,7 @@ export default async function Home({
 					</div>
 
 					{/* Placeholder for the isometric graphic */}
-					<div className="relative h-full min-h-[400px] lg:min-h-[600px] flex items-center justify-center">
+					<div className="relative h-full min-h-[400px] lg:min-h-[600px] hidden lg:flex items-center justify-center">
 						<div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-primary/10 to-transparent rounded-full blur-3xl" />
 						{/* Abstract representation of the blocks */}
 						<div className="relative w-full max-w-md aspect-square">
