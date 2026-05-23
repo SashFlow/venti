@@ -1,14 +1,13 @@
 // ============================================================================
-// ENTERPRISE WMS SCHEMA (V2)
-// Designed For:
+// ENTERPRISE WMS PLATFORM SCHEMA (V3)
+// PURPOSE:
+// - Enterprise WMS POC
+// - Reverse Logistics
+// - Workflow Engine
+// - 3D Warehouse Rendering
+// - React Flow Workflow Visualization
+// - Digital Twin Ready
 // - Multi Tenant SaaS
-// - High Scale Warehousing
-// - HVAC / Distribution / 3PL
-// - Batch + Serialized Inventory
-// - Directed Putaway
-// - Wave Picking
-// - Replenishment
-// - Event Sourcing
 // ============================================================================
 
 datasource db {
@@ -20,55 +19,375 @@ generator client {
     provider = "prisma-client-js"
 }
 
-// ============================================================================
-// ORGANIZATION
-// ============================================================================
-
-model Organization {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    name String
-    slug String @unique
-
-    warehouses Warehouse[]
-    users      User[]
-    products   Product[]
-    suppliers  Supplier[]
-    customers  Customer[]
+generator zod {
+    provider = "prisma-zod-generator"
+    output   = "./zod"
+    config   = "./zod-generator.config.json"
 }
 
 // ============================================================================
-// USER
+// ROOT
 // ============================================================================
 
 model User {
+    id                    String                 @id @default(cuid())
+    name                  String
+    email                 String
+    emailVerified         Boolean
+    image                 String?
+    createdAt             DateTime
+    updatedAt             DateTime
+    username              String?
+    role                  String?
+    banned                Boolean?
+    banReason             String?
+    banExpires            DateTime?
+    onboardingComplete    Boolean                @default(false)
+    paymentsCustomerId    String?
+    locale                String?
+    twoFactorEnabled      Boolean?
+    aiOptOut              Boolean                @default(false)
+    sessions              Session[]
+    accounts              Account[]
+    passkeys              Passkey[]
+    invitations           Invitation[]
+    purchases             Purchase[]
+    members               Member[]
+    twofactors            TwoFactor[]
+    auditLogs             AuditLog[]
+    inventoryTransactions InventoryTransaction[]
+    tasks                 WarehouseTask[]
+    scanEvents            ScanEvent[]
+    uploadedFiles         UploadFile[]           @relation("UploadedFilesByUser")
+    ReturnInspection      ReturnInspection[]
+
+    @@unique([email])
+    @@unique([username])
+    @@map("user")
+}
+
+model Session {
     id        String   @id @default(cuid())
+    expiresAt DateTime
+    ipAddress String?
+    userAgent String?
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    impersonatedBy String?
+
+    activeOrganizationId String?
+
+    token     String
+    createdAt DateTime
+    updatedAt DateTime
+
+    @@unique([token])
+    @@index([userId])
+    @@index([expiresAt])
+    @@map("session")
+}
+
+model Account {
+    id           String    @id @default(cuid())
+    accountId    String
+    providerId   String
+    userId       String
+    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    accessToken  String?   @db.Text
+    refreshToken String?   @db.Text
+    idToken      String?   @db.Text
+    expiresAt    DateTime?
+    password     String?
+
+    accessTokenExpiresAt  DateTime?
+    refreshTokenExpiresAt DateTime?
+    scope                 String?
+    createdAt             DateTime
+    updatedAt             DateTime
+
+    @@index([userId])
+    @@index([providerId, accountId])
+    @@map("account")
+}
+
+model Verification {
+    id         String   @id @default(cuid())
+    identifier String
+    value      String   @db.Text
+    expiresAt  DateTime
+
+    createdAt DateTime?
+    updatedAt DateTime?
+
+    @@index([identifier])
+    @@index([expiresAt])
+    @@map("verification")
+}
+
+model Passkey {
+    id           String    @id @default(cuid())
+    name         String?
+    publicKey    String
+    userId       String
+    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    credentialID String    @unique
+    counter      Int
+    deviceType   String
+    backedUp     Boolean
+    transports   String?
+    createdAt    DateTime?
+
+    @@index([userId])
+    @@map("passkey")
+}
+
+model TwoFactor {
+    id          String @id @default(cuid())
+    secret      String
+    backupCodes String
+    userId      String
+    user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@map("two_factor")
+}
+
+model Organization {
+    id                 String              @id @default(cuid())
+    name               String
+    slug               String?
+    logo               String?
+    logoUploadFileId   String?
+    logoUploadFile     UploadFile?         @relation("OrganizationLogoUpload", fields: [logoUploadFileId], references: [id], onDelete: SetNull)
+    createdAt          DateTime
+    metadata           Json?
+    paymentsCustomerId String?
+    members            Member[]
+    invitations        Invitation[]
+    purchases          Purchase[]
+    roleGroups         RoleGroup[]
+    warehouses         Warehouse[]
+    orgConfig          OrganizationConfig?
+    auditLogs          AuditLog[]
+    skus               SKU[]
+    suppliers          Supplier[]
+    customers          Customer[]
+    uploadFiles        UploadFile[]        @relation("OrganizationUploads")
+    CustomerLocation   CustomerLocation[]
+    Product            Product[]
+
+    @@unique([slug])
+    @@index([logoUploadFileId])
+    @@map("organization")
+}
+
+model OrganizationConfig {
+    id             String       @id @default(cuid())
+    organizationId String       @unique
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    headquarterId String?
+    headquarter   Address? @relation(fields: [headquarterId], references: [id], onDelete: SetNull)
+
+    fulfillment    Json?
+    inventory      Json?
+    units          Json?
+    barcodeScanner Json?
+    purchaseOrders Json?
+    transfers      Json?
+    cycleCount     Json?
+    dataRetention  Json?
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id])
-
-    name  String
-    email String
-
-    role UserRole
-
-    inventoryTransactions InventoryTransaction[]
-    tasks                 WarehouseTask[]
-
-    @@unique([organizationId, email])
+    @@map("organization_config")
 }
 
-enum UserRole {
-    ADMIN
-    SUPERVISOR
-    OPERATOR
-    PICKER
-    PACKER
-    RECEIVER
+model Address {
+    id           String  @id @default(cuid())
+    addressLine1 String
+    addressLine2 String?
+    city         String
+    state        String
+    zip          String
+    country      String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationConfigs OrganizationConfig[]
+    customerLocations   CustomerLocation[]
+
+    @@map("address")
+}
+
+model CustomerLocation {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    customerId String
+    customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+    addressId String
+    address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+
+    name      String
+    isDefault Boolean @default(false)
+    notes     String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([organizationId])
+    @@index([customerId])
+    @@map("customer_location")
+}
+
+model Member {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    userId         String
+    user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    role           String
+    roleGroupId    String?
+    roleGroup      RoleGroup?   @relation(fields: [roleGroupId], references: [id], onDelete: SetNull)
+    createdAt      DateTime
+
+    @@unique([organizationId, userId])
+    @@index([userId])
+    @@index([roleGroupId])
+    @@map("member")
+}
+
+model Invitation {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    email          String
+    role           String?
+    status         String
+    expiresAt      DateTime
+    inviterId      String
+    user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+    @@index([organizationId])
+    @@index([email])
+    @@index([inviterId])
+    @@index([expiresAt])
+    @@map("invitation")
+}
+
+enum PurchaseType {
+    SUBSCRIPTION
+    ONE_TIME
+}
+
+model Purchase {
+    id             String        @id @default(cuid())
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    organizationId String?
+    user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId         String?
+    type           PurchaseType
+    customerId     String
+    subscriptionId String?       @unique
+    productId      String
+    status         String?
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+
+    @@index([subscriptionId])
+    @@index([organizationId])
+    @@index([userId])
+    @@map("purchase")
+}
+
+model AuditLog {
+    id             String        @id @default(cuid())
+    organizationId String?
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+    userId         String?
+    user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+    action         String
+    resource       String
+    resourceId     String?
+    metadata       Json?
+    ipAddress      String?
+    userAgent      String?
+    createdAt      DateTime      @default(now())
+
+    @@index([organizationId])
+    @@index([userId])
+    @@index([resource])
+    @@index([resourceId])
+    @@index([createdAt])
+    @@map("audit_log")
+}
+
+enum UploadFileScope {
+    ORGANIZATION_LOGO
+    USER_AVATAR
+    NOTE_IMAGE
+    GENERIC
+}
+
+enum UploadFileStatus {
+    PENDING
+    UPLOADED
+    FAILED
+    DELETED
+}
+
+model UploadFile {
+    id               String           @id @default(cuid())
+    organizationId   String?
+    organization     Organization?    @relation("OrganizationUploads", fields: [organizationId], references: [id], onDelete: SetNull)
+    uploadedByUserId String?
+    uploadedByUser   User?            @relation("UploadedFilesByUser", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+    bucket           String           @db.VarChar(100)
+    path             String           @db.VarChar(1024)
+    fileName         String?          @db.VarChar(255)
+    mimeType         String?          @db.VarChar(255)
+    sizeBytes        Int?
+    checksum         String?          @db.VarChar(255)
+    scope            UploadFileScope  @default(GENERIC)
+    status           UploadFileStatus @default(PENDING)
+    metadata         Json?
+    createdAt        DateTime         @default(now())
+    updatedAt        DateTime         @updatedAt
+
+    organizationLogoFor Organization[] @relation("OrganizationLogoUpload")
+
+    @@unique([bucket, path])
+    @@index([organizationId])
+    @@index([uploadedByUserId])
+    @@index([scope])
+    @@index([status])
+    @@map("upload_file")
+}
+
+// ================================================
+// Scope Models
+// ================================================
+
+model RoleGroup {
+    id             String       @id @default(cuid())
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    name           String
+    description    String?
+    warehouses     Warehouse[]  @relation("RoleGroupWarehouses")
+    permissions    String[]
+    members        Member[]
+
+    @@index([organizationId])
+    @@map("role_group")
 }
 
 // ============================================================================
@@ -100,6 +419,21 @@ model Warehouse {
 
     tasks WarehouseTask[]
 
+    purchaseOrders PurchaseOrder[]
+
+    asns AdvancedShippingNotice[]
+
+    workflows WorkflowDefinition[]
+
+    cycleCounts CycleCountSession[]
+
+    returnOrders ReturnOrder[]
+
+    roleGroups           RoleGroup[]            @relation("RoleGroupWarehouses")
+    InventoryTransaction InventoryTransaction[]
+    PickWave             PickWave[]
+    ScanEvent            ScanEvent[]
+
     @@unique([organizationId, code])
 }
 
@@ -110,7 +444,7 @@ enum WarehouseStatus {
 }
 
 // ============================================================================
-// LOCATION TREE
+// LOCATION
 // ============================================================================
 
 model Location {
@@ -146,27 +480,38 @@ model Location {
     currentVolume Decimal? @db.Decimal(18, 4)
     currentWeight Decimal? @db.Decimal(18, 4)
 
+    // =========================================================================
+    // 3D ENGINE SUPPORT
+    // =========================================================================
+
     x Decimal? @db.Decimal(12, 2)
     y Decimal? @db.Decimal(12, 2)
     z Decimal? @db.Decimal(12, 2)
 
-    width  Decimal?
-    height Decimal?
-    depth  Decimal?
+    width  Decimal? @db.Decimal(12, 2)
+    height Decimal? @db.Decimal(12, 2)
+    depth  Decimal? @db.Decimal(12, 2)
 
-    rotationX Decimal?
-    rotationY Decimal?
-    rotationZ Decimal?
+    rotationX Decimal? @db.Decimal(12, 2)
+    rotationY Decimal? @db.Decimal(12, 2)
+    rotationZ Decimal? @db.Decimal(12, 2)
 
     meshType String?
     colorHex String?
 
     inventoryBalances InventoryBalance[]
 
+    replenishmentRules ReplenishmentRule[]
+
     fromTransactions InventoryTransaction[] @relation("TransactionFromLocation")
     toTransactions   InventoryTransaction[] @relation("TransactionToLocation")
 
-    replenishmentRules ReplenishmentRule[]
+    fromTasks WarehouseTask[] @relation("TaskFromLocation")
+    toTasks   WarehouseTask[] @relation("TaskToLocation")
+
+    scanEvents      ScanEvent[]
+    InventorySerial InventorySerial[]
+    CycleCountItem  CycleCountItem[]
 
     @@unique([warehouseId, code])
     @@index([warehouseId, type])
@@ -250,6 +595,15 @@ model SKU {
     purchaseOrderItems PurchaseOrderItem[]
     salesOrderItems    SalesOrderItem[]
 
+    replenishmentRules   ReplenishmentRule[]
+    Organization         Organization?          @relation(fields: [organizationId], references: [id])
+    organizationId       String?
+    InventoryTransaction InventoryTransaction[]
+    ASNItem              ASNItem[]
+    ReturnOrderItem      ReturnOrderItem[]
+    WarehouseTask        WarehouseTask[]
+    CycleCountItem       CycleCountItem[]
+
     @@unique([productId, code])
 }
 
@@ -263,23 +617,6 @@ model UnitOfMeasure {
     name String
 
     skus SKU[]
-}
-
-model SKUUomConversion {
-    id String @id @default(cuid())
-
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
-
-    fromUomId String
-    fromUom   UnitOfMeasure @relation("FromUom", fields: [fromUomId], references: [id])
-
-    toUomId String
-    toUom   UnitOfMeasure @relation("ToUom", fields: [toUomId], references: [id])
-
-    multiplier Decimal @db.Decimal(18, 6)
-
-    @@unique([skuId, fromUomId, toUomId])
 }
 
 // ============================================================================
@@ -299,7 +636,8 @@ model InventoryLot {
 
     qcStatus QCStatus @default(PENDING)
 
-    balances InventoryBalance[]
+    balances             InventoryBalance[]
+    InventoryTransaction InventoryTransaction[]
 
     @@unique([skuId, lotNumber])
 }
@@ -312,7 +650,7 @@ enum QCStatus {
 }
 
 // ============================================================================
-// SERIAL TRACKING
+// SERIALS
 // ============================================================================
 
 model InventorySerial {
@@ -326,7 +664,7 @@ model InventorySerial {
     locationId String?
     location   Location? @relation(fields: [locationId], references: [id])
 
-    status InventoryStatus
+    status InventoryState
 
     @@unique([skuId, serialNumber])
 }
@@ -350,6 +688,8 @@ model InventoryBalance {
     lotId String?
     lot   InventoryLot? @relation(fields: [lotId], references: [id])
 
+    state InventoryState @default(AVAILABLE)
+
     quantityAvailable Decimal @default(0) @db.Decimal(18, 4)
     quantityReserved  Decimal @default(0) @db.Decimal(18, 4)
     quantityDamaged   Decimal @default(0) @db.Decimal(18, 4)
@@ -357,9 +697,21 @@ model InventoryBalance {
 
     updatedAt DateTime @updatedAt
 
-    @@unique([locationId, skuId, lotId])
+    @@unique([locationId, skuId, lotId, state])
     @@index([warehouseId, skuId])
     @@index([locationId, skuId])
+}
+
+enum InventoryState {
+    AVAILABLE
+    RESERVED
+    QC
+    HOLD
+    DAMAGED
+    QUARANTINE
+    EXPIRED
+    INBOUND
+    OUTBOUND
 }
 
 // ============================================================================
@@ -391,7 +743,7 @@ enum ReservationStatus {
 }
 
 // ============================================================================
-// INVENTORY EVENT SOURCING
+// INVENTORY TRANSACTION
 // ============================================================================
 
 model InventoryTransaction {
@@ -428,7 +780,6 @@ model InventoryTransaction {
 
     @@index([warehouseId, createdAt])
     @@index([skuId, createdAt])
-    @@index([transactionType])
 }
 
 enum InventoryTransactionType {
@@ -459,8 +810,66 @@ model Supplier {
     name String
 
     purchaseOrders PurchaseOrder[]
+    asns           AdvancedShippingNotice[]
 
     @@unique([organizationId, code])
+}
+
+// ============================================================================
+// ASN
+// ============================================================================
+
+model AdvancedShippingNotice {
+    id String @id @default(cuid())
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+    supplierId String
+    supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+    purchaseOrderId String?
+    purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+
+    asnNumber String
+
+    expectedArrival DateTime?
+
+    pallets Int?
+    cartons Int?
+
+    status ASNStatus
+
+    createdAt DateTime @default(now())
+
+    items          ASNItem[]
+    ReceivingOrder ReceivingOrder[]
+
+    @@unique([warehouseId, asnNumber])
+}
+
+model ASNItem {
+    id String @id @default(cuid())
+
+    asnId String
+    asn   AdvancedShippingNotice @relation(fields: [asnId], references: [id])
+
+    skuId String
+    sku   SKU    @relation(fields: [skuId], references: [id])
+
+    expectedQty Decimal @db.Decimal(18, 4)
+    receivedQty Decimal @default(0) @db.Decimal(18, 4)
+
+    lotNumber String?
+}
+
+enum ASNStatus {
+    CREATED
+    IN_TRANSIT
+    ARRIVED
+    RECEIVING
+    COMPLETED
+    CANCELLED
 }
 
 // ============================================================================
@@ -484,7 +893,10 @@ model PurchaseOrder {
 
     items PurchaseOrderItem[]
 
-    createdAt DateTime @default(now())
+    asns AdvancedShippingNotice[]
+
+    createdAt      DateTime         @default(now())
+    ReceivingOrder ReceivingOrder[]
 
     @@unique([warehouseId, poNumber])
 }
@@ -526,6 +938,9 @@ model ReceivingOrder {
     purchaseOrderId String?
     purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
 
+    asnId String?
+    asn   AdvancedShippingNotice? @relation(fields: [asnId], references: [id])
+
     status ReceivingStatus
 
     receivedAt DateTime?
@@ -541,7 +956,7 @@ enum ReceivingStatus {
 }
 
 // ============================================================================
-// CUSTOMERS
+// CUSTOMER
 // ============================================================================
 
 model Customer {
@@ -553,7 +968,9 @@ model Customer {
     code String
     name String
 
-    salesOrders SalesOrder[]
+    salesOrders      SalesOrder[]
+    returnOrders     ReturnOrder[]
+    CustomerLocation CustomerLocation[]
 
     @@unique([organizationId, code])
 }
@@ -579,7 +996,8 @@ model SalesOrder {
 
     items SalesOrderItem[]
 
-    shipment Shipment?
+    shipment    Shipment?
+    ReturnOrder ReturnOrder[]
 
     @@unique([warehouseId, orderNumber])
 }
@@ -610,34 +1028,6 @@ model SalesOrderItem {
 }
 
 // ============================================================================
-// WAVE PICKING
-// ============================================================================
-
-model PickWave {
-    id String @id @default(cuid())
-
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
-
-    waveNumber String
-
-    status WaveStatus
-
-    tasks WarehouseTask[]
-
-    createdAt DateTime @default(now())
-
-    @@unique([warehouseId, waveNumber])
-}
-
-enum WaveStatus {
-    CREATED
-    RELEASED
-    PICKING
-    COMPLETED
-}
-
-// ============================================================================
 // SHIPMENT
 // ============================================================================
 
@@ -665,6 +1055,111 @@ enum ShipmentStatus {
     SHIPPED
     DELIVERED
     FAILED
+}
+
+// ============================================================================
+// REVERSE LOGISTICS
+// ============================================================================
+
+model ReturnOrder {
+    id String @id @default(cuid())
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+    customerId String
+    customer   Customer @relation(fields: [customerId], references: [id])
+
+    salesOrderId String?
+    salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id])
+
+    returnNumber String
+
+    reason String?
+
+    status ReturnOrderStatus
+
+    createdAt DateTime @default(now())
+
+    items ReturnOrderItem[]
+
+    inspections ReturnInspection[]
+
+    @@unique([warehouseId, returnNumber])
+}
+
+model ReturnOrderItem {
+    id String @id @default(cuid())
+
+    returnOrderId String
+    returnOrder   ReturnOrder @relation(fields: [returnOrderId], references: [id])
+
+    skuId String
+    sku   SKU    @relation(fields: [skuId], references: [id])
+
+    quantity Decimal @db.Decimal(18, 4)
+
+    disposition ReturnDisposition?
+}
+
+model ReturnInspection {
+    id String @id @default(cuid())
+
+    returnOrderId String
+    returnOrder   ReturnOrder @relation(fields: [returnOrderId], references: [id])
+
+    inspectedById String?
+    inspectedBy   User?   @relation(fields: [inspectedById], references: [id])
+
+    result QCStatus
+
+    notes String?
+
+    createdAt DateTime @default(now())
+}
+
+enum ReturnDisposition {
+    RESTOCK
+    SCRAP
+    REFURBISH
+    RETURN_TO_VENDOR
+}
+
+enum ReturnOrderStatus {
+    CREATED
+    IN_TRANSIT
+    RECEIVED
+    INSPECTING
+    COMPLETED
+    CANCELLED
+}
+
+// ============================================================================
+// WAVE PICKING
+// ============================================================================
+
+model PickWave {
+    id String @id @default(cuid())
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+    waveNumber String
+
+    status WaveStatus
+
+    tasks WarehouseTask[]
+
+    createdAt DateTime @default(now())
+
+    @@unique([warehouseId, waveNumber])
+}
+
+enum WaveStatus {
+    CREATED
+    RELEASED
+    PICKING
+    COMPLETED
 }
 
 // ============================================================================
@@ -706,7 +1201,6 @@ model WarehouseTask {
     createdAt DateTime @default(now())
 
     @@index([warehouseId, status])
-    @@index([assignedUserId, status])
 }
 
 enum WarehouseTaskType {
@@ -718,6 +1212,7 @@ enum WarehouseTaskType {
     MOVE
     REPLENISHMENT
     CYCLE_COUNT
+    QC
 }
 
 enum TaskStatus {
@@ -733,6 +1228,112 @@ enum TaskPriority {
     NORMAL
     HIGH
     URGENT
+}
+
+// ============================================================================
+// WORKFLOW ENGINE
+// ============================================================================
+
+model WorkflowDefinition {
+    id String @id @default(cuid())
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+    name String
+
+    type WorkflowType
+
+    version Int @default(1)
+
+    isActive Boolean @default(true)
+
+    nodes WorkflowNode[]
+    edges WorkflowEdge[]
+
+    createdAt DateTime @default(now())
+
+    executions WorkflowExecution[]
+}
+
+model WorkflowNode {
+    id String @id @default(cuid())
+
+    workflowId String
+    workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
+
+    nodeId String
+
+    type String
+
+    label String
+
+    positionX Decimal @db.Decimal(12, 2)
+    positionY Decimal @db.Decimal(12, 2)
+
+    metadata Json?
+}
+
+model WorkflowEdge {
+    id String @id @default(cuid())
+
+    workflowId String
+    workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
+
+    sourceNodeId String
+    targetNodeId String
+
+    label String?
+
+    metadata Json?
+}
+
+model WorkflowExecution {
+    id String @id @default(cuid())
+
+    workflowId String
+    workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
+
+    referenceType String?
+    referenceId   String?
+
+    status WorkflowExecutionStatus
+
+    startedAt   DateTime  @default(now())
+    completedAt DateTime?
+
+    steps WorkflowExecutionStep[]
+}
+
+model WorkflowExecutionStep {
+    id String @id @default(cuid())
+
+    executionId String
+    execution   WorkflowExecution @relation(fields: [executionId], references: [id])
+
+    nodeId String
+
+    status WorkflowExecutionStatus
+
+    startedAt   DateTime  @default(now())
+    completedAt DateTime?
+
+    metadata Json?
+}
+
+enum WorkflowType {
+    INBOUND
+    OUTBOUND
+    INVENTORY
+    RETURNS
+}
+
+enum WorkflowExecutionStatus {
+    PENDING
+    RUNNING
+    COMPLETED
+    FAILED
+    CANCELLED
 }
 
 // ============================================================================
@@ -772,13 +1373,6 @@ model CycleCountSession {
     items CycleCountItem[]
 }
 
-enum CycleCountStatus {
-    CREATED
-    COUNTING
-    APPROVED
-    COMPLETED
-}
-
 model CycleCountItem {
     id String @id @default(cuid())
 
@@ -795,4 +1389,48 @@ model CycleCountItem {
     countedQty  Decimal @db.Decimal(18, 4)
 
     variance Decimal @db.Decimal(18, 4)
+}
+
+enum CycleCountStatus {
+    CREATED
+    COUNTING
+    APPROVED
+    COMPLETED
+}
+
+// ============================================================================
+// SCAN EVENTS
+// ============================================================================
+
+model ScanEvent {
+    id String @id @default(cuid())
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+    userId String?
+    user   User?   @relation(fields: [userId], references: [id])
+
+    locationId String?
+    location   Location? @relation(fields: [locationId], references: [id])
+
+    barcode String
+
+    eventType ScanEventType
+
+    metadata Json?
+
+    createdAt DateTime @default(now())
+
+    @@index([warehouseId, createdAt])
+}
+
+enum ScanEventType {
+    RECEIVE
+    PICK
+    PUTAWAY
+    MOVE
+    PACK
+    SHIP
+    COUNT
 }
