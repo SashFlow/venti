@@ -1,0 +1,2204 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+    output   = "./generated/client"
+}
+
+generator zod {
+    provider = "prisma-zod-generator"
+    output   = "./zod"
+    config   = "./zod-generator.config.json"
+}
+
+model User {
+    id                         String              @id @default(cuid())
+    name                       String
+    email                      String
+    emailVerified              Boolean
+    image                      String?
+    createdAt                  DateTime
+    updatedAt                  DateTime
+    username                   String?
+    role                       String?
+    banned                     Boolean?
+    banReason                  String?
+    banExpires                 DateTime?
+    onboardingComplete         Boolean             @default(false)
+    paymentsCustomerId         String?
+    locale                     String?
+    twoFactorEnabled           Boolean?
+    aiOptOut                   Boolean             @default(false)
+    sessions                   Session[]
+    accounts                   Account[]
+    passkeys                   Passkey[]
+    invitations                Invitation[]
+    purchases                  Purchase[]
+    members                    Member[]
+    twofactors                 TwoFactor[]
+    auditLogs                  AuditLog[]
+    tasksAssigned              Task[]              @relation("TaskAssignedTo")
+    tasksCreated               Task[]              @relation("TaskAssignedBy")
+    inventoryMovements         InventoryMovement[] @relation("MovementPerformedBy")
+    layoutVersionsPublished    LayoutVersion[]     @relation("LayoutVersionPublishedBy")
+    cycleCountSessionsAssigned CycleCountSession[] @relation("CycleCountAssignedTo")
+    cycleCountSessionsApproved CycleCountSession[] @relation("CycleCountApprovedBy")
+    cycleCountLinesCounted     CycleCountLine[]    @relation("CycleCountLineCountedBy")
+    purchaseOrdersCreated      PurchaseOrder[]     @relation("POCreatedBy")
+    purchaseOrdersApproved     PurchaseOrder[]     @relation("POApprovedBy")
+    salesOrdersCreated         SalesOrder[]        @relation("SOCreatedBy")
+    wavesReleased              Wave[]              @relation("WaveReleasedBy")
+    shipmentsDispatched        Shipment[]          @relation("ShipmentDispatchedBy")
+    uploadedFiles              UploadFile[]        @relation("UploadedFilesByUser")
+
+    @@unique([email])
+    @@unique([username])
+    @@map("user")
+}
+
+model Session {
+    id        String   @id @default(cuid())
+    expiresAt DateTime
+    ipAddress String?
+    userAgent String?
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    impersonatedBy String?
+
+    activeOrganizationId String?
+
+    token     String
+    createdAt DateTime
+    updatedAt DateTime
+
+    @@unique([token])
+    @@index([userId])
+    @@index([expiresAt])
+    @@map("session")
+}
+
+model Account {
+    id           String    @id @default(cuid())
+    accountId    String
+    providerId   String
+    userId       String
+    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    accessToken  String?   @db.Text
+    refreshToken String?   @db.Text
+    idToken      String?   @db.Text
+    expiresAt    DateTime?
+    password     String?
+
+    accessTokenExpiresAt  DateTime?
+    refreshTokenExpiresAt DateTime?
+    scope                 String?
+    createdAt             DateTime
+    updatedAt             DateTime
+
+    @@index([userId])
+    @@index([providerId, accountId])
+    @@map("account")
+}
+
+model Verification {
+    id         String   @id @default(cuid())
+    identifier String
+    value      String   @db.Text
+    expiresAt  DateTime
+
+    createdAt DateTime?
+    updatedAt DateTime?
+
+    @@index([identifier])
+    @@index([expiresAt])
+    @@map("verification")
+}
+
+model Passkey {
+    id           String    @id @default(cuid())
+    name         String?
+    publicKey    String
+    userId       String
+    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    credentialID String    @unique
+    counter      Int
+    deviceType   String
+    backedUp     Boolean
+    transports   String?
+    createdAt    DateTime?
+
+    @@index([userId])
+    @@map("passkey")
+}
+
+model TwoFactor {
+    id          String @id @default(cuid())
+    secret      String
+    backupCodes String
+    userId      String
+    user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@map("two_factor")
+}
+
+model Organization {
+    id                 String              @id @default(cuid())
+    name               String
+    slug               String?
+    logo               String?
+    logoUploadFileId   String?
+    logoUploadFile     UploadFile?         @relation("OrganizationLogoUpload", fields: [logoUploadFileId], references: [id], onDelete: SetNull)
+    createdAt          DateTime
+    metadata           Json?
+    paymentsCustomerId String?
+    members            Member[]
+    invitations        Invitation[]
+    purchases          Purchase[]
+    roleGroups         RoleGroup[]
+    warehouses         Warehouse[]
+    orgConfig          OrganizationConfig?
+    auditLogs          AuditLog[]
+    skus               SKU[]
+    suppliers          Supplier[]
+    uoms               UOM[]
+    skuCategories      SKUCategory[]
+    purchaseOrders     PurchaseOrder[]
+    salesOrders        SalesOrder[]
+    customers          Customer[]
+    customerLocations  CustomerLocation[]
+    packageTypes       PackageType[]
+    uploadFiles        UploadFile[]        @relation("OrganizationUploads")
+
+    @@unique([slug])
+    @@index([logoUploadFileId])
+    @@map("organization")
+}
+
+model Member {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    userId         String
+    user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    role           String
+    roleGroupId    String?
+    roleGroup      RoleGroup?   @relation(fields: [roleGroupId], references: [id], onDelete: SetNull)
+    createdAt      DateTime
+
+    @@unique([organizationId, userId])
+    @@index([userId])
+    @@index([roleGroupId])
+    @@map("member")
+}
+
+model Invitation {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    email          String
+    role           String?
+    status         String
+    expiresAt      DateTime
+    inviterId      String
+    user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+    @@index([organizationId])
+    @@index([email])
+    @@index([inviterId])
+    @@index([expiresAt])
+    @@map("invitation")
+}
+
+enum PurchaseType {
+    SUBSCRIPTION
+    ONE_TIME
+}
+
+model Purchase {
+    id             String        @id @default(cuid())
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    organizationId String?
+    user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId         String?
+    type           PurchaseType
+    customerId     String
+    subscriptionId String?       @unique
+    productId      String
+    status         String?
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+
+    @@index([subscriptionId])
+    @@index([organizationId])
+    @@index([userId])
+    @@map("purchase")
+}
+
+model AuditLog {
+    id             String        @id @default(cuid())
+    organizationId String?
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+    userId         String?
+    user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+    action         String
+    resource       String
+    resourceId     String?
+    metadata       Json?
+    ipAddress      String?
+    userAgent      String?
+    createdAt      DateTime      @default(now())
+
+    @@index([organizationId])
+    @@index([userId])
+    @@index([resource])
+    @@index([resourceId])
+    @@index([createdAt])
+    @@map("audit_log")
+}
+
+// ================================================
+// Scope Models
+// ================================================
+
+model RoleGroup {
+    id             String       @id @default(cuid())
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    name           String
+    description    String?
+    warehouses     Warehouse[]  @relation("RoleGroupWarehouses")
+    permissions    String[]
+    members        Member[]
+
+    @@index([organizationId])
+    @@map("role_group")
+}
+
+// ================================================
+// Common Models
+// ================================================
+model Address {
+    id           String   @id @default(cuid())
+    addressLine1 String
+    addressLine2 String?
+    city         String
+    country      String
+    state        String
+    zip          String
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    warehouseAddress  Warehouse?          @relation("WarehouseAddress")
+    warehouseReturn   Warehouse?          @relation("WarehouseReturnAddress")
+    orgConfig         OrganizationConfig? @relation("BillingAddress")
+    customerLocations CustomerLocation[]  @relation("CustomerLocationAddress")
+
+    @@map("address")
+}
+
+model Task {
+    id           String       @id @default(cuid())
+    type         TaskType
+    status       TaskStatus   @default(PENDING)
+    priority     TaskPriority @default(NORMAL)
+    description  String
+    assignedToId String?
+    assignedTo   User?        @relation("TaskAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+    assignedById String?
+    assignedBy   User?        @relation("TaskAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+    warehouseId  String?
+    warehouse    Warehouse?   @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+    deadline     DateTime?
+    slaDeadline  DateTime?
+    startedAt    DateTime?
+    completedAt  DateTime?
+    notes        String?      @db.Text
+    createdAt    DateTime     @default(now())
+    updatedAt    DateTime     @updatedAt
+
+    @@index([warehouseId])
+    @@index([warehouseId, status])
+    @@index([assignedToId])
+    @@index([assignedToId, status])
+    @@index([assignedById])
+    @@index([status])
+    @@index([type])
+    @@index([priority])
+    @@index([deadline])
+    @@map("task")
+}
+
+model OrganizationConfig {
+    id             String       @id @default(cuid())
+    organizationId String       @unique
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    headquarterId  String       @unique
+    headquarter    Address      @relation("BillingAddress", fields: [headquarterId], references: [id], onDelete: Restrict)
+    fulfillment    Json?
+    inventory      Json?
+    units          Json?
+    barcodeScanner Json?
+    purchaseOrders Json?
+    transfers      Json?
+    cycleCount     Json?
+    dataRetention  Json?
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+
+    @@map("organization_config")
+}
+
+enum UploadFileScope {
+    ORGANIZATION_LOGO
+    USER_AVATAR
+    NOTE_IMAGE
+    GENERIC
+}
+
+enum UploadFileStatus {
+    PENDING
+    UPLOADED
+    FAILED
+    DELETED
+}
+
+model UploadFile {
+    id               String           @id @default(cuid())
+    organizationId   String?
+    organization     Organization?    @relation("OrganizationUploads", fields: [organizationId], references: [id], onDelete: SetNull)
+    uploadedByUserId String?
+    uploadedByUser   User?            @relation("UploadedFilesByUser", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+    bucket           String           @db.VarChar(100)
+    path             String           @db.VarChar(1024)
+    fileName         String?          @db.VarChar(255)
+    mimeType         String?          @db.VarChar(255)
+    sizeBytes        Int?
+    checksum         String?          @db.VarChar(255)
+    scope            UploadFileScope  @default(GENERIC)
+    status           UploadFileStatus @default(PENDING)
+    metadata         Json?
+    createdAt        DateTime         @default(now())
+    updatedAt        DateTime         @updatedAt
+
+    organizationLogoFor Organization[] @relation("OrganizationLogoUpload")
+
+    @@unique([bucket, path])
+    @@index([organizationId])
+    @@index([uploadedByUserId])
+    @@index([scope])
+    @@index([status])
+    @@map("upload_file")
+}
+
+// ============================================================================
+// Customers
+// ============================================================================
+
+model Customer {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    name         String    @db.VarChar(255)
+    email        String?   @db.VarChar(255)
+    phone        String?   @db.VarChar(50)
+    isWholesaler Boolean   @default(false)
+    notes        String?   @db.Text
+    lastOrderAt  DateTime?
+    totalOrders  Int       @default(0)
+    metadata     Json?
+
+    locations   CustomerLocation[]
+    salesOrders SalesOrder[]
+
+    @@index([organizationId])
+    @@index([organizationId, createdAt])
+    @@index([organizationId, name])
+    @@index([organizationId, email])
+    @@map("customer")
+}
+
+model CustomerLocation {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    customerId String
+    customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    addressId String  @unique
+    address   Address @relation("CustomerLocationAddress", fields: [addressId], references: [id], onDelete: Restrict)
+
+    name      String  @db.VarChar(255)
+    isDefault Boolean @default(false)
+    notes     String? @db.Text
+
+    @@index([customerId])
+    @@index([organizationId])
+    @@map("customer_location")
+}
+
+// ============================================================================
+// Suppliers
+// ============================================================================
+
+enum SupplierType {
+    FACTORY
+    DISTRIBUTOR
+    WHOLESALER
+    DROPSHIPPER
+    OTHER
+}
+
+model Supplier {
+    id                  String          @id @default(cuid())
+    createdAt           DateTime        @default(now())
+    updatedAt           DateTime        @updatedAt
+    organizationId      String
+    organization        Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    code                String          @db.VarChar(50)
+    name                String          @db.VarChar(255)
+    email               String?         @db.VarChar(255)
+    phone               String?         @db.VarChar(50)
+    type                SupplierType
+    otherType           String?         @db.VarChar(255)
+    defaultLeadTimeDays Int?
+    metadata            Json?
+    skuSuppliers        SkuSupplier[]
+    purchaseOrders      PurchaseOrder[]
+
+    @@unique([organizationId, code])
+    @@index([organizationId])
+    @@map("supplier")
+}
+
+// ============================================================================
+// Warehouse
+// ============================================================================
+model Warehouse {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationId String
+
+    organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    addressId String? @unique
+
+    address Address? @relation("WarehouseAddress", fields: [addressId], references: [id], onDelete: SetNull)
+
+    returnAddressId String? @unique
+
+    returnAddress Address? @relation("WarehouseReturnAddress", fields: [returnAddressId], references: [id], onDelete: SetNull)
+
+    code String @db.VarChar(50)
+    name String @db.VarChar(255)
+
+    description String? @db.Text
+
+    timezone String @default("UTC") @db.VarChar(50)
+
+    status WarehouseStatus @default(ACTIVE)
+
+    floors WarehouseFloor[]
+
+    inventoryItems InventoryItem[]
+
+    inventoryMovements InventoryMovement[]
+    roleGroups         RoleGroup[]         @relation("RoleGroupWarehouses")
+
+    tasks                Task[]
+    inventoryAllocations InventoryAllocation[]
+    inventoryBalances    InventoryBalance[]
+    cycleCountSessions   CycleCountSession[]
+    dockDoors            DockDoor[]
+    purchaseOrders       PurchaseOrder[]
+    receipts             Receipt[]
+    salesOrders          SalesOrder[]
+    shipments            Shipment[]
+
+    @@unique([organizationId, code])
+    @@index([organizationId])
+    @@index([status])
+    @@map("warehouse")
+}
+
+model WarehouseFloor {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+
+    warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    floorNumber Int
+
+    code String @db.VarChar(50)
+
+    name String? @db.VarChar(255)
+
+    status FloorStatus @default(ACTIVE)
+
+    // Entire floor dimensions
+
+    widthMm  Decimal? @db.Decimal(12, 2)
+    lengthMm Decimal? @db.Decimal(12, 2)
+    heightMm Decimal? @db.Decimal(12, 2)
+
+    // Coordinate origin
+
+    originX Decimal? @default(0) @db.Decimal(12, 2)
+    originY Decimal? @default(0) @db.Decimal(12, 2)
+    originZ Decimal? @default(0) @db.Decimal(12, 2)
+
+    elevationMm Decimal? @default(0) @db.Decimal(12, 2)
+
+    metadata Json?
+
+    @@unique([warehouseId, floorNumber])
+    @@unique([warehouseId, code])
+    @@index([warehouseId])
+    @@index([status])
+    @@map("warehouse_floor")
+}
+
+model Zone {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseFloorId String
+
+    warehouseFloor WarehouseFloor @relation(fields: [warehouseFloorId], references: [id], onDelete: Cascade)
+
+    code String @db.VarChar(50)
+
+    name String @db.VarChar(255)
+
+    description String? @db.Text
+
+    type ZoneType
+
+    colorHex String? @db.VarChar(20)
+
+    metadata Json?
+
+    storageUnits StorageUnit[]
+
+    @@unique([warehouseFloorId, code])
+    @@index([warehouseFloorId])
+    @@index([type])
+    @@map("zone")
+}
+
+model FloorStorage {
+}
+
+model Storage {
+}
+
+model PalletStorage {
+}
+
+model BinStorage {
+}
+
+// ============================================================================
+
+model PackageType {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    name                 String  @db.VarChar(255)
+    description          String? @db.Text
+    packageType          String  @db.VarChar(50)
+    price                Decimal @default(0) @db.Decimal(12, 2)
+    length               Decimal @default(1) @db.Decimal(12, 2)
+    width                Decimal @default(1) @db.Decimal(12, 2)
+    height               Decimal @default(1) @db.Decimal(12, 2)
+    weight               Decimal @default(1) @db.Decimal(12, 2)
+    dimensionUnit        String  @default("in") @db.VarChar(10)
+    weightUnit           String  @default("lb") @db.VarChar(10)
+    applyToAllWarehouses Boolean @default(true)
+    metadata             Json?
+
+    @@index([organizationId])
+    @@index([organizationId, createdAt])
+    @@index([organizationId, name])
+    @@map("package_type")
+}
+
+// ============================================================================
+// UOM
+// ============================================================================
+
+model UOM {
+    id                 String              @id @default(cuid())
+    createdAt          DateTime            @default(now())
+    updatedAt          DateTime            @updatedAt
+    organizationId     String
+    organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    code               String              @db.VarChar(20)
+    name               String              @db.VarChar(100)
+    abbreviation       String              @db.VarChar(20)
+    isBase             Boolean             @default(false)
+    precision          Int                 @default(0)
+    fromConversions    UOMConversion[]     @relation("UOMFrom")
+    toConversions      UOMConversion[]     @relation("UOMTo")
+    skus               SKU[]
+    purchaseOrderLines PurchaseOrderLine[]
+    receiptLines       ReceiptLine[]
+    salesOrderLines    SalesOrderLine[]
+
+    @@unique([organizationId, code])
+    @@index([organizationId])
+    @@map("uom")
+}
+
+// ============================================================================
+// UOM CONVERSION
+// ============================================================================
+
+model UOMConversion {
+    id            String    @id @default(cuid())
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    fromUomId     String
+    fromUom       UOM       @relation("UOMFrom", fields: [fromUomId], references: [id], onDelete: Cascade)
+    toUomId       String
+    toUom         UOM       @relation("UOMTo", fields: [toUomId], references: [id], onDelete: Cascade)
+    factor        Decimal   @db.Decimal(18, 8)
+    effectiveFrom DateTime?
+    effectiveTo   DateTime?
+
+    @@index([fromUomId, toUomId])
+    @@index([fromUomId])
+    @@index([toUomId])
+    @@index([fromUomId, effectiveFrom])
+    @@map("uom_conversion")
+}
+
+// ============================================================================
+// SKU CATEGORY
+// ============================================================================
+
+model SKUCategory {
+    id             String        @id @default(cuid())
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+    organizationId String
+    organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    name           String        @db.VarChar(255)
+    parentId       String?
+    parent         SKUCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+    children       SKUCategory[] @relation("CategoryHierarchy")
+    skus           SKU[]
+
+    @@unique([organizationId, name])
+    @@index([organizationId])
+    @@index([parentId])
+    @@map("sku_category")
+}
+
+// ============================================================================
+// SKU SUPPLIER
+// ============================================================================
+
+model SkuSupplier {
+    id           String   @id @default(cuid())
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+    skuId        String
+    sku          SKU      @relation(fields: [skuId], references: [id], onDelete: Cascade)
+    supplierId   String
+    supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+    isPrimary    Boolean  @default(false)
+    vendorCode   String?  @db.VarChar(100)
+    leadTimeDays Int?
+    moq          Decimal? @db.Decimal(12, 4)
+    unitPrice    Decimal? @db.Decimal(18, 4)
+
+    @@unique([skuId, supplierId])
+    @@index([skuId])
+    @@index([supplierId])
+    @@map("sku_supplier")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum WarehouseStatus {
+    ACTIVE
+    INACTIVE
+    ARCHIVED
+}
+
+enum FloorStatus {
+    ACTIVE
+    BLOCKED
+    MAINTENANCE
+}
+
+enum ZoneType {
+    BULK
+    PICKING
+    SPARE_PARTS
+    INBOUND
+    OUTBOUND
+    RETURNS
+    QC
+    CUSTOM
+}
+
+enum StorageUnitType {
+    AREA
+
+    FLOOR_LOCATION
+    FLOOR_STACK
+
+    RACK
+    RACK_LEVEL
+    PALLET_SLOT
+
+    SHELF
+    SHELF_LEVEL
+    BIN
+
+    STAGING
+    QC
+    RETURNS
+    DAMAGE
+    PICKING
+    CROSS_DOCK
+
+    SECURE_CAGE
+    MEZZANINE
+
+    TOOL_STORAGE
+    PACKAGING_STORAGE
+    REFRIGERANT_STORAGE
+
+    CUSTOM
+}
+
+enum StorageUnitStatus {
+    ACTIVE
+    BLOCKED
+    FULL
+    MAINTENANCE
+    DISABLED
+}
+
+enum HandlingUnitType {
+    PALLET
+    CARTON
+    TOTE
+    CRATE
+    LOOSE
+}
+
+enum HandlingUnitStatus {
+    ACTIVE
+    SEALED
+    DAMAGED
+    DISPATCHED
+}
+
+enum InventoryStatus {
+    AVAILABLE
+    RESERVED
+    DAMAGED
+    QC_HOLD
+    RETURNED
+}
+
+enum InventoryTransactionType {
+    RECEIVED
+    PUTAWAY
+
+    INTERNAL_TRANSFER
+
+    PICK
+    PACK
+
+    STAGING
+    SHIP
+
+    RETURN_RECEIVED
+    RETURN_RESTOCK
+
+    QC_HOLD
+    QC_RELEASE
+
+    DAMAGE
+    ADJUSTMENT
+
+    SPLIT
+    MERGE
+
+    PALLETIZE
+    DEPALLETIZE
+
+    CYCLE_COUNT
+}
+
+enum InventoryMovementStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+    FAILED
+}
+
+enum LayoutVersionStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+}
+
+enum TaskType {
+    RECEIVE
+    PUTAWAY
+    PICK
+    PACK
+    SHIP
+    TRANSFER
+    CYCLE_COUNT
+    QC_INSPECT
+    REPLENISH
+    RETURNS_INTAKE
+}
+
+enum TaskStatus {
+    PENDING
+    ASSIGNED
+    IN_PROGRESS
+    BLOCKED
+    COMPLETED
+    CANCELLED
+}
+
+enum TaskPriority {
+    CRITICAL
+    HIGH
+    NORMAL
+    LOW
+}
+
+enum SKULifecycle {
+    ACTIVE
+    DISCONTINUED
+    OBSOLETE
+}
+
+// ============================================================================
+// ZONE
+// LOGICAL GROUPING ONLY
+// ============================================================================
+
+// ============================================================================
+// STORAGE UNIT
+// CORE PHYSICAL OBJECT
+// ============================================================================
+
+model StorageUnit {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+
+    warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    floorId String?
+
+    floor WarehouseFloor? @relation(fields: [floorId], references: [id], onDelete: SetNull)
+
+    zoneId String?
+
+    zone Zone? @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+
+    // ==========================================================================
+    // RECURSIVE HIERARCHY
+    // ==========================================================================
+
+    parentStorageUnitId String?
+
+    parentStorageUnit StorageUnit? @relation("StorageHierarchy", fields: [parentStorageUnitId], references: [id], onDelete: Cascade)
+
+    childStorageUnits StorageUnit[] @relation("StorageHierarchy")
+
+    // ==========================================================================
+    // IDENTITY
+    // ==========================================================================
+
+    code String @db.VarChar(100)
+
+    name String? @db.VarChar(255)
+
+    barcode String? @db.VarChar(255)
+
+    qrCode String? @db.VarChar(255)
+
+    type StorageUnitType
+
+    status StorageUnitStatus @default(ACTIVE)
+
+    // ==========================================================================
+    // 3D POSITIONING
+    // ==========================================================================
+
+    startX Decimal? @default(0) @db.Decimal(12, 2)
+    startY Decimal? @default(0) @db.Decimal(12, 2)
+    startZ Decimal? @default(0) @db.Decimal(12, 2)
+
+    // ==========================================================================
+    // DIMENSIONS
+    // ==========================================================================
+
+    widthMm  Decimal? @db.Decimal(12, 2)
+    lengthMm Decimal? @db.Decimal(12, 2)
+    heightMm Decimal? @db.Decimal(12, 2)
+
+    // ==========================================================================
+    // ROTATION
+    // ==========================================================================
+
+    rotationXDeg Decimal? @default(0) @db.Decimal(8, 2)
+    rotationYDeg Decimal? @default(0) @db.Decimal(8, 2)
+    rotationZDeg Decimal? @default(0) @db.Decimal(8, 2)
+
+    // ==========================================================================
+    // CAPACITY
+    // ==========================================================================
+
+    maxWeightKg Decimal? @db.Decimal(12, 2)
+
+    maxVolumeM3 Decimal? @db.Decimal(12, 4)
+
+    maxPallets Int?
+
+    maxUnits Int?
+
+    // ==========================================================================
+    // HIERARCHY HELPERS
+    // ==========================================================================
+
+    levelIndex Int?
+
+    positionIndex Int?
+
+    sequence Int?
+
+    // ==========================================================================
+    // STORAGE RULES
+    // ==========================================================================
+
+    allowMixedSku Boolean @default(false)
+
+    allowMixedBatch Boolean @default(false)
+
+    allowLooseInventory Boolean @default(true)
+
+    allowPalletInventory Boolean @default(true)
+
+    allowCartonInventory Boolean @default(true)
+
+    // ==========================================================================
+    // OPERATIONAL FLAGS
+    // ==========================================================================
+
+    isPickable Boolean @default(true)
+
+    isStorable Boolean @default(true)
+
+    isInboundAllowed Boolean @default(true)
+
+    isOutboundAllowed Boolean @default(true)
+
+    isCycleCountEnabled Boolean @default(true)
+
+    isBlocked Boolean @default(false)
+
+    // ==========================================================================
+    // VISUALIZATION
+    // ==========================================================================
+
+    colorHex String? @db.VarChar(20)
+
+    labelColorHex String? @db.VarChar(20)
+
+    icon String? @db.VarChar(100)
+
+    // ==========================================================================
+    // THREE.JS / UI METADATA
+    // ==========================================================================
+
+    metadata Json?
+
+    // Example:
+    // {
+    //   "meshType": "rack",
+    //   "material": "steel",
+    //   "texture": "...",
+    //   "labelVisible": true
+    // }
+
+    // ==========================================================================
+    // RELATIONS
+    // ==========================================================================
+
+    handlingUnits HandlingUnit[]
+
+    inventoryItems InventoryItem[]
+
+    // Movement tracking
+
+    fromInventoryMovements InventoryMovement[] @relation("InventoryFromStorage")
+
+    toInventoryMovements InventoryMovement[] @relation("InventoryToStorage")
+
+    inventoryBalances InventoryBalance[]
+    cycleCountLines   CycleCountLine[]
+
+    @@unique([warehouseId, code])
+    @@unique([warehouseId, barcode])
+    @@unique([warehouseId, qrCode])
+    @@index([warehouseId])
+    @@index([floorId])
+    @@index([zoneId])
+    @@index([parentStorageUnitId])
+    @@index([type])
+    @@index([status])
+    @@index([warehouseId, status])
+    @@index([levelIndex])
+    @@index([positionIndex])
+    @@map("storage_unit")
+}
+
+// ============================================================================
+// HANDLING UNIT
+// PALLET / CARTON / TOTE
+// ============================================================================
+
+model HandlingUnit {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+
+    warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    code String @db.VarChar(100)
+
+    barcode String? @db.VarChar(255)
+
+    type HandlingUnitType
+
+    status HandlingUnitStatus @default(ACTIVE)
+
+    currentStorageUnitId String?
+
+    currentStorageUnit StorageUnit? @relation(fields: [currentStorageUnitId], references: [id], onDelete: SetNull)
+
+    // Nested handling units
+
+    parentHandlingUnitId String?
+
+    parentHandlingUnit HandlingUnit? @relation("HandlingUnitHierarchy", fields: [parentHandlingUnitId], references: [id], onDelete: Cascade)
+
+    childHandlingUnits HandlingUnit[] @relation("HandlingUnitHierarchy")
+
+    // Dimensions
+
+    widthMm Decimal? @db.Decimal(12, 2)
+
+    lengthMm Decimal? @db.Decimal(12, 2)
+
+    heightMm Decimal? @db.Decimal(12, 2)
+
+    weightKg Decimal? @db.Decimal(12, 2)
+
+    metadata Json?
+
+    inventoryItems InventoryItem[]
+
+    fromInventoryMovements InventoryMovement[] @relation("InventoryFromHandling")
+
+    toInventoryMovements InventoryMovement[] @relation("InventoryToHandling")
+
+    inventoryBalances InventoryBalance[]
+
+    @@unique([warehouseId, code])
+    @@unique([warehouseId, barcode])
+    @@index([warehouseId])
+    @@index([warehouseId, status])
+    @@index([type])
+    @@index([status])
+    @@index([currentStorageUnitId])
+    @@map("handling_unit")
+}
+
+// ============================================================================
+// SKU
+// ============================================================================
+
+model SKU {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    skuCode String @db.VarChar(100)
+
+    name String @db.VarChar(255)
+
+    description String? @db.Text
+
+    lifecycle SKULifecycle @default(ACTIVE)
+
+    gtin String? @db.VarChar(50)
+
+    uomId String?
+    uom   UOM?    @relation(fields: [uomId], references: [id], onDelete: SetNull)
+
+    categoryId String?
+    category   SKUCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+    // Physical dimensions
+
+    widthMm Decimal? @db.Decimal(12, 2)
+
+    lengthMm Decimal? @db.Decimal(12, 2)
+
+    heightMm Decimal? @db.Decimal(12, 2)
+
+    weightKg Decimal? @db.Decimal(12, 2)
+
+    reorderPoint Decimal? @db.Decimal(12, 4)
+
+    minStock Decimal? @db.Decimal(12, 4)
+
+    maxStock Decimal? @db.Decimal(12, 4)
+
+    serialTracking Boolean @default(false)
+
+    batchTracking Boolean @default(false)
+
+    expiryTracking Boolean @default(false)
+
+    metadata Json?
+
+    inventoryItems     InventoryItem[]
+    skuSuppliers       SkuSupplier[]
+    inventoryBalances  InventoryBalance[]
+    cycleCountLines    CycleCountLine[]
+    purchaseOrderLines PurchaseOrderLine[]
+    asnLines           ASNLine[]
+    receiptLines       ReceiptLine[]
+    salesOrderLines    SalesOrderLine[]
+    shipmentLines      ShipmentLine[]
+
+    @@unique([organizationId, skuCode])
+    @@index([organizationId])
+    @@index([lifecycle])
+    @@index([uomId])
+    @@index([categoryId])
+    @@index([serialTracking])
+    @@index([batchTracking])
+    @@index([gtin])
+    @@map("sku")
+}
+
+// ============================================================================
+// INVENTORY
+// CURRENT STATE
+// ============================================================================
+
+model InventoryItem {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+
+    warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    skuId String
+
+    sku SKU @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+    currentStorageUnitId String?
+
+    currentStorageUnit StorageUnit? @relation(fields: [currentStorageUnitId], references: [id], onDelete: SetNull)
+
+    currentHandlingUnitId String?
+
+    currentHandlingUnit HandlingUnit? @relation(fields: [currentHandlingUnitId], references: [id], onDelete: SetNull)
+
+    serialNumber String? @db.VarChar(255)
+
+    batchNumber String? @db.VarChar(255)
+
+    expiryDate DateTime?
+
+    manufactureDate DateTime?
+
+    quantity Decimal @default(1) @db.Decimal(12, 4)
+
+    costPrice Decimal? @db.Decimal(18, 4)
+
+    status InventoryStatus @default(AVAILABLE)
+
+    metadata Json?
+
+    movements   InventoryMovement[]
+    allocations InventoryAllocation[]
+
+    @@unique([warehouseId, skuId, serialNumber])
+    @@index([warehouseId])
+    @@index([warehouseId, status])
+    @@index([warehouseId, skuId, batchNumber, currentStorageUnitId])
+    @@index([skuId])
+    @@index([currentStorageUnitId])
+    @@index([currentHandlingUnitId])
+    @@index([serialNumber])
+    @@index([batchNumber])
+    @@index([status])
+    @@index([warehouseId, expiryDate])
+    @@map("inventory_item")
+}
+
+// ============================================================================
+// INVENTORY MOVEMENT LEDGER
+// EVENT SOURCING
+// ============================================================================
+
+model InventoryMovement {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+
+    warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    inventoryItemId String
+
+    inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+
+    transactionType InventoryTransactionType
+
+    status InventoryMovementStatus @default(PENDING)
+
+    // ==========================================================================
+    // FROM
+    // ==========================================================================
+
+    fromStorageUnitId String?
+
+    fromStorageUnit StorageUnit? @relation("InventoryFromStorage", fields: [fromStorageUnitId], references: [id], onDelete: SetNull)
+
+    fromHandlingUnitId String?
+
+    fromHandlingUnit HandlingUnit? @relation("InventoryFromHandling", fields: [fromHandlingUnitId], references: [id], onDelete: SetNull)
+
+    // ==========================================================================
+    // TO
+    // ==========================================================================
+
+    toStorageUnitId String?
+
+    toStorageUnit StorageUnit? @relation("InventoryToStorage", fields: [toStorageUnitId], references: [id], onDelete: SetNull)
+
+    toHandlingUnitId String?
+
+    toHandlingUnit HandlingUnit? @relation("InventoryToHandling", fields: [toHandlingUnitId], references: [id], onDelete: SetNull)
+
+    quantity Decimal @db.Decimal(12, 4)
+
+    referenceNumber String? @db.VarChar(100)
+
+    notes String? @db.Text
+
+    metadata Json?
+
+    performedByUserId String?
+    performedBy       User?   @relation("MovementPerformedBy", fields: [performedByUserId], references: [id], onDelete: SetNull)
+
+    startedAt DateTime?
+
+    completedAt DateTime?
+
+    transferGroupId String?
+
+    @@index([inventoryItemId])
+    @@index([warehouseId])
+    @@index([warehouseId, status])
+    @@index([transactionType])
+    @@index([status])
+    @@index([fromStorageUnitId])
+    @@index([toStorageUnitId])
+    @@index([fromHandlingUnitId])
+    @@index([toHandlingUnitId])
+    @@index([completedAt])
+    @@index([startedAt])
+    @@index([createdAt])
+    @@index([referenceNumber])
+    @@index([transferGroupId])
+    @@index([performedByUserId])
+    @@map("inventory_movement")
+}
+
+// ============================================================================
+// 3D LAYOUT VERSIONING
+// ============================================================================
+
+model LayoutVersion {
+    id String @id @default(cuid())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+
+    warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    floorId String?
+
+    floor WarehouseFloor? @relation(fields: [floorId], references: [id], onDelete: SetNull)
+
+    version Int @default(autoincrement())
+
+    name String? @db.VarChar(255)
+
+    status LayoutVersionStatus @default(DRAFT)
+
+    publishedAt       DateTime?
+    publishedByUserId String?
+    publishedBy       User?     @relation("LayoutVersionPublishedBy", fields: [publishedByUserId], references: [id], onDelete: SetNull)
+
+    sceneDataUrl String? @db.Text
+
+    notes String? @db.Text
+
+    @@unique([warehouseId, version])
+    @@index([publishedByUserId])
+    @@index([warehouseId])
+    @@index([floorId])
+    @@index([status])
+    @@map("layout_version")
+}
+
+// ============================================================================
+// INVENTORY ALLOCATION
+// Partial reservation of InventoryItem quantity for an order/wave/pick.
+// orderId/waveId/pickTaskId will become FK relations once phase C
+// (order management) models are added.
+// ============================================================================
+
+enum AllocationStatus {
+    PENDING
+    CONFIRMED
+    PARTIALLY_RELEASED
+    RELEASED
+    EXPIRED
+    CANCELLED
+}
+
+model InventoryAllocation {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    inventoryItemId String
+    inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+
+    allocatedQty Decimal @db.Decimal(12, 4)
+    releasedQty  Decimal @default(0) @db.Decimal(12, 4)
+
+    status AllocationStatus @default(PENDING)
+
+    salesOrderId String?
+    salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id], onDelete: SetNull)
+
+    waveId String?
+    wave   Wave?   @relation(fields: [waveId], references: [id], onDelete: SetNull)
+
+    pickTaskId String?
+
+    expiresAt DateTime?
+
+    @@index([inventoryItemId])
+    @@index([warehouseId])
+    @@index([status])
+    @@index([salesOrderId])
+    @@index([waveId])
+    @@index([expiresAt])
+    @@map("inventory_allocation")
+}
+
+// ============================================================================
+// INVENTORY BALANCE
+// Aggregated on-hand qty per (warehouse, sku, storageUnit, handlingUnit, batch, expiry).
+// Updated by the application on every InventoryMovement.
+// Strict uniqueness on nullable dimensions requires NULLS NOT DISTINCT (PG 15+) —
+// see prisma/migrations/manual_inventory_balance_unique.sql
+// ============================================================================
+
+model InventoryBalance {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    skuId String
+    sku   SKU    @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+    storageUnitId String?
+    storageUnit   StorageUnit? @relation(fields: [storageUnitId], references: [id], onDelete: SetNull)
+
+    handlingUnitId String?
+    handlingUnit   HandlingUnit? @relation(fields: [handlingUnitId], references: [id], onDelete: SetNull)
+
+    batchNumber String?   @db.VarChar(255)
+    expiryDate  DateTime?
+
+    qtyOnHand   Decimal @default(0) @db.Decimal(12, 4)
+    qtyReserved Decimal @default(0) @db.Decimal(12, 4)
+    qtyDamaged  Decimal @default(0) @db.Decimal(12, 4)
+    qtyQcHold   Decimal @default(0) @db.Decimal(12, 4)
+
+    @@index([warehouseId, skuId])
+    @@index([warehouseId])
+    @@index([skuId])
+    @@index([storageUnitId])
+    @@index([handlingUnitId])
+    @@index([warehouseId, expiryDate])
+    @@map("inventory_balance")
+}
+
+// ============================================================================
+// CYCLE COUNT
+// ============================================================================
+
+enum CycleCountType {
+    FULL
+    PARTIAL
+    BLIND
+    ABC_A
+    ABC_B
+    ABC_C
+    RANDOM
+}
+
+enum CycleCountStatus {
+    DRAFT
+    SCHEDULED
+    IN_PROGRESS
+    PENDING_APPROVAL
+    COMPLETED
+    CANCELLED
+}
+
+enum CycleCountLineStatus {
+    PENDING
+    IN_PROGRESS
+    COUNTED
+    RECOUNT_REQUIRED
+    APPROVED
+    DISCREPANCY_ACCEPTED
+}
+
+model CycleCountSession {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    code String @db.VarChar(100)
+
+    type   CycleCountType
+    status CycleCountStatus @default(DRAFT)
+
+    scheduledDate DateTime?
+    startedAt     DateTime?
+    completedAt   DateTime?
+
+    assignedToId String?
+    assignedTo   User?   @relation("CycleCountAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+    approvedById String?
+    approvedBy   User?   @relation("CycleCountApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+    approvedAt DateTime?
+
+    notes String? @db.Text
+
+    lines CycleCountLine[]
+
+    @@unique([warehouseId, code])
+    @@index([warehouseId])
+    @@index([status])
+    @@index([assignedToId])
+    @@index([scheduledDate])
+    @@map("cycle_count_session")
+}
+
+model CycleCountLine {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    sessionId String
+    session   CycleCountSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+    storageUnitId String
+    storageUnit   StorageUnit @relation(fields: [storageUnitId], references: [id], onDelete: Restrict)
+
+    // Null = blind count (all SKUs at this location)
+    skuId String?
+    sku   SKU?    @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+    batchNumber String?   @db.VarChar(255)
+    expiryDate  DateTime?
+
+    systemQty      Decimal  @db.Decimal(12, 4)
+    countedQty     Decimal? @db.Decimal(12, 4)
+    discrepancyQty Decimal? @db.Decimal(12, 4) // countedQty - systemQty; set by app
+
+    status          CycleCountLineStatus @default(PENDING)
+    recountRequired Boolean              @default(false)
+
+    countedById String?
+    countedBy   User?   @relation("CycleCountLineCountedBy", fields: [countedById], references: [id], onDelete: SetNull)
+
+    countedAt DateTime?
+
+    notes String? @db.Text
+
+    @@index([sessionId])
+    @@index([storageUnitId])
+    @@index([skuId])
+    @@index([status])
+    @@map("cycle_count_line")
+}
+
+// ============================================================================
+// CARRIER
+// ============================================================================
+
+model Carrier {
+    id          String     @id @default(cuid())
+    createdAt   DateTime   @default(now())
+    updatedAt   DateTime   @updatedAt
+    name        String     @db.VarChar(255)
+    code        String     @db.VarChar(50)
+    scac        String?    @db.VarChar(10)
+    /// URL template — substitute {trackingNumber} at runtime
+    trackingUrl String?    @db.VarChar(500)
+    isActive    Boolean    @default(true)
+    metadata    Json?
+    shipments   Shipment[]
+
+    @@unique([code])
+    @@map("carrier")
+}
+
+// ============================================================================
+// DOCK DOOR
+// ============================================================================
+
+enum DockDoorType {
+    INBOUND
+    OUTBOUND
+    BIDIRECTIONAL
+}
+
+enum DockDoorStatus {
+    AVAILABLE
+    OCCUPIED
+    MAINTENANCE
+    DISABLED
+}
+
+model DockDoor {
+    id          String         @id @default(cuid())
+    createdAt   DateTime       @default(now())
+    updatedAt   DateTime       @updatedAt
+    warehouseId String
+    warehouse   Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+    code        String         @db.VarChar(50)
+    name        String?        @db.VarChar(255)
+    type        DockDoorType
+    status      DockDoorStatus @default(AVAILABLE)
+    metadata    Json?
+    receipts    Receipt[]
+    shipments   Shipment[]
+
+    @@unique([warehouseId, code])
+    @@index([warehouseId])
+    @@index([status])
+    @@map("dock_door")
+}
+
+// ============================================================================
+// PURCHASE ORDER
+// ============================================================================
+
+enum PurchaseOrderStatus {
+    DRAFT
+    SUBMITTED
+    APPROVED
+    SENT_TO_SUPPLIER
+    ACKNOWLEDGED
+    PARTIALLY_RECEIVED
+    FULLY_RECEIVED
+    CANCELLED
+    CLOSED
+}
+
+enum PurchaseOrderLineStatus {
+    PENDING
+    PARTIALLY_RECEIVED
+    FULLY_RECEIVED
+    CANCELLED
+}
+
+model PurchaseOrder {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+    supplierId String
+    supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+    poNumber String              @db.VarChar(100)
+    status   PurchaseOrderStatus @default(DRAFT)
+
+    expectedDate DateTime?
+    orderedAt    DateTime?
+    closedAt     DateTime?
+
+    createdById String?
+    createdBy   User?   @relation("POCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+    approvedById String?
+    approvedBy   User?   @relation("POApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+    approvedAt DateTime?
+
+    notes    String? @db.Text
+    metadata Json?
+
+    lines    PurchaseOrderLine[]
+    asns     ASN[]
+    receipts Receipt[]
+
+    @@unique([organizationId, poNumber])
+    @@index([organizationId])
+    @@index([warehouseId])
+    @@index([supplierId])
+    @@index([status])
+    @@index([expectedDate])
+    @@map("purchase_order")
+}
+
+model PurchaseOrderLine {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    purchaseOrderId String
+    purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+    lineNumber Int
+
+    skuId String
+    sku   SKU    @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+    uomId String?
+    uom   UOM?    @relation(fields: [uomId], references: [id], onDelete: SetNull)
+
+    orderedQty   Decimal                 @db.Decimal(12, 4)
+    receivedQty  Decimal                 @default(0) @db.Decimal(12, 4)
+    unitCost     Decimal?                @db.Decimal(18, 4)
+    status       PurchaseOrderLineStatus @default(PENDING)
+    expectedDate DateTime?
+
+    asnLines     ASNLine[]
+    receiptLines ReceiptLine[]
+
+    @@unique([purchaseOrderId, lineNumber])
+    @@index([purchaseOrderId])
+    @@index([skuId])
+    @@index([status])
+    @@map("purchase_order_line")
+}
+
+// ============================================================================
+// ASN (ADVANCE SHIPMENT NOTICE)
+// ============================================================================
+
+enum ASNStatus {
+    DRAFT
+    SENT
+    IN_TRANSIT
+    ARRIVED
+    PARTIALLY_RECEIVED
+    FULLY_RECEIVED
+    CANCELLED
+}
+
+model ASN {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    purchaseOrderId String
+    purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+    asnNumber String    @db.VarChar(100)
+    status    ASNStatus @default(DRAFT)
+
+    expectedDate DateTime?
+    shippedAt    DateTime?
+    arrivedAt    DateTime?
+
+    carrierName    String? @db.VarChar(255)
+    trackingNumber String? @db.VarChar(255)
+
+    notes    String? @db.Text
+    metadata Json?
+
+    lines    ASNLine[]
+    receipts Receipt[]
+
+    @@unique([purchaseOrderId, asnNumber])
+    @@index([purchaseOrderId])
+    @@index([status])
+    @@index([expectedDate])
+    @@map("asn")
+}
+
+model ASNLine {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    asnId String
+    asn   ASN    @relation(fields: [asnId], references: [id], onDelete: Cascade)
+
+    purchaseOrderLineId String
+    purchaseOrderLine   PurchaseOrderLine @relation(fields: [purchaseOrderLineId], references: [id], onDelete: Restrict)
+
+    skuId String
+    sku   SKU    @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+    expectedQty Decimal @db.Decimal(12, 4)
+    receivedQty Decimal @default(0) @db.Decimal(12, 4)
+
+    @@index([asnId])
+    @@index([purchaseOrderLineId])
+    @@index([skuId])
+    @@map("asn_line")
+}
+
+// ============================================================================
+// RECEIPT
+// ============================================================================
+
+enum ReceiptStatus {
+    DRAFT
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+model Receipt {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+    purchaseOrderId String
+    purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+
+    asnId String?
+    asn   ASN?    @relation(fields: [asnId], references: [id], onDelete: SetNull)
+
+    receiptNumber String        @db.VarChar(100)
+    status        ReceiptStatus @default(DRAFT)
+
+    dockDoorId String?
+    dockDoor   DockDoor? @relation(fields: [dockDoorId], references: [id], onDelete: SetNull)
+
+    receivedAt  DateTime?
+    completedAt DateTime?
+
+    notes    String? @db.Text
+    metadata Json?
+
+    lines ReceiptLine[]
+
+    @@unique([warehouseId, receiptNumber])
+    @@index([warehouseId])
+    @@index([purchaseOrderId])
+    @@index([asnId])
+    @@index([status])
+    @@map("receipt")
+}
+
+model ReceiptLine {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    receiptId String
+    receipt   Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+
+    purchaseOrderLineId String
+    purchaseOrderLine   PurchaseOrderLine @relation(fields: [purchaseOrderLineId], references: [id], onDelete: Restrict)
+
+    skuId String
+    sku   SKU    @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+    uomId String?
+    uom   UOM?    @relation(fields: [uomId], references: [id], onDelete: SetNull)
+
+    receivedQty Decimal @db.Decimal(12, 4)
+    acceptedQty Decimal @default(0) @db.Decimal(12, 4)
+    rejectedQty Decimal @default(0) @db.Decimal(12, 4)
+
+    batchNumber   String?   @db.VarChar(255)
+    expiryDate    DateTime?
+    serialNumbers String[]
+
+    notes String? @db.Text
+
+    @@index([receiptId])
+    @@index([purchaseOrderLineId])
+    @@index([skuId])
+    @@map("receipt_line")
+}
+
+// ============================================================================
+// SALES ORDER
+// ============================================================================
+
+enum SalesOrderStatus {
+    DRAFT
+    CONFIRMED
+    PARTIALLY_ALLOCATED
+    FULLY_ALLOCATED
+    PARTIALLY_PICKED
+    FULLY_PICKED
+    PARTIALLY_SHIPPED
+    FULLY_SHIPPED
+    CANCELLED
+    CLOSED
+}
+
+enum SalesOrderLineStatus {
+    PENDING
+    PARTIALLY_ALLOCATED
+    FULLY_ALLOCATED
+    PARTIALLY_PICKED
+    FULLY_PICKED
+    PARTIALLY_SHIPPED
+    FULLY_SHIPPED
+    CANCELLED
+}
+
+enum SalesOrderPriority {
+    CRITICAL
+    HIGH
+    NORMAL
+    LOW
+}
+
+model SalesOrder {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+    orderNumber String             @db.VarChar(100)
+    status      SalesOrderStatus   @default(DRAFT)
+    priority    SalesOrderPriority @default(NORMAL)
+
+    customerId String?
+    customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+    // Denormalized snapshot — populated from Customer at order creation time
+    customerName  String? @db.VarChar(255)
+    customerEmail String? @db.VarChar(255)
+    customerRef   String? @db.VarChar(100)
+
+    requestedShipDate DateTime?
+    requiredByDate    DateTime?
+    shippedAt         DateTime?
+    closedAt          DateTime?
+
+    createdById String?
+    createdBy   User?   @relation("SOCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+    shippingAddress Json?
+    notes           String? @db.Text
+    metadata        Json?
+
+    lines       SalesOrderLine[]
+    waves       Wave[]                @relation("WaveSalesOrders")
+    shipments   Shipment[]
+    allocations InventoryAllocation[]
+
+    @@unique([organizationId, orderNumber])
+    @@index([organizationId])
+    @@index([warehouseId])
+    @@index([customerId])
+    @@index([status])
+    @@index([priority])
+    @@index([requestedShipDate])
+    @@index([requiredByDate])
+    @@map("sales_order")
+}
+
+model SalesOrderLine {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    salesOrderId String
+    salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+
+    lineNumber Int
+
+    skuId String
+    sku   SKU    @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+    uomId String?
+    uom   UOM?    @relation(fields: [uomId], references: [id], onDelete: SetNull)
+
+    orderedQty   Decimal  @db.Decimal(12, 4)
+    allocatedQty Decimal  @default(0) @db.Decimal(12, 4)
+    pickedQty    Decimal  @default(0) @db.Decimal(12, 4)
+    shippedQty   Decimal  @default(0) @db.Decimal(12, 4)
+    unitPrice    Decimal? @db.Decimal(18, 4)
+
+    status SalesOrderLineStatus @default(PENDING)
+
+    waveLines     WaveLine[]
+    shipmentLines ShipmentLine[]
+
+    @@unique([salesOrderId, lineNumber])
+    @@index([salesOrderId])
+    @@index([skuId])
+    @@index([status])
+    @@map("sales_order_line")
+}
+
+// ============================================================================
+// WAVE
+// ============================================================================
+
+enum WaveStatus {
+    DRAFT
+    RELEASED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+enum WaveType {
+    SINGLE_ORDER
+    BATCH
+    ZONE
+    CLUSTER
+}
+
+model Wave {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+    waveNumber String     @db.VarChar(100)
+    type       WaveType   @default(SINGLE_ORDER)
+    status     WaveStatus @default(DRAFT)
+
+    releasedAt  DateTime?
+    completedAt DateTime?
+
+    releasedById String?
+    releasedBy   User?   @relation("WaveReleasedBy", fields: [releasedById], references: [id], onDelete: SetNull)
+
+    notes    String? @db.Text
+    metadata Json?
+
+    lines       WaveLine[]
+    allocations InventoryAllocation[]
+    salesOrders SalesOrder[]          @relation("WaveSalesOrders")
+
+    @@unique([warehouseId, waveNumber])
+    @@index([warehouseId])
+    @@index([status])
+    @@index([releasedAt])
+    @@map("wave")
+}
+
+model WaveLine {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    waveId String
+    wave   Wave   @relation(fields: [waveId], references: [id], onDelete: Cascade)
+
+    salesOrderLineId String
+    salesOrderLine   SalesOrderLine @relation(fields: [salesOrderLineId], references: [id], onDelete: Restrict)
+
+    qtyToPick Decimal @db.Decimal(12, 4)
+    qtyPicked Decimal @default(0) @db.Decimal(12, 4)
+
+    @@unique([waveId, salesOrderLineId])
+    @@index([waveId])
+    @@index([salesOrderLineId])
+    @@map("wave_line")
+}
+
+// ============================================================================
+// SHIPMENT
+// ============================================================================
+
+enum ShipmentStatus {
+    PENDING
+    READY_TO_SHIP
+    LOADED
+    DISPATCHED
+    IN_TRANSIT
+    DELIVERED
+    RETURNED
+    CANCELLED
+}
+
+model Shipment {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+    salesOrderId String
+    salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
+
+    shipmentNumber String         @db.VarChar(100)
+    status         ShipmentStatus @default(PENDING)
+
+    carrierId String?
+    carrier   Carrier? @relation(fields: [carrierId], references: [id], onDelete: SetNull)
+
+    trackingNumber String? @db.VarChar(255)
+
+    dockDoorId String?
+    dockDoor   DockDoor? @relation(fields: [dockDoorId], references: [id], onDelete: SetNull)
+
+    shippingAddress Json?
+
+    scheduledAt  DateTime?
+    dispatchedAt DateTime?
+    deliveredAt  DateTime?
+
+    dispatchedById String?
+    dispatchedBy   User?   @relation("ShipmentDispatchedBy", fields: [dispatchedById], references: [id], onDelete: SetNull)
+
+    notes    String? @db.Text
+    metadata Json?
+
+    lines ShipmentLine[]
+
+    @@unique([warehouseId, shipmentNumber])
+    @@index([warehouseId])
+    @@index([salesOrderId])
+    @@index([carrierId])
+    @@index([status])
+    @@index([scheduledAt])
+    @@map("shipment")
+}
+
+model ShipmentLine {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    shipmentId String
+    shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+    salesOrderLineId String
+    salesOrderLine   SalesOrderLine @relation(fields: [salesOrderLineId], references: [id], onDelete: Restrict)
+
+    skuId String
+    sku   SKU    @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+    shippedQty    Decimal  @db.Decimal(12, 4)
+    serialNumbers String[]
+    batchNumber   String?  @db.VarChar(255)
+
+    @@index([shipmentId])
+    @@index([salesOrderLineId])
+    @@index([skuId])
+    @@map("shipment_line")
+}
