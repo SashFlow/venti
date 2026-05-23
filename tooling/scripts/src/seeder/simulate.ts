@@ -17,27 +17,24 @@ async function main() {
 	const tables = [
 		"organization",
 		"user",
-		"uom",
-		"sku_category",
-		"sku",
-		"supplier",
-		"customer",
-		"warehouse",
-		"warehouse_floor",
-		"zone",
-		"storage_unit",
-		"inventory_item",
-		"inventory_movement",
-		"purchase_order",
-		"purchase_order_line",
-		"receipt",
-		"receipt_line",
-		"sales_order",
-		"sales_order_line",
-		"wave",
-		"wave_line",
-		"shipment",
-		"shipment_line",
+		"UnitOfMeasure",
+		"Product",
+		"SKU",
+		"Supplier",
+		"Customer",
+		"Warehouse",
+		"Location",
+		"InventoryLot",
+		"InventorySerial",
+		"InventoryBalance",
+		"InventoryTransaction",
+		"PurchaseOrder",
+		"PurchaseOrderItem",
+		"AdvancedShippingNotice",
+		"ASNItem",
+		"ReceivingOrder",
+		"SalesOrder",
+		"SalesOrderItem",
 	];
 
 	tables.forEach((t) => exporter.initTable(t));
@@ -117,27 +114,32 @@ function simulateInbound(
 	const poId = generateId();
 	const receiptId = generateId();
 
-	exporter.writeRow("purchase_order", {
+	exporter.writeRow("PurchaseOrder", {
 		id: poId,
-		organizationId: state.orgId,
+		createdAt: currentDate,
 		warehouseId: wh.id,
 		supplierId,
 		poNumber: `PO-${generateId().slice(0, 8)}`,
-		status: "FULLY_RECEIVED",
-		expectedDate: currentDate,
-		createdAt: currentDate,
-		updatedAt: currentDate,
+		status: "RECEIVED",
 	});
 
-	exporter.writeRow("receipt", {
+	exporter.writeRow("AdvancedShippingNotice", {
 		id: receiptId,
+		createdAt: currentDate,
+		warehouseId: wh.id,
+		supplierId,
+		purchaseOrderId: poId,
+		asnNumber: `ASN-${generateId().slice(0, 8)}`,
+		status: "COMPLETED",
+	});
+
+	exporter.writeRow("ReceivingOrder", {
+		id: generateId(),
+		createdAt: currentDate,
 		warehouseId: wh.id,
 		purchaseOrderId: poId,
-		receiptNumber: `RCP-${generateId().slice(0, 8)}`,
+		asnId: receiptId,
 		status: "COMPLETED",
-		receivedAt: currentDate,
-		createdAt: currentDate,
-		updatedAt: currentDate,
 	});
 
 	// Pick 1-5 SKUs to receive
@@ -147,29 +149,21 @@ function simulateInbound(
 		const polId = generateId();
 		const qty = faker.number.int({ min: 10, max: 100 });
 
-		exporter.writeRow("purchase_order_line", {
+		exporter.writeRow("PurchaseOrderItem", {
 			id: polId,
 			purchaseOrderId: poId,
-			lineNumber: l + 1,
 			skuId: sku.id,
 			orderedQty: qty,
 			receivedQty: qty,
-			status: "FULLY_RECEIVED",
-			createdAt: currentDate,
-			updatedAt: currentDate,
 		});
 
 		const rclId = generateId();
-		exporter.writeRow("receipt_line", {
+		exporter.writeRow("ASNItem", {
 			id: rclId,
-			receiptId: receiptId,
-			purchaseOrderLineId: polId,
+			asnId: receiptId,
 			skuId: sku.id,
+			expectedQty: qty,
 			receivedQty: qty,
-			acceptedQty: qty,
-			rejectedQty: 0,
-			createdAt: currentDate,
-			updatedAt: currentDate,
 		});
 
 		// Create Inventory Items and Movements
@@ -192,42 +186,61 @@ function simulateInbound(
 			? `SN-${generateId().slice(0, 8)}`
 			: null;
 
-		exporter.writeRow("inventory_item", {
+		let lotId: string | null = null;
+
+		if (sku.batchTracking && batchNumber) {
+			lotId = generateId();
+			exporter.writeRow("InventoryLot", {
+				id: lotId,
+				skuId: sku.id,
+				lotNumber: batchNumber,
+				qcStatus: "PASSED",
+			});
+		}
+
+		if (sku.serialTracking && serialNumber) {
+			exporter.writeRow("InventorySerial", {
+				id: generateId(),
+				skuId: sku.id,
+				serialNumber: serialNumber,
+				locationId: locId,
+				status: "AVAILABLE",
+			});
+		}
+
+		exporter.writeRow("InventoryBalance", {
 			id: invId,
 			warehouseId: wh.id,
+			locationId: locId,
 			skuId: sku.id,
-			currentStorageUnitId: locId,
-			serialNumber,
-			batchNumber,
-			quantity: qty,
-			status: "AVAILABLE",
-			createdAt: currentDate,
+			lotId: lotId,
+			state: "AVAILABLE",
+			quantityAvailable: qty,
 			updatedAt: currentDate,
 		});
 
-		exporter.writeRow("inventory_movement", {
+		exporter.writeRow("InventoryTransaction", {
 			id: generateId(),
-			warehouseId: wh.id,
-			inventoryItemId: invId,
-			transactionType: "RECEIVED",
-			status: "COMPLETED",
-			toStorageUnitId: wh.inboundLocations[0],
-			quantity: qty,
 			createdAt: currentDate,
-			updatedAt: currentDate,
+			warehouseId: wh.id,
+			skuId: sku.id,
+			lotId: lotId,
+			fromLocationId: null,
+			toLocationId: wh.inboundLocations[0],
+			quantity: qty,
+			transactionType: "RECEIVE",
 		});
 
-		exporter.writeRow("inventory_movement", {
+		exporter.writeRow("InventoryTransaction", {
 			id: generateId(),
+			createdAt: currentDate,
 			warehouseId: wh.id,
-			inventoryItemId: invId,
+			skuId: sku.id,
+			lotId: lotId,
+			fromLocationId: wh.inboundLocations[0],
+			toLocationId: locId,
+			quantity: qty,
 			transactionType: "PUTAWAY",
-			status: "COMPLETED",
-			fromStorageUnitId: wh.inboundLocations[0],
-			toStorageUnitId: locId,
-			quantity: qty,
-			createdAt: currentDate,
-			updatedAt: currentDate,
 		});
 
 		// Update state
@@ -247,44 +260,19 @@ function simulateOutbound(
 ) {
 	const customerId = faker.helpers.arrayElement(state.customers);
 	const soId = generateId();
-	const waveId = generateId();
-	const shipmentId = generateId();
 
-	exporter.writeRow("sales_order", {
+	exporter.writeRow("SalesOrder", {
 		id: soId,
-		organizationId: state.orgId,
+		orderedAt: currentDate,
 		warehouseId: wh.id,
 		customerId,
 		orderNumber: `SO-${generateId().slice(0, 8)}`,
-		status: "FULLY_SHIPPED",
-		createdAt: currentDate,
-		updatedAt: currentDate,
-	});
-
-	exporter.writeRow("wave", {
-		id: waveId,
-		warehouseId: wh.id,
-		waveNumber: `WV-${generateId().slice(0, 8)}`,
-		type: "SINGLE_ORDER",
-		status: "COMPLETED",
-		createdAt: currentDate,
-		updatedAt: currentDate,
-	});
-
-	exporter.writeRow("shipment", {
-		id: shipmentId,
-		warehouseId: wh.id,
-		salesOrderId: soId,
-		shipmentNumber: `SHP-${generateId().slice(0, 8)}`,
-		status: "DISPATCHED",
-		dispatchedAt: currentDate,
-		createdAt: currentDate,
-		updatedAt: currentDate,
+		status: "SHIPPED",
 	});
 
 	// Pick lines
 	const numLines = faker.number.int({ min: 1, max: 3 });
-	let lineIdx = 1;
+	const lineIdx = 1;
 
 	// Get available SKUs in this warehouse
 	const availableSkus = Object.keys(inventory[wh.id]).filter(
@@ -303,40 +291,12 @@ function simulateOutbound(
 		);
 
 		const solId = generateId();
-		exporter.writeRow("sales_order_line", {
+		exporter.writeRow("SalesOrderItem", {
 			id: solId,
 			salesOrderId: soId,
-			lineNumber: lineIdx++,
 			skuId: skuId,
 			orderedQty: qty,
 			allocatedQty: qty,
-			pickedQty: qty,
-			shippedQty: qty,
-			status: "FULLY_SHIPPED",
-			createdAt: currentDate,
-			updatedAt: currentDate,
-		});
-
-		const wvlId = generateId();
-		exporter.writeRow("wave_line", {
-			id: wvlId,
-			waveId,
-			salesOrderLineId: solId,
-			qtyToPick: qty,
-			qtyPicked: qty,
-			createdAt: currentDate,
-			updatedAt: currentDate,
-		});
-
-		const shplId = generateId();
-		exporter.writeRow("shipment_line", {
-			id: shplId,
-			shipmentId,
-			salesOrderLineId: solId,
-			skuId,
-			shippedQty: qty,
-			createdAt: currentDate,
-			updatedAt: currentDate,
 		});
 
 		// Update state
@@ -344,26 +304,28 @@ function simulateOutbound(
 
 		// Simulate dummy Inventory Movement (to represent the pick & ship)
 		const invId = inventory[wh.id][skuId].invId;
-		exporter.writeRow("inventory_movement", {
+		exporter.writeRow("InventoryTransaction", {
 			id: generateId(),
-			warehouseId: wh.id,
-			inventoryItemId: invId,
-			transactionType: "PICK",
-			status: "COMPLETED",
-			quantity: qty,
 			createdAt: currentDate,
-			updatedAt: currentDate,
+			warehouseId: wh.id,
+			skuId: skuId,
+			lotId: null,
+			fromLocationId: null,
+			toLocationId: null,
+			quantity: qty,
+			transactionType: "PICK",
 		});
 
-		exporter.writeRow("inventory_movement", {
+		exporter.writeRow("InventoryTransaction", {
 			id: generateId(),
-			warehouseId: wh.id,
-			inventoryItemId: invId,
-			transactionType: "SHIP",
-			status: "COMPLETED",
-			quantity: qty,
 			createdAt: currentDate,
-			updatedAt: currentDate,
+			warehouseId: wh.id,
+			skuId: skuId,
+			lotId: null,
+			fromLocationId: null,
+			toLocationId: null,
+			quantity: qty,
+			transactionType: "SHIP",
 		});
 	}
 }

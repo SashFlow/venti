@@ -1,20 +1,20 @@
 import path from "path";
 
 export const CONFIG = {
-	START_DATE: new Date("2021-05-21T00:00:00Z"),
+	START_DATE: new Date("2026-04-01T00:00:00Z"),
 	END_DATE: new Date("2026-05-21T00:00:00Z"),
-	NUM_WAREHOUSES: 25,
-	ORDERS_PER_DAY: 1000,
-	RECEIPTS_PER_DAY: 200,
+	NUM_WAREHOUSES: 2,
+	ORDERS_PER_DAY: 50,
+	RECEIPTS_PER_DAY: 10,
 	OUTPUT_DIR: path.resolve(__dirname, "../../.data-dump"),
 
 	// Ratios / Counts
 	NUM_ORGANIZATIONS: 1, // Focus on single tenant for simpler reporting (can scale later)
-	NUM_USERS_PER_ORG: 50,
-	NUM_SUPPLIERS: 100,
-	NUM_CUSTOMERS: 5000,
-	NUM_SKUS: 2000,
-	NUM_CATEGORIES: 50,
+	NUM_USERS_PER_ORG: 10,
+	NUM_SUPPLIERS: 10,
+	NUM_CUSTOMERS: 50,
+	NUM_SKUS: 200,
+	NUM_CATEGORIES: 10,
 
 	// Warehouse Dimensions
 	FLOOR_WIDTH_MM: 100000, // 100 meters

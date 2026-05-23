@@ -27,226 +27,148 @@ export class CsvExporter {
 					"createdAt",
 					"updatedAt",
 				];
-			case "uom":
+			case "UnitOfMeasure":
+				return ["id", "code", "name"];
+			case "Product":
 				return [
 					"id",
+					"createdAt",
+					"updatedAt",
 					"organizationId",
 					"code",
 					"name",
-					"abbreviation",
-					"isBase",
-					"precision",
-					"createdAt",
-					"updatedAt",
+					"isBatchTracked",
+					"isSerialTracked",
+					"isPerishable",
 				];
-			case "sku_category":
+			case "SKU":
 				return [
 					"id",
-					"organizationId",
-					"name",
 					"createdAt",
 					"updatedAt",
-				];
-			case "sku":
-				return [
-					"id",
-					"organizationId",
-					"skuCode",
-					"name",
-					"lifecycle",
-					"categoryId",
-					"uomId",
-					"serialTracking",
-					"batchTracking",
-					"createdAt",
-					"updatedAt",
-				];
-			case "supplier":
-				return [
-					"id",
-					"organizationId",
+					"productId",
 					"code",
 					"name",
-					"createdAt",
-					"updatedAt",
+					"baseUomId",
 				];
-			case "customer":
-				return [
-					"id",
-					"organizationId",
-					"name",
-					"createdAt",
-					"updatedAt",
-				];
+			case "Supplier":
+				return ["id", "organizationId", "code", "name"];
+			case "Customer":
+				return ["id", "organizationId", "code", "name"];
 
-			case "warehouse":
+			case "Warehouse":
 				return [
 					"id",
+					"createdAt",
+					"updatedAt",
 					"organizationId",
 					"code",
 					"name",
 					"status",
-					"createdAt",
-					"updatedAt",
 				];
-			case "warehouse_floor":
+			case "Location":
 				return [
 					"id",
-					"warehouseId",
-					"floorNumber",
-					"code",
-					"status",
-					"widthMm",
-					"lengthMm",
 					"createdAt",
 					"updatedAt",
-				];
-			case "zone":
-				return [
-					"id",
 					"warehouseId",
+					"parentLocationId",
 					"code",
 					"name",
 					"type",
-					"createdAt",
-					"updatedAt",
+					"isPickable",
+					"isReceivable",
+					"isReservable",
+					"isQuarantine",
+					"x",
+					"y",
+					"z",
+					"width",
+					"height",
+					"depth",
 				];
-			case "storage_unit":
+			case "InventoryLot":
+				return ["id", "skuId", "lotNumber", "qcStatus"];
+			case "InventorySerial":
+				return ["id", "skuId", "serialNumber", "locationId", "status"];
+			case "InventoryBalance":
 				return [
 					"id",
 					"warehouseId",
-					"floorId",
-					"zoneId",
-					"parentStorageUnitId",
-					"code",
-					"type",
-					"status",
-					"levelIndex",
-					"positionIndex",
-					"createdAt",
+					"locationId",
+					"skuId",
+					"lotId",
+					"state",
+					"quantityAvailable",
 					"updatedAt",
 				];
-
-			case "inventory_item":
+			case "InventoryTransaction":
 				return [
 					"id",
+					"createdAt",
 					"warehouseId",
 					"skuId",
-					"currentStorageUnitId",
-					"currentHandlingUnitId",
-					"serialNumber",
-					"batchNumber",
+					"lotId",
+					"fromLocationId",
+					"toLocationId",
 					"quantity",
-					"status",
-					"createdAt",
-					"updatedAt",
-				];
-			case "inventory_movement":
-				return [
-					"id",
-					"warehouseId",
-					"inventoryItemId",
 					"transactionType",
-					"status",
-					"fromStorageUnitId",
-					"toStorageUnitId",
-					"quantity",
-					"createdAt",
-					"updatedAt",
 				];
 
-			case "purchase_order":
+			case "PurchaseOrder":
 				return [
 					"id",
-					"organizationId",
+					"createdAt",
 					"warehouseId",
 					"supplierId",
 					"poNumber",
 					"status",
-					"expectedDate",
-					"createdAt",
-					"updatedAt",
 				];
-			case "purchase_order_line":
+			case "PurchaseOrderItem":
 				return [
 					"id",
 					"purchaseOrderId",
-					"lineNumber",
 					"skuId",
 					"orderedQty",
 					"receivedQty",
-					"status",
-					"createdAt",
-					"updatedAt",
 				];
-			case "receipt":
+			case "AdvancedShippingNotice":
 				return [
 					"id",
+					"createdAt",
+					"warehouseId",
+					"supplierId",
+					"purchaseOrderId",
+					"asnNumber",
+					"status",
+				];
+			case "ASNItem":
+				return ["id", "asnId", "skuId", "expectedQty", "receivedQty"];
+			case "ReceivingOrder":
+				return [
+					"id",
+					"createdAt",
 					"warehouseId",
 					"purchaseOrderId",
-					"receiptNumber",
+					"asnId",
 					"status",
-					"receivedAt",
-					"createdAt",
-					"updatedAt",
 				];
-			case "receipt_line":
+			case "SalesOrder":
 				return [
 					"id",
-					"receiptId",
-					"purchaseOrderLineId",
-					"skuId",
-					"receivedQty",
-					"acceptedQty",
-					"rejectedQty",
-					"createdAt",
-					"updatedAt",
-				];
-
-			case "sales_order":
-				return [
-					"id",
-					"organizationId",
+					"orderedAt",
 					"warehouseId",
 					"customerId",
 					"orderNumber",
 					"status",
-					"createdAt",
-					"updatedAt",
 				];
-			case "sales_order_line":
+			case "SalesOrderItem":
 				return [
 					"id",
 					"salesOrderId",
-					"lineNumber",
 					"skuId",
 					"orderedQty",
 					"allocatedQty",
-					"pickedQty",
-					"shippedQty",
-					"status",
-					"createdAt",
-					"updatedAt",
-				];
-			case "wave":
-				return [
-					"id",
-					"warehouseId",
-					"waveNumber",
-					"type",
-					"status",
-					"createdAt",
-					"updatedAt",
-				];
-			case "wave_line":
-				return [
-					"id",
-					"waveId",
-					"salesOrderLineId",
-					"qtyToPick",
-					"qtyPicked",
-					"createdAt",
-					"updatedAt",
 				];
 			case "shipment":
 				return [
@@ -255,7 +177,6 @@ export class CsvExporter {
 					"salesOrderId",
 					"shipmentNumber",
 					"status",
-					"dispatchedAt",
 					"createdAt",
 					"updatedAt",
 				];
@@ -263,15 +184,14 @@ export class CsvExporter {
 				return [
 					"id",
 					"shipmentId",
-					"salesOrderLineId",
+					"waveLineId",
 					"skuId",
-					"shippedQty",
+					"quantity",
 					"createdAt",
 					"updatedAt",
 				];
-
 			default:
-				return ["id"];
+				return [];
 		}
 	}
 

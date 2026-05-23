@@ -7,7 +7,6 @@ export interface State {
 	orgId: string;
 	users: string[];
 	uoms: string[];
-	categories: string[];
 	suppliers: string[];
 	customers: string[];
 	skus: { id: string; serialTracking: boolean; batchTracking: boolean }[];
@@ -25,7 +24,6 @@ export function generateMasterData(exporter: CsvExporter): State {
 		orgId: generateId(),
 		users: [],
 		uoms: [],
-		categories: [],
 		suppliers: [],
 		customers: [],
 		skus: [],
@@ -59,45 +57,21 @@ export function generateMasterData(exporter: CsvExporter): State {
 	// UOMs
 	const baseUomId = generateId();
 	state.uoms.push(baseUomId);
-	exporter.writeRow("uom", {
+	exporter.writeRow("UnitOfMeasure", {
 		id: baseUomId,
-		organizationId: state.orgId,
 		code: "EA",
 		name: "Each",
-		abbreviation: "ea",
-		isBase: true,
-		precision: 0,
-		createdAt: now,
-		updatedAt: now,
 	});
-
-	// Categories
-	for (let i = 0; i < CONFIG.NUM_CATEGORIES; i++) {
-		const id = generateId();
-		state.categories.push(id);
-		exporter.writeRow("sku_category", {
-			id,
-			organizationId: state.orgId,
-			name:
-				faker.commerce.department() +
-				" " +
-				faker.string.uuid().slice(0, 4),
-			createdAt: now,
-			updatedAt: now,
-		});
-	}
 
 	// Suppliers
 	for (let i = 0; i < CONFIG.NUM_SUPPLIERS; i++) {
 		const id = generateId();
 		state.suppliers.push(id);
-		exporter.writeRow("supplier", {
+		exporter.writeRow("Supplier", {
 			id,
 			organizationId: state.orgId,
 			code: `SUP-${i + 1}`,
 			name: faker.company.name(),
-			createdAt: now,
-			updatedAt: now,
 		});
 	}
 
@@ -105,18 +79,18 @@ export function generateMasterData(exporter: CsvExporter): State {
 	for (let i = 0; i < CONFIG.NUM_CUSTOMERS; i++) {
 		const id = generateId();
 		state.customers.push(id);
-		exporter.writeRow("customer", {
+		exporter.writeRow("Customer", {
 			id,
 			organizationId: state.orgId,
+			code: `CUST-${i + 1}`,
 			name: faker.company.name(),
-			createdAt: now,
-			updatedAt: now,
 		});
 	}
 
-	// SKUs
+	// Products & SKUs
 	for (let i = 0; i < CONFIG.NUM_SKUS; i++) {
-		const id = generateId();
+		const productId = generateId();
+		const skuId = generateId();
 		const isSerialized = Math.random() < CONFIG.SKU_TYPE_PROBS.SERIALIZED;
 		const isBatch =
 			!isSerialized &&
@@ -125,23 +99,31 @@ export function generateMasterData(exporter: CsvExporter): State {
 					(1 - CONFIG.SKU_TYPE_PROBS.SERIALIZED);
 
 		state.skus.push({
-			id,
+			id: skuId,
 			serialTracking: isSerialized,
 			batchTracking: isBatch,
 		});
 
-		exporter.writeRow("sku", {
-			id,
-			organizationId: state.orgId,
-			skuCode: `SKU-${faker.string.alphanumeric(8).toUpperCase()}`,
-			name: faker.commerce.productName(),
-			lifecycle: "ACTIVE",
-			categoryId: faker.helpers.arrayElement(state.categories),
-			uomId: baseUomId,
-			serialTracking: isSerialized,
-			batchTracking: isBatch,
+		exporter.writeRow("Product", {
+			id: productId,
 			createdAt: now,
 			updatedAt: now,
+			organizationId: state.orgId,
+			code: `PROD-${faker.string.alphanumeric(8).toUpperCase()}`,
+			name: faker.commerce.productName(),
+			isBatchTracked: isBatch,
+			isSerialTracked: isSerialized,
+			isPerishable: isBatch && Math.random() > 0.5,
+		});
+
+		exporter.writeRow("SKU", {
+			id: skuId,
+			createdAt: now,
+			updatedAt: now,
+			productId: productId,
+			code: `SKU-${faker.string.alphanumeric(8).toUpperCase()}`,
+			name: faker.commerce.productName(),
+			baseUomId: baseUomId,
 		});
 	}
 
@@ -158,200 +140,295 @@ export function generateMasterData(exporter: CsvExporter): State {
 			outboundLocations: [] as string[],
 		};
 
-		exporter.writeRow("warehouse", {
+		exporter.writeRow("Warehouse", {
 			id: whId,
+			createdAt: now,
+			updatedAt: now,
 			organizationId: state.orgId,
 			code: `WH-${i + 1}`,
 			name: `${faker.location.city()} Distribution Center`,
 			status: "ACTIVE",
-			createdAt: now,
-			updatedAt: now,
 		});
 
-		exporter.writeRow("warehouse_floor", {
+		exporter.writeRow("Location", {
 			id: floorId,
-			warehouseId: whId,
-			floorNumber: 1,
-			code: "FL-1",
-			status: "ACTIVE",
-			widthMm: CONFIG.FLOOR_WIDTH_MM,
-			lengthMm: CONFIG.FLOOR_LENGTH_MM,
 			createdAt: now,
 			updatedAt: now,
+			warehouseId: whId,
+			parentLocationId: null,
+			code: "FL-1",
+			name: "Main Floor",
+			type: "FLOOR",
+			isPickable: false,
+			isReceivable: false,
+			isReservable: false,
+			isQuarantine: false,
+			x: 0,
+			y: 0,
+			z: 0,
+			width: CONFIG.FLOOR_WIDTH_MM,
+			height: 0,
+			depth: CONFIG.FLOOR_LENGTH_MM,
 		});
 
 		// Zones
 		const zones = [
-			{ type: "INBOUND", code: "Z-IN", name: "Inbound Staging" },
-			{ type: "OUTBOUND", code: "Z-OUT", name: "Outbound Staging" },
-			{ type: "BULK", code: "Z-BLK", name: "Bulk Storage" },
-			{ type: "PICKING", code: "Z-PCK", name: "Picking Area" },
-			{ type: "QC", code: "Z-QC", name: "Quality Control" },
+			{
+				type: "STAGING",
+				code: "Z-IN",
+				name: "Inbound Staging",
+				isReceivable: true,
+				isPickable: false,
+			},
+			{
+				type: "STAGING",
+				code: "Z-OUT",
+				name: "Outbound Staging",
+				isReceivable: false,
+				isPickable: false,
+			},
+			{
+				type: "ZONE",
+				code: "Z-BLK",
+				name: "Bulk Storage",
+				isReceivable: true,
+				isPickable: true,
+			},
+			{
+				type: "ZONE",
+				code: "Z-PCK",
+				name: "Picking Area",
+				isReceivable: true,
+				isPickable: true,
+			},
+			{
+				type: "QC",
+				code: "Z-QC",
+				name: "Quality Control",
+				isReceivable: true,
+				isPickable: false,
+			},
 		];
 
 		for (const z of zones) {
 			const zoneId = generateId();
-			exporter.writeRow("zone", {
+			exporter.writeRow("Location", {
 				id: zoneId,
+				createdAt: now,
+				updatedAt: now,
 				warehouseId: whId,
+				parentLocationId: floorId,
 				code: z.code,
 				name: z.name,
 				type: z.type,
-				createdAt: now,
-				updatedAt: now,
+				isPickable: z.isPickable,
+				isReceivable: z.isReceivable,
+				isReservable: true,
+				isQuarantine: z.type === "QC",
+				x: null,
+				y: null,
+				z: null,
+				width: null,
+				height: null,
+				depth: null,
 			});
 
-			// Generate Storage Units per Zone with randomized layout to make each warehouse different
-			if (z.type === "INBOUND") {
+			if (z.code === "Z-IN") {
 				const numStaging = faker.number.int({ min: 3, max: 8 });
 				for (let j = 0; j < numStaging; j++) {
 					const locId = generateId();
 					whState.inboundLocations.push(locId);
-					exporter.writeRow("storage_unit", {
+					exporter.writeRow("Location", {
 						id: locId,
-						warehouseId: whId,
-						floorId,
-						zoneId,
-						code: `IN-STG-${j + 1}`,
-						type: "STAGING",
-						status: "ACTIVE",
 						createdAt: now,
 						updatedAt: now,
+						warehouseId: whId,
+						parentLocationId: zoneId,
+						code: `IN-STG-${j + 1}`,
+						name: `Inbound Staging ${j + 1}`,
+						type: "STAGING",
+						isPickable: false,
+						isReceivable: true,
+						isReservable: true,
+						isQuarantine: false,
+						x: null,
+						y: null,
+						z: null,
+						width: null,
+						height: null,
+						depth: null,
 					});
 				}
-			} else if (z.type === "OUTBOUND") {
+			} else if (z.code === "Z-OUT") {
 				const numStaging = faker.number.int({ min: 3, max: 8 });
 				for (let j = 0; j < numStaging; j++) {
 					const locId = generateId();
 					whState.outboundLocations.push(locId);
-					exporter.writeRow("storage_unit", {
+					exporter.writeRow("Location", {
 						id: locId,
+						createdAt: now,
+						updatedAt: now,
 						warehouseId: whId,
-						floorId,
-						zoneId,
+						parentLocationId: zoneId,
 						code: `OUT-STG-${j + 1}`,
+						name: `Outbound Staging ${j + 1}`,
 						type: "STAGING",
-						status: "ACTIVE",
-						createdAt: now,
-						updatedAt: now,
+						isPickable: false,
+						isReceivable: false,
+						isReservable: false,
+						isQuarantine: false,
+						x: null,
+						y: null,
+						z: null,
+						width: null,
+						height: null,
+						depth: null,
 					});
 				}
-			} else if (z.type === "BULK") {
-				// Random layout: a mix of floor locations and tall racks
-				const numFloorLocations = faker.number.int({ min: 5, max: 20 });
-				for (let f = 0; f < numFloorLocations; f++) {
-					const locId = generateId();
-					whState.bulkLocations.push(locId);
-					exporter.writeRow("storage_unit", {
-						id: locId,
-						warehouseId: whId,
-						floorId,
-						zoneId,
-						code: `BLK-FLR-${f + 1}`,
-						type: "FLOOR_LOCATION",
-						status: "ACTIVE",
-						createdAt: now,
-						updatedAt: now,
-					});
-				}
-
+			} else if (z.code === "Z-BLK") {
 				const numRacks = faker.number.int({ min: 5, max: 15 });
 				for (let r = 0; r < numRacks; r++) {
 					const rackId = generateId();
-					exporter.writeRow("storage_unit", {
+					exporter.writeRow("Location", {
 						id: rackId,
-						warehouseId: whId,
-						floorId,
-						zoneId,
-						code: `BLK-R${r + 1}`,
-						type: "RACK",
-						status: "ACTIVE",
 						createdAt: now,
 						updatedAt: now,
+						warehouseId: whId,
+						parentLocationId: zoneId,
+						code: `BLK-R${r + 1}`,
+						name: `Bulk Rack ${r + 1}`,
+						type: "RACK",
+						isPickable: false,
+						isReceivable: false,
+						isReservable: false,
+						isQuarantine: false,
+						x: null,
+						y: null,
+						z: null,
+						width: null,
+						height: null,
+						depth: null,
 					});
 					const numLevels = faker.number.int({ min: 3, max: 6 });
 					for (let l = 0; l < numLevels; l++) {
 						const levelId = generateId();
-						exporter.writeRow("storage_unit", {
+						exporter.writeRow("Location", {
 							id: levelId,
-							warehouseId: whId,
-							floorId,
-							zoneId,
-							parentStorageUnitId: rackId,
-							code: `BLK-R${r + 1}-L${l + 1}`,
-							type: "RACK_LEVEL",
-							levelIndex: l,
-							status: "ACTIVE",
 							createdAt: now,
 							updatedAt: now,
+							warehouseId: whId,
+							parentLocationId: rackId,
+							code: `BLK-R${r + 1}-L${l + 1}`,
+							name: `Bulk Rack ${r + 1} Level ${l + 1}`,
+							type: "SHELF",
+							isPickable: false,
+							isReceivable: false,
+							isReservable: false,
+							isQuarantine: false,
+							x: null,
+							y: null,
+							z: null,
+							width: null,
+							height: null,
+							depth: null,
 						});
 						const numSlots = faker.number.int({ min: 4, max: 8 });
 						for (let s = 0; s < numSlots; s++) {
 							const slotId = generateId();
 							whState.bulkLocations.push(slotId);
-							exporter.writeRow("storage_unit", {
+							exporter.writeRow("Location", {
 								id: slotId,
-								warehouseId: whId,
-								floorId,
-								zoneId,
-								parentStorageUnitId: levelId,
-								code: `BLK-R${r + 1}-L${l + 1}-S${s + 1}`,
-								type: "PALLET_SLOT",
-								positionIndex: s,
-								status: "ACTIVE",
 								createdAt: now,
 								updatedAt: now,
+								warehouseId: whId,
+								parentLocationId: levelId,
+								code: `BLK-R${r + 1}-L${l + 1}-S${s + 1}`,
+								name: `Bulk Rack ${r + 1} Level ${l + 1} Slot ${s + 1}`,
+								type: "BIN",
+								isPickable: true,
+								isReceivable: true,
+								isReservable: true,
+								isQuarantine: false,
+								x: null,
+								y: null,
+								z: null,
+								width: null,
+								height: null,
+								depth: null,
 							});
 						}
 					}
 				}
-			} else if (z.type === "PICKING") {
-				const numShelves = faker.number.int({ min: 10, max: 30 });
-				for (let s = 0; s < numShelves; s++) {
-					const shelfId = generateId();
-					exporter.writeRow("storage_unit", {
-						id: shelfId,
-						warehouseId: whId,
-						floorId,
-						zoneId,
-						code: `PCK-S${s + 1}`,
-						type: "SHELF",
-						status: "ACTIVE",
+			} else if (z.code === "Z-PCK") {
+				const numRacks = faker.number.int({ min: 10, max: 20 });
+				for (let r = 0; r < numRacks; r++) {
+					const rackId = generateId();
+					exporter.writeRow("Location", {
+						id: rackId,
 						createdAt: now,
 						updatedAt: now,
+						warehouseId: whId,
+						parentLocationId: zoneId,
+						code: `PCK-R${r + 1}`,
+						name: `Picking Rack ${r + 1}`,
+						type: "RACK",
+						isPickable: false,
+						isReceivable: false,
+						isReservable: false,
+						isQuarantine: false,
+						x: null,
+						y: null,
+						z: null,
+						width: null,
+						height: null,
+						depth: null,
 					});
-					const numLevels = faker.number.int({ min: 4, max: 7 });
+					const numLevels = faker.number.int({ min: 3, max: 5 });
 					for (let l = 0; l < numLevels; l++) {
 						const levelId = generateId();
-						exporter.writeRow("storage_unit", {
+						exporter.writeRow("Location", {
 							id: levelId,
-							warehouseId: whId,
-							floorId,
-							zoneId,
-							parentStorageUnitId: shelfId,
-							code: `PCK-S${s + 1}-L${l + 1}`,
-							type: "SHELF_LEVEL",
-							levelIndex: l,
-							status: "ACTIVE",
 							createdAt: now,
 							updatedAt: now,
+							warehouseId: whId,
+							parentLocationId: rackId,
+							code: `PCK-R${r + 1}-L${l + 1}`,
+							name: `Picking Rack ${r + 1} Level ${l + 1}`,
+							type: "SHELF",
+							isPickable: false,
+							isReceivable: false,
+							isReservable: false,
+							isQuarantine: false,
+							x: null,
+							y: null,
+							z: null,
+							width: null,
+							height: null,
+							depth: null,
 						});
-						const numBins = faker.number.int({ min: 5, max: 12 });
+						const numBins = faker.number.int({ min: 5, max: 10 });
 						for (let b = 0; b < numBins; b++) {
 							const binId = generateId();
 							whState.pickingBins.push(binId);
-							exporter.writeRow("storage_unit", {
+							exporter.writeRow("Location", {
 								id: binId,
-								warehouseId: whId,
-								floorId,
-								zoneId,
-								parentStorageUnitId: levelId,
-								code: `PCK-S${s + 1}-L${l + 1}-B${b + 1}`,
-								type: "BIN",
-								positionIndex: b,
-								status: "ACTIVE",
 								createdAt: now,
 								updatedAt: now,
+								warehouseId: whId,
+								parentLocationId: levelId,
+								code: `PCK-R${r + 1}-L${l + 1}-B${b + 1}`,
+								name: `Picking Rack ${r + 1} Level ${l + 1} Bin ${b + 1}`,
+								type: "BIN",
+								isPickable: true,
+								isReceivable: true,
+								isReservable: true,
+								isQuarantine: false,
+								x: null,
+								y: null,
+								z: null,
+								width: null,
+								height: null,
+								depth: null,
 							});
 						}
 					}
