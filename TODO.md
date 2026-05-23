@@ -1,63 +1,1558 @@
-## Inventory Control
+# Enterprise WMS POC — Detailed Engineering To-Do List
 
-**Reordering Rules** Keep your stock levels exactly where you want them. Set a minimum and maximum quantity for any product, and the system automatically creates a purchase or manufacturing order the moment stock dips too low — no manual monitoring required.
+This roadmap is designed for actual implementation execution.
 
-**Replenish on Order (MTO)** For products you don't keep in stock, this strategy creates a supplier quote or production order the instant a customer places a sale — so you're never holding excess inventory, and orders are always fulfilled.
+Each task explains:
 
-**Inventory Adjustments & Cycle Counts** Real-world inventory rarely matches the books perfectly. Built-in adjustment tools let your team reconcile physical counts with system records quickly. For high-value or fast-moving items, cycle counting lets you audit specific locations regularly without stopping operations.
-
-**Scrapping** When a product is damaged or defective beyond repair, you can formally remove it from usable inventory with a single action. The system keeps your counts clean while maintaining a full record for accounting purposes.
-
----
-
-## Receiving & Shipping
-
-Flexible workflows let you match your receiving and dispatch process to how your warehouse actually operates:
-
-- **1-Step** — Products move directly into or out of stock. Best for simple, fast-moving operations.
-- **2-Step** — Products stage in an input/output area before moving to stock or dispatch. Useful when sorting by storage location or using FIFO/LIFO/FEFO picking strategies.
-- **3-Step** — Adds a quality inspection zone on the receiving side, or a packing zone on the dispatch side. Ideal for businesses with compliance requirements or complex fulfillment needs.
+* WHY it exists
+* WHAT to build
+* WHAT the user should see
+* WHAT backend behavior is needed
+* WHAT demo value it provides
 
 ---
 
-## Multi-Warehouse Operations
+# PHASE 0 — Platform Foundation
 
-**Warehouse Resupply** Designate one central warehouse to automatically resupply your other locations. When a branch runs low, it can trigger replenishment directly from the central hub — keeping all locations stocked without manual coordination.
-
-**Inter-Warehouse Transfers** Moving stock between locations is handled administratively by the system, keeping inventory counts accurate across all warehouses throughout the transfer process.
+Goal: Create a stable enterprise-grade base before warehouse logic.
 
 ---
 
-## Picking Efficiency
+# 0.1 Project Initialization
 
-**Batch Transfers** Group multiple orders together so a single picker can fulfil them in one warehouse run — fewer trips, faster throughput.
+## Objective
 
-**Wave Transfers** A more targeted approach: pick specific product categories or items from the same location across multiple orders. Ideal for high-volume operations that need fine-grained control over pick runs.
-
----
-
-## Product Tracking & Traceability
-
-**Lots** Assign a shared identifier to a batch of products — useful for food, clothing, and any goods that need to be traceable back to a production or delivery group. Essential for managing recalls or expiration dates.
-
-**Serial Numbers** Assign a unique ID to each individual unit. Provides item-level history from receipt through to customer delivery — particularly valuable for after-sales service and warranty management.
-
-**Expiration Dates** For perishable products, expiration tracking integrates directly with lot and serial number management to prevent spoilage losses and ensure nothing expired ever reaches a customer.
+Create a production-ready monorepo and architecture.
 
 ---
 
-## Inventory Valuation & Costs
+## Tasks
 
-**Valuation** On-hand stock is automatically factored into your company's financial records, giving you an accurate picture of asset value at any point in time.
+### [ ] Setup Frontend Application
 
-**Landed Costs** Go beyond the purchase price. Assign shipping fees, insurance, customs duties, and other incidental costs directly to products, so your true cost-per-unit is always reflected in your margins.
+Build the main web application.
+
+### Features
+
+* App shell
+* Responsive layout
+* Navigation
+* Route system
+* Auth pages
+
+### Recommended
+
+* Next.js
+* TypeScript
+* Tailwind
 
 ---
 
-## Additional Capabilities
+### [ ] Setup Backend API Layer
 
-**Consignment** Sell supplier products from your warehouse without purchasing them upfront. The system tracks ownership separately, making it straightforward to manage consigned stock alongside your own inventory.
+Create APIs for all warehouse operations.
 
-**Units of Measure** Buy in bulk, sell in units. Convert between metric and imperial, or between pack sizes and individual items — seamlessly, at every stage of the supply chain.
+### Features
 
-**Delivery Date Forecasting** Lead time configuration across suppliers, manufacturing, and logistics gives your team accurate, reliable delivery estimates to share with customers.
+* REST APIs
+* Validation
+* Authentication
+* Error handling
+* Rate limiting
+
+### Important
+
+Separate:
+
+* business logic
+* database logic
+* workflow logic
+
+---
+
+### [ ] Setup Database & Prisma
+
+Create database infrastructure.
+
+### Features
+
+* PostgreSQL setup
+* Prisma schema migration
+* Seed scripts
+* Transaction support
+
+### Deliverables
+
+* migration system
+* schema validation
+* local dev database
+
+---
+
+### [ ] Setup Authentication
+
+Secure enterprise access.
+
+### Features
+
+* login
+* logout
+* invite users
+* password reset
+* session handling
+* RBAC
+
+---
+
+### [ ] Setup Logging & Error Tracking
+
+Create observability early.
+
+### Features
+
+* request logs
+* API logs
+* DB query logs
+* exception tracking
+
+---
+
+# 0.2 Developer Experience
+
+## Objective
+
+Speed up development.
+
+---
+
+### [ ] Setup Docker Environment
+
+### Must Include
+
+* app container
+* postgres
+* redis
+* websocket service
+
+---
+
+### [ ] Setup Seed System
+
+Populate warehouse demo data automatically.
+
+### Demo Data
+
+* warehouses
+* SKUs
+* racks
+* inventory
+* suppliers
+* orders
+
+---
+
+### [ ] Setup Background Job System
+
+Needed for:
+
+* replenishment
+* workflow execution
+* notifications
+* inventory sync
+
+---
+
+# PHASE 1 — Multi-Tenant SaaS Layer
+
+Goal: Make platform enterprise-ready.
+
+---
+
+# 1.1 Organization System
+
+## Objective
+
+Allow multiple companies to use same platform.
+
+---
+
+### [ ] Create Organization Flow
+
+### User Experience
+
+Admin creates:
+
+* company
+* warehouse group
+* settings
+
+### Backend
+
+* organization isolation
+* tenant-aware queries
+
+---
+
+### [ ] Organization Configuration
+
+### Features
+
+Store configs for:
+
+* barcode formats
+* units
+* fulfillment rules
+* replenishment settings
+* retention policies
+
+---
+
+# 1.2 User & Permission System
+
+## Objective
+
+Enterprise role management.
+
+---
+
+### [ ] Invite Users
+
+### Flow
+
+```text id="fmxh8t"
+Admin
+  ↓
+Invite User
+  ↓
+Email Invite
+  ↓
+Accept Invite
+  ↓
+Assign Warehouse Access
+```
+
+---
+
+### [ ] Build Role Groups
+
+### Examples
+
+* warehouse manager
+* picker
+* QC operator
+* supervisor
+* admin
+
+### Features
+
+* warehouse scoped access
+* permission matrix
+
+---
+
+### [ ] Permission Middleware
+
+Protect:
+
+* APIs
+* UI pages
+* workflows
+* inventory actions
+
+---
+
+# PHASE 2 — Warehouse Structure System
+
+Goal: Build digital warehouse hierarchy.
+
+---
+
+# 2.1 Warehouse CRUD
+
+## Objective
+
+Create physical warehouses digitally.
+
+---
+
+### [ ] Warehouse Management UI
+
+### Features
+
+* create warehouse
+* edit warehouse
+* activate/deactivate
+* timezone management
+
+---
+
+### [ ] Warehouse Dashboard
+
+### Show
+
+* occupancy
+* active tasks
+* inbound queue
+* outbound queue
+
+---
+
+# 2.2 Hierarchical Location Engine
+
+## Objective
+
+Digitally model warehouse structure.
+
+This is one of the MOST IMPORTANT systems.
+
+---
+
+### [ ] Build Location Hierarchy
+
+### Supported Types
+
+* Zone
+* Aisle
+* Rack
+* Shelf
+* Bin
+* Dock
+* QC
+* Packing
+* Quarantine
+
+---
+
+### [ ] Parent/Child Tree System
+
+### Example
+
+```text id="jlwmmy"
+Warehouse
+ └── Zone A
+      └── Aisle 1
+           └── Rack R1
+                └── Shelf S1
+                     └── Bin B1
+```
+
+---
+
+### [ ] Drag & Drop Hierarchy Builder
+
+### Features
+
+* move racks
+* reorganize bins
+* restructure aisles
+
+### Demo Value
+
+Makes warehouse feel configurable.
+
+---
+
+# 2.3 Capacity & Utilization Engine
+
+## Objective
+
+Track real warehouse usage.
+
+---
+
+### [ ] Capacity Tracking
+
+Track:
+
+* volume
+* weight
+* utilization %
+
+---
+
+### [ ] Occupancy Engine
+
+Calculate:
+
+```text id="b5mqns"
+used_volume / total_volume
+```
+
+---
+
+### [ ] Capacity Warning System
+
+### Show Alerts
+
+* overfilled bins
+* overweight racks
+* unavailable locations
+
+---
+
+# PHASE 3 — 3D Warehouse Digital Twin
+
+Goal: Build the visual “wow factor”.
+
+---
+
+# 3.1 3D Engine Foundation
+
+## Objective
+
+Convert warehouse schema into visual space.
+
+---
+
+### [ ] Setup Three.js Renderer
+
+### Features
+
+* camera controls
+* lighting
+* shadows
+* navigation
+
+---
+
+### [ ] Build Coordinate Mapping System
+
+Use:
+
+* x
+* y
+* z
+* width
+* height
+* depth
+
+from schema.
+
+---
+
+# 3.2 Warehouse Visualization
+
+## Objective
+
+Render actual warehouse.
+
+---
+
+### [ ] Render Physical Structures
+
+### Visual Objects
+
+* aisles
+* racks
+* shelves
+* pallets
+* bins
+
+---
+
+### [ ] Render Inventory Density
+
+### Colors
+
+* Green = healthy
+* Yellow = low
+* Red = overloaded
+* Purple = QC
+* Black = quarantine
+
+---
+
+### [ ] Hover Interaction System
+
+On hover show:
+
+* SKU
+* quantity
+* lot
+* serial
+* occupancy
+
+---
+
+# 3.3 Real-Time Warehouse Simulation
+
+## Objective
+
+Make warehouse feel alive.
+
+---
+
+### [ ] Live Inventory Updates
+
+When inventory changes:
+
+* update 3D scene
+* animate movement
+
+---
+
+### [ ] Task Path Visualization
+
+Render:
+
+* pick routes
+* replenishment movement
+* forklift paths
+
+---
+
+# PHASE 4 — Product & SKU Management
+
+Goal: Build warehouse master data.
+
+---
+
+# 4.1 Product Catalog
+
+## Objective
+
+Represent sellable inventory.
+
+---
+
+### [ ] Product CRUD
+
+### Features
+
+* code
+* name
+* description
+* categories
+
+---
+
+### [ ] Product Search
+
+Search by:
+
+* code
+* name
+* barcode
+
+---
+
+# 4.2 SKU Engine
+
+## Objective
+
+Represent inventory units.
+
+---
+
+### [ ] SKU Management
+
+### Features
+
+* barcode
+* dimensions
+* weight
+* UOM
+* pricing
+
+---
+
+### [ ] Batch & Serial Tracking
+
+### Demo Cases
+
+* HVAC compressors with serial numbers
+* refrigerant cylinders with lot tracking
+
+---
+
+# 4.3 Expiry & QC Tracking
+
+## Objective
+
+Support regulated inventory.
+
+---
+
+### [ ] Expiry Management
+
+### Features
+
+* FEFO logic
+* expired stock detection
+* expiry alerts
+
+---
+
+### [ ] QC Status System
+
+Track:
+
+* passed
+* failed
+* hold
+
+---
+
+# PHASE 5 — Inventory Engine
+
+Goal: Core warehouse brain.
+
+---
+
+# 5.1 Inventory Balance System
+
+## Objective
+
+Track inventory everywhere.
+
+---
+
+### [ ] Inventory Aggregation Engine
+
+Calculate inventory:
+
+* by warehouse
+* by location
+* by SKU
+* by lot
+* by serial
+
+---
+
+### [ ] Inventory State Engine
+
+### States
+
+* AVAILABLE
+* QC
+* HOLD
+* RESERVED
+* DAMAGED
+* QUARANTINE
+
+---
+
+### [ ] Inventory Query APIs
+
+### Filters
+
+* location
+* SKU
+* lot
+* state
+* warehouse
+
+---
+
+# 5.2 Inventory Movement Engine
+
+## Objective
+
+Track all movement history.
+
+---
+
+### [ ] Inventory Transaction System
+
+### Types
+
+* RECEIVE
+* PUTAWAY
+* MOVE
+* PICK
+* SHIP
+* DAMAGE
+
+---
+
+### [ ] Inventory Timeline UI
+
+### Show
+
+```text id="2h40vh"
+10:00 Receive
+10:15 Putaway
+12:10 Pick
+12:30 Ship
+```
+
+---
+
+# 5.3 Inventory Adjustment System
+
+## Objective
+
+Support warehouse corrections.
+
+---
+
+### [ ] Manual Adjustment UI
+
+### Features
+
+* increase/decrease stock
+* reason codes
+* audit logs
+
+---
+
+# PHASE 6 — Inbound Operations
+
+Goal: Demonstrate inbound receiving flow.
+
+---
+
+# 6.1 Supplier Management
+
+## Objective
+
+Manage inbound vendors.
+
+---
+
+### [ ] Supplier CRUD
+
+### Features
+
+* supplier code
+* addresses
+* contacts
+
+---
+
+# 6.2 Purchase Order Engine
+
+## Objective
+
+Track expected inbound inventory.
+
+---
+
+### [ ] Purchase Order Creation
+
+### Features
+
+* multiple SKUs
+* expected quantities
+* statuses
+
+---
+
+### [ ] PO Dashboard
+
+Show:
+
+* pending
+* in transit
+* received
+
+---
+
+# 6.3 ASN Workflow
+
+## Objective
+
+Provide enterprise inbound visibility.
+
+---
+
+### [ ] ASN Creation
+
+### Features
+
+* pallets
+* cartons
+* ETA
+* expected inventory
+
+---
+
+### [ ] ASN Arrival Tracking
+
+### Workflow
+
+```text id="3m7v9y"
+Created
+  ↓
+In Transit
+  ↓
+Arrived
+  ↓
+Receiving
+  ↓
+Completed
+```
+
+---
+
+# 6.4 Receiving Workflow
+
+## Objective
+
+Receive inventory physically.
+
+---
+
+### [ ] Receiving Session UI
+
+### Operator Actions
+
+* scan carton
+* scan SKU
+* enter quantity
+* mark damaged
+
+---
+
+### [ ] Receiving Validation
+
+Validate:
+
+* over receive
+* under receive
+* incorrect SKU
+
+---
+
+# 6.5 Putaway Engine
+
+## Objective
+
+Move inbound inventory into storage.
+
+---
+
+### [ ] Putaway Recommendation Engine
+
+Suggest bins using:
+
+* capacity
+* SKU type
+* empty space
+
+---
+
+### [ ] Directed Putaway Tasks
+
+Create operator tasks automatically.
+
+---
+
+# PHASE 7 — Outbound Operations
+
+Goal: Ship customer orders.
+
+---
+
+# 7.1 Customer Management
+
+## Objective
+
+Store outbound customer data.
+
+---
+
+### [ ] Customer CRUD
+
+### Features
+
+* addresses
+* shipping locations
+* defaults
+
+---
+
+# 7.2 Sales Order Engine
+
+## Objective
+
+Represent outbound demand.
+
+---
+
+### [ ] Sales Order Creation
+
+### Features
+
+* multi-SKU orders
+* statuses
+* allocations
+
+---
+
+# 7.3 Allocation Engine
+
+## Objective
+
+Reserve inventory.
+
+---
+
+### [ ] Reservation Logic
+
+### Must Handle
+
+* partial allocation
+* insufficient inventory
+* lot allocation
+
+---
+
+# 7.4 Picking System
+
+## Objective
+
+Guide warehouse operators.
+
+---
+
+### [ ] Pick Task Generation
+
+### Flow
+
+```text id="9q2n1u"
+Sales Order
+  ↓
+Allocation
+  ↓
+Pick Task
+```
+
+---
+
+### [ ] Optimized Pick Paths
+
+Reduce walking distance.
+
+---
+
+### [ ] Barcode Pick Validation
+
+Prevent incorrect picks.
+
+---
+
+# 7.5 Packing & Shipping
+
+## Objective
+
+Finalize outbound flow.
+
+---
+
+### [ ] Packing Station UI
+
+### Features
+
+* carton selection
+* scan verification
+* labels
+
+---
+
+### [ ] Shipment System
+
+### Features
+
+* tracking numbers
+* carriers
+* shipment status
+
+---
+
+# PHASE 8 — Reverse Logistics
+
+Goal: Handle returns professionally.
+
+---
+
+# 8.1 Return Order System
+
+## Objective
+
+Track customer returns.
+
+---
+
+### [ ] Return Request Creation
+
+### Features
+
+* reason codes
+* linked sales orders
+* return statuses
+
+---
+
+# 8.2 Return Receiving
+
+## Objective
+
+Receive returned inventory.
+
+---
+
+### [ ] Return Scan Workflow
+
+### Operator Actions
+
+* scan returned SKU
+* inspect package
+* assign inspection area
+
+---
+
+# 8.3 Return Inspection
+
+## Objective
+
+Determine inventory disposition.
+
+---
+
+### [ ] QC Inspection UI
+
+### Features
+
+* notes
+* photos
+* grading
+* pass/fail
+
+---
+
+# 8.4 Return Disposition Engine
+
+## Objective
+
+Route returned inventory.
+
+---
+
+### Outcomes
+
+* restock
+* scrap
+* refurbish
+* RTV
+
+---
+
+# PHASE 9 — Warehouse Task Engine
+
+Goal: Operational orchestration layer.
+
+---
+
+# 9.1 Task Lifecycle
+
+## Objective
+
+Manage warehouse work.
+
+---
+
+### [ ] Task State Machine
+
+### States
+
+```text id="rk15hk"
+Pending
+  ↓
+Assigned
+  ↓
+In Progress
+  ↓
+Completed
+```
+
+---
+
+# 9.2 Task Assignment
+
+## Objective
+
+Distribute warehouse work.
+
+---
+
+### [ ] Operator Assignment Logic
+
+Assign based on:
+
+* workload
+* zone
+* priority
+
+---
+
+### [ ] Priority Queue
+
+### Priorities
+
+* LOW
+* NORMAL
+* HIGH
+* URGENT
+
+---
+
+# 9.3 Mobile Operator UI
+
+## Objective
+
+Warehouse handheld experience.
+
+---
+
+### [ ] Task Queue Screen
+
+Show:
+
+* task type
+* source bin
+* destination bin
+* quantity
+
+---
+
+### [ ] Scan-to-Confirm Workflow
+
+Prevent human errors.
+
+---
+
+# PHASE 10 — Workflow Builder
+
+Goal: Configurable warehouse workflows.
+
+---
+
+# 10.1 React Flow Editor
+
+## Objective
+
+Create no-code workflows.
+
+---
+
+### [ ] Workflow Canvas
+
+### Features
+
+* drag/drop nodes
+* connect edges
+* save flows
+
+---
+
+# 10.2 Workflow Types
+
+## Objective
+
+Support warehouse operations.
+
+---
+
+### [ ] Inbound Workflow
+
+```text id="5sl7xn"
+Receive
+  ↓
+QC
+  ↓
+Putaway
+```
+
+---
+
+### [ ] Outbound Workflow
+
+```text id="kl4wui"
+Allocate
+  ↓
+Pick
+  ↓
+Pack
+  ↓
+Ship
+```
+
+---
+
+### [ ] Return Workflow
+
+```text id="ib0sh8"
+Receive Return
+  ↓
+Inspect
+  ↓
+Disposition
+```
+
+---
+
+# 10.3 Workflow Execution Engine
+
+## Objective
+
+Run workflows dynamically.
+
+---
+
+### [ ] Execution Tracker
+
+Track:
+
+* running nodes
+* failed nodes
+* completed nodes
+
+---
+
+### [ ] Live Workflow Visualization
+
+Animate node states in UI.
+
+---
+
+# PHASE 11 — Barcode & Scanning System
+
+Goal: Real warehouse operations.
+
+---
+
+# 11.1 Scan Engine
+
+## Objective
+
+Support physical warehouse interaction.
+
+---
+
+### [ ] Barcode Scanning
+
+### Support
+
+* camera scanning
+* hardware scanners
+* QR codes
+
+---
+
+# 11.2 Scan Validation
+
+## Objective
+
+Reduce operational mistakes.
+
+---
+
+### [ ] Validation Rules
+
+Validate:
+
+* correct SKU
+* correct location
+* correct quantity
+
+---
+
+# 11.3 Scan Event History
+
+## Objective
+
+Track warehouse actions.
+
+---
+
+### [ ] Scan Audit UI
+
+Show:
+
+* user
+* location
+* timestamp
+* action
+
+---
+
+# PHASE 12 — Replenishment Engine
+
+Goal: Automated inventory movement.
+
+---
+
+# 12.1 Min/Max Rules
+
+## Objective
+
+Keep pick bins stocked.
+
+---
+
+### [ ] Replenishment Rules
+
+Configure:
+
+* min qty
+* max qty
+* replenish qty
+
+---
+
+# 12.2 Auto Task Creation
+
+## Objective
+
+Generate replenishment automatically.
+
+---
+
+### [ ] Replenishment Job
+
+### Workflow
+
+```text id="lj0zvd"
+Low Pick Bin
+   ↓
+Create Task
+   ↓
+Move Inventory
+```
+
+---
+
+# PHASE 13 — Cycle Counting
+
+Goal: Inventory accuracy management.
+
+---
+
+# 13.1 Count Sessions
+
+## Objective
+
+Audit inventory periodically.
+
+---
+
+### [ ] Count Session Creation
+
+### Features
+
+* zone selection
+* operator assignment
+
+---
+
+# 13.2 Count Workflow
+
+## Objective
+
+Compare actual vs expected inventory.
+
+---
+
+### [ ] Scan Counting UI
+
+### Operator Flow
+
+```text id="0c24e8"
+Scan Bin
+  ↓
+Count Items
+  ↓
+Submit Variance
+```
+
+---
+
+# 13.3 Variance Resolution
+
+## Objective
+
+Fix discrepancies safely.
+
+---
+
+### [ ] Adjustment Approval Workflow
+
+Require supervisor approval.
+
+---
+
+# PHASE 14 — Dashboard & Analytics
+
+Goal: Executive operational visibility.
+
+---
+
+# 14.1 Warehouse Dashboard
+
+## Objective
+
+Provide real-time KPIs.
+
+---
+
+### [ ] Operational Metrics
+
+Show:
+
+* occupancy
+* orders shipped
+* receiving backlog
+* active tasks
+
+---
+
+# 14.2 Heatmaps & Visualization
+
+## Objective
+
+Visual operational insight.
+
+---
+
+### [ ] Picking Heatmaps
+
+Show most active locations.
+
+---
+
+### [ ] Inventory Heatmaps
+
+Show dense/empty areas.
+
+---
+
+# PHASE 15 — AI & Smart Features
+
+Goal: Intelligent warehouse operations.
+
+---
+
+# 15.1 Smart Slotting
+
+## Objective
+
+Recommend optimal storage locations.
+
+---
+
+### [ ] Velocity-Based Slotting
+
+Place high-moving SKUs closer to packing.
+
+---
+
+# 15.2 Path Optimization
+
+## Objective
+
+Reduce picker travel distance.
+
+---
+
+### [ ] Route Optimization Engine
+
+Generate shortest routes.
+
+---
+
+# 15.3 Predictive Features
+
+## Objective
+
+Forecast warehouse operations.
+
+---
+
+### [ ] Demand Forecasting
+
+Predict future inventory needs.
+
+---
+
+### [ ] Replenishment Prediction
+
+Auto-predict replenishment demand.
+
+---
+
+# FINAL DEMO FEATURES
+
+Goal: Make the POC unforgettable.
+
+---
+
+# Demo Scenario 1 — Inbound Flow
+
+```text id="jrn6mt"
+PO Created
+  ↓
+ASN Arrives
+  ↓
+Receive Inventory
+  ↓
+QC
+  ↓
+Putaway
+  ↓
+3D Warehouse Updates
+```
+
+---
+
+# Demo Scenario 2 — Outbound Flow
+
+```text id="mp8qig"
+Sales Order
+  ↓
+Allocation
+  ↓
+Pick Wave
+  ↓
+Picking
+  ↓
+Packing
+  ↓
+Shipment
+```
+
+---
+
+# Demo Scenario 3 — Returns
+
+```text id="ey1hvc"
+Customer Return
+  ↓
+Inspection
+  ↓
+Disposition
+  ↓
+Restock/Scrap
+```
+
+---
+
+# Demo Scenario 4 — Workflow Engine
+
+Show:
+
+* React Flow editor
+* live execution
+* animated workflow progression
+
+---
+
+# Demo Scenario 5 — 3D Warehouse
+
+Show:
+
+* inventory movement
+* occupancy
+* live task movement
+* heatmaps
+* congestion zones
