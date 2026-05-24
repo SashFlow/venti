@@ -18,7 +18,7 @@ export default function WarehousePage() {
 	const { organization } = useSession();
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
-	const [statusView, setStatusView] = useState<"active" | "archived" | "all">(
+	const [statusView, setStatusView] = useState<"active" | "INACTIVE" | "all">(
 		"active",
 	);
 
@@ -72,12 +72,11 @@ export default function WarehousePage() {
 	const totals = useMemo(() => {
 		return warehouses.reduce(
 			(acc, warehouse) => {
-				acc.zones += warehouse._count.zones;
-				acc.storageUnits += warehouse._count.storageUnits;
-				acc.inventoryItems += warehouse._count.inventoryItems;
+				acc.locations += warehouse._count.locations;
+				acc.inventoryBalances += warehouse._count.inventoryBalances;
 				return acc;
 			},
-			{ zones: 0, storageUnits: 0, inventoryItems: 0 },
+			{ locations: 0, inventoryBalances: 0 },
 		);
 	}, [warehouses]);
 
@@ -104,13 +103,13 @@ export default function WarehousePage() {
 							value={statusView}
 							onValueChange={(value) => {
 								setStatusView(
-									value as "active" | "archived" | "all",
+									value as "active" | "INACTIVE" | "all",
 								);
 							}}
 						>
 							<TabsList>
 								<TabsTrigger value="active">Active</TabsTrigger>
-								<TabsTrigger value="archived">
+								<TabsTrigger value="INACTIVE">
 									Archived
 								</TabsTrigger>
 								<TabsTrigger value="all">All</TabsTrigger>
@@ -145,21 +144,21 @@ export default function WarehousePage() {
 				<Card className="border">
 					<CardHeader className="pb-2">
 						<CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-							Zones
+							Locations
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="text-2xl font-semibold">
-						{totals.zones}
+						{totals.locations}
 					</CardContent>
 				</Card>
 				<Card className="border">
 					<CardHeader className="pb-2">
 						<CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-							Storage Units
+							Inventory Balances
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="text-2xl font-semibold">
-						{totals.storageUnits}
+						{totals.inventoryBalances}
 					</CardContent>
 				</Card>
 			</div>
@@ -175,15 +174,13 @@ export default function WarehousePage() {
 						</p>
 					) : warehouses.length === 0 ? (
 						<p className="text-sm text-muted-foreground">
-							{statusView === "archived"
+							{statusView === "INACTIVE"
 								? "No archived warehouses found."
 								: "No warehouses found for this organization."}
 						</p>
 					) : (
 						warehouses.map((warehouse) => {
-							const latestLayout =
-								warehouse.layoutVersions[0] ?? null;
-							const isArchived = warehouse.status === "ARCHIVED";
+							const isArchived = warehouse.status === "INACTIVE";
 
 							const rowContent = (
 								<>
@@ -204,15 +201,11 @@ export default function WarehousePage() {
 									<div className="flex items-center gap-3 text-right text-xs text-muted-foreground">
 										<div>
 											<p>
-												Items:{" "}
+												Balances:{" "}
 												{
 													warehouse._count
-														.inventoryItems
+														.inventoryBalances
 												}
-											</p>
-											<p>
-												Layout: v
-												{latestLayout?.version ?? "-"}
 											</p>
 										</div>
 										{isArchived ? (

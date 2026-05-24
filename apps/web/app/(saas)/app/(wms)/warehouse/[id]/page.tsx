@@ -24,20 +24,7 @@ import {
 type WarehouseSettingsFormValues = {
 	name: string;
 	code: string;
-	description: string;
 	timezone: string;
-	addressLine1: string;
-	addressLine2: string;
-	city: string;
-	state: string;
-	zip: string;
-	country: string;
-	returnAddressLine1: string;
-	returnAddressLine2: string;
-	returnCity: string;
-	returnState: string;
-	returnZip: string;
-	returnCountry: string;
 };
 
 export default function WarehouseDetailsPage() {
@@ -45,26 +32,11 @@ export default function WarehouseDetailsPage() {
 	const router = useRouter();
 	const { organization } = useSession();
 	const queryClient = useQueryClient();
-	const [hasDifferentReturnAddress, setHasDifferentReturnAddress] =
-		useState(false);
 	const [settingsValues, setSettingsValues] =
 		useState<WarehouseSettingsFormValues>({
 			name: "",
 			code: "",
-			description: "",
 			timezone: "UTC",
-			addressLine1: "",
-			addressLine2: "",
-			city: "",
-			state: "",
-			zip: "",
-			country: "",
-			returnAddressLine1: "",
-			returnAddressLine2: "",
-			returnCity: "",
-			returnState: "",
-			returnZip: "",
-			returnCountry: "",
 		});
 
 	const { data, isPending } = useQuery({
@@ -96,23 +68,8 @@ export default function WarehouseDetailsPage() {
 		setSettingsValues({
 			name: data.name,
 			code: data.code,
-			description: data.description ?? "",
 			timezone: data.timezone,
-			addressLine1: data.address?.addressLine1 ?? "",
-			addressLine2: data.address?.addressLine2 ?? "",
-			city: data.address?.city ?? "",
-			state: data.address?.state ?? "",
-			zip: data.address?.zip ?? "",
-			country: data.address?.country ?? "",
-			returnAddressLine1: data.returnAddress?.addressLine1 ?? "",
-			returnAddressLine2: data.returnAddress?.addressLine2 ?? "",
-			returnCity: data.returnAddress?.city ?? "",
-			returnState: data.returnAddress?.state ?? "",
-			returnZip: data.returnAddress?.zip ?? "",
-			returnCountry: data.returnAddress?.country ?? "",
 		});
-
-		setHasDifferentReturnAddress(Boolean(data.returnAddress));
 	}, [data]);
 
 	const handleSettingsSave = async () => {
@@ -120,7 +77,7 @@ export default function WarehouseDetailsPage() {
 			return;
 		}
 
-		if (data.status === "ARCHIVED") {
+		if (data.status === "INACTIVE") {
 			toast.error("Archived warehouses are read-only. Restore first.");
 			return;
 		}
@@ -130,60 +87,12 @@ export default function WarehouseDetailsPage() {
 			return;
 		}
 
-		const hasAddress =
-			settingsValues.addressLine1.trim().length > 0 ||
-			settingsValues.addressLine2.trim().length > 0 ||
-			settingsValues.city.trim().length > 0 ||
-			settingsValues.state.trim().length > 0 ||
-			settingsValues.zip.trim().length > 0 ||
-			settingsValues.country.trim().length > 0;
-
-		const hasReturnAddress =
-			settingsValues.returnAddressLine1.trim().length > 0 ||
-			settingsValues.returnAddressLine2.trim().length > 0 ||
-			settingsValues.returnCity.trim().length > 0 ||
-			settingsValues.returnState.trim().length > 0 ||
-			settingsValues.returnZip.trim().length > 0 ||
-			settingsValues.returnCountry.trim().length > 0;
-
 		await updateWarehouseMutation.mutateAsync({
 			organizationId: data.organizationId,
 			id: data.id,
 			name: settingsValues.name.trim(),
 			code: settingsValues.code.trim(),
-			description: settingsValues.description.trim() || undefined,
 			timezone: settingsValues.timezone.trim() || undefined,
-			address: hasAddress
-				? {
-						addressLine1:
-							settingsValues.addressLine1.trim() || undefined,
-						addressLine2:
-							settingsValues.addressLine2.trim() || undefined,
-						city: settingsValues.city.trim() || undefined,
-						state: settingsValues.state.trim() || undefined,
-						zip: settingsValues.zip.trim() || undefined,
-						country: settingsValues.country.trim() || undefined,
-					}
-				: undefined,
-			returnAddress: hasDifferentReturnAddress
-				? hasReturnAddress
-					? {
-							addressLine1:
-								settingsValues.returnAddressLine1.trim() ||
-								undefined,
-							addressLine2:
-								settingsValues.returnAddressLine2.trim() ||
-								undefined,
-							city: settingsValues.returnCity.trim() || undefined,
-							state:
-								settingsValues.returnState.trim() || undefined,
-							zip: settingsValues.returnZip.trim() || undefined,
-							country:
-								settingsValues.returnCountry.trim() ||
-								undefined,
-						}
-					: undefined
-				: null,
 		});
 
 		await queryClient.invalidateQueries({
@@ -201,7 +110,7 @@ export default function WarehouseDetailsPage() {
 			return;
 		}
 
-		if (data.status === "ARCHIVED") {
+		if (data.status === "INACTIVE") {
 			return;
 		}
 
@@ -231,7 +140,7 @@ export default function WarehouseDetailsPage() {
 			return;
 		}
 
-		if (data.status !== "ARCHIVED") {
+		if (data.status !== "INACTIVE") {
 			return;
 		}
 
@@ -281,7 +190,7 @@ export default function WarehouseDetailsPage() {
 						{data.code} • {data.status}
 					</p>
 				</div>
-				{data.status === "ARCHIVED" ? (
+				{data.status === "INACTIVE" ? (
 					<Button
 						onClick={() => {
 							void handleRestoreWarehouse();
@@ -392,15 +301,11 @@ export default function WarehouseDetailsPage() {
 					}}
 					saving={updateWarehouseMutation.isPending}
 					deleting={deleteWarehouseMutation.isPending}
-					readOnly={data.status === "ARCHIVED"}
+					readOnly={data.status === "INACTIVE"}
 					onRestore={() => {
 						void handleRestoreWarehouse();
 					}}
 					restoring={restoreWarehouseMutation.isPending}
-					hasDifferentReturnAddress={hasDifferentReturnAddress}
-					onDifferentReturnAddressChange={(checked) => {
-						setHasDifferentReturnAddress(checked);
-					}}
 				/>
 				<InventoryTabContent
 					warehouseId={data.id}

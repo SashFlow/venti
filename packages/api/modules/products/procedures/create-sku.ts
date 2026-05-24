@@ -1,6 +1,5 @@
 import { ORPCError } from "@orpc/server";
 import { createSKU } from "@repo/database";
-import type { Prisma } from "@repo/database/prisma/generated/client";
 import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";

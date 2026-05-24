@@ -1,28 +1,5 @@
 import { db } from "../prisma";
 
-function parseLayoutScene(sceneDataUrl: string | null) {
-	if (!sceneDataUrl) {
-		return null;
-	}
-
-	try {
-		return JSON.parse(sceneDataUrl) as {
-			viewMode?: "2d" | "iso" | "3d";
-			nodes?: Array<{
-				id: string;
-				label: string;
-				x: number;
-				y: number;
-				width: number;
-				height: number;
-				color: string;
-			}>;
-		};
-	} catch {
-		return null;
-	}
-}
-
 export async function listWarehouses(params: {
 	organizationId: string;
 	query?: string;
@@ -139,24 +116,7 @@ export async function createWarehouse(params: {
 	organizationId: string;
 	name: string;
 	code: string;
-	description?: string;
 	timezone?: string;
-	address?: {
-		addressLine1?: string;
-		addressLine2?: string;
-		city?: string;
-		state?: string;
-		zip?: string;
-		country?: string;
-	};
-	returnAddress?: {
-		addressLine1?: string;
-		addressLine2?: string;
-		city?: string;
-		state?: string;
-		zip?: string;
-		country?: string;
-	} | null;
 }) {
 	const existing = await db.warehouse.findFirst({
 		where: {
@@ -168,41 +128,6 @@ export async function createWarehouse(params: {
 
 	if (existing) {
 		throw new Error();
-	}
-
-	let addressId: string | undefined;
-	let returnAddressId: string | null | undefined;
-
-	if (params.address) {
-		const address = await db.address.create({
-			data: {
-				addressLine1: params.address.addressLine1 ?? "",
-				addressLine2: params.address.addressLine2,
-				city: params.address.city ?? "",
-				state: params.address.state ?? "",
-				zip: params.address.zip ?? "",
-				country: params.address.country ?? "",
-			},
-			select: { id: true },
-		});
-
-		addressId = address.id;
-	}
-
-	if (params.returnAddress) {
-		const returnAddress = await db.address.create({
-			data: {
-				addressLine1: params.returnAddress.addressLine1 ?? "",
-				addressLine2: params.returnAddress.addressLine2,
-				city: params.returnAddress.city ?? "",
-				state: params.returnAddress.state ?? "",
-				zip: params.returnAddress.zip ?? "",
-				country: params.returnAddress.country ?? "",
-			},
-			select: { id: true },
-		});
-
-		returnAddressId = returnAddress.id;
 	}
 
 	const warehouse = await db.warehouse.create({
@@ -232,24 +157,7 @@ export async function updateWarehouse(params: {
 	id: string;
 	name: string;
 	code: string;
-	description?: string;
 	timezone?: string;
-	address?: {
-		addressLine1?: string;
-		addressLine2?: string;
-		city?: string;
-		state?: string;
-		zip?: string;
-		country?: string;
-	};
-	returnAddress?: {
-		addressLine1?: string;
-		addressLine2?: string;
-		city?: string;
-		state?: string;
-		zip?: string;
-		country?: string;
-	} | null;
 }) {
 	const existing = await db.warehouse.findFirst({
 		where: {

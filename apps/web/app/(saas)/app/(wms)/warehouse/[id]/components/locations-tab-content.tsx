@@ -381,7 +381,9 @@ function LocationsTab({
 								</label>
 								<Select
 									value={newType}
-									onValueChange={setNewType}
+									onValueChange={(val) => {
+										if (val) setNewType(val);
+									}}
 								>
 									<SelectTrigger>
 										<SelectValue placeholder="Select type" />

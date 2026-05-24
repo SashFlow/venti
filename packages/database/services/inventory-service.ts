@@ -7,6 +7,8 @@ export async function listInventoryBalances(input: {
 	skuId?: string;
 	lotId?: string;
 	state?: any;
+	limit?: number;
+	offset?: number;
 }) {
 	const balances = await prisma.inventoryBalance.findMany({
 		where: {
@@ -25,6 +27,8 @@ export async function listInventoryBalances(input: {
 		orderBy: {
 			location: { code: "asc" },
 		},
+		take: input.limit ?? 20,
+		skip: input.offset ?? 0,
 	});
 	return balances;
 }
