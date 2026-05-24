@@ -125,7 +125,7 @@ Speed up development.
 
 ---
 
-### [ ] Setup Docker Environment
+### [x] Setup Docker Environment
 
 ### Must Include
 
@@ -136,7 +136,7 @@ Speed up development.
 
 ---
 
-### [ ] Setup Seed System
+### [x] Setup Seed System
 
 Populate warehouse demo data automatically.
 
@@ -151,7 +151,7 @@ Populate warehouse demo data automatically.
 
 ---
 
-### [ ] Setup Background Job System
+### [x] Setup Background Job System
 
 Needed for:
 
@@ -338,7 +338,7 @@ Warehouse
 
 ---
 
-### [ ] Drag & Drop Hierarchy Builder
+### [x] Drag & Drop Hierarchy Builder
 
 ### Features
 
@@ -380,7 +380,7 @@ used_volume / total_volume
 
 ---
 
-### [ ] Capacity Warning System
+### [x] Capacity Warning System
 
 ### Show Alerts
 
@@ -404,7 +404,7 @@ Convert warehouse schema into visual space.
 
 ---
 
-### [ ] Setup Three.js Renderer
+### [x] Setup Three.js Renderer
 
 ### Features
 
@@ -415,7 +415,7 @@ Convert warehouse schema into visual space.
 
 ---
 
-### [ ] Build Coordinate Mapping System
+### [x] Build Coordinate Mapping System
 
 Use:
 
@@ -607,7 +607,7 @@ Track inventory everywhere.
 
 ---
 
-### [ ] Inventory Aggregation Engine
+### [x] Inventory Aggregation Engine
 
 Calculate inventory:
 
@@ -632,7 +632,7 @@ Calculate inventory:
 
 ---
 
-### [ ] Inventory Query APIs
+### [x] Inventory Query APIs
 
 ### Filters
 
@@ -665,7 +665,7 @@ Track all movement history.
 
 ---
 
-### [ ] Inventory Timeline UI
+### [x] Inventory Timeline UI
 
 ### Show
 
@@ -686,7 +686,7 @@ Support warehouse corrections.
 
 ---
 
-### [ ] Manual Adjustment UI
+### [x] Manual Adjustment UI
 
 ### Features
 
@@ -1136,7 +1136,7 @@ Create no-code workflows.
 
 ---
 
-### [ ] Workflow Canvas
+### [x] Workflow Canvas
 
 ### Features
 

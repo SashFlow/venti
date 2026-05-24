@@ -1,7 +1,7 @@
 import path from "path";
 
 export const CONFIG = {
-	START_DATE: new Date("2026-04-01T00:00:00Z"),
+	START_DATE: new Date("2022-04-01T00:00:00Z"),
 	END_DATE: new Date("2026-05-21T00:00:00Z"),
 	NUM_WAREHOUSES: 2,
 	ORDERS_PER_DAY: 50,

@@ -3,6 +3,7 @@ import { adminRouter } from "../modules/admin/router";
 import { aiRouter } from "../modules/ai/router";
 import { contactRouter } from "../modules/contact/router";
 import { customersRouter } from "../modules/customers/router";
+import { inventoryRouter } from "../modules/inventory/router";
 import { masterDataRouter } from "../modules/master-data/router";
 import { newsletterRouter } from "../modules/newsletter/router";
 import { ordersRouter } from "../modules/orders/router";
@@ -35,6 +36,7 @@ export const router = publicProcedure
 		packaging: packagingRouter,
 		products: productsRouter,
 		masterData: masterDataRouter,
+		inventory: inventoryRouter,
 	});
 
 export type ApiRouterClient = RouterClient<typeof router>;

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Warehouse3DScene } from "./warehouse-3d-scene";
 
 const FILTER_BUTTON_CLASS =
 	"h-8 rounded-md border border-input bg-muted/40 px-3 text-xs font-semibold text-foreground/80";
@@ -425,7 +426,19 @@ function SettingsTab({
 	);
 }
 
-function InventoryTab() {
+function InventoryTab({
+	warehouseId,
+	organizationId,
+}: {
+	warehouseId: string;
+	organizationId: string;
+}) {
+	const { data: balances = [], isPending } = useQuery({
+		...orpc.inventory.balances.queryOptions({
+			input: { organizationId, warehouseId },
+		}),
+	});
+
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
@@ -513,8 +526,8 @@ function InventoryTab() {
 								<TableHead>Serial</TableHead>
 								<TableHead>SKU</TableHead>
 								<TableHead>Lot</TableHead>
-								<TableHead>Bin</TableHead>
-								<TableHead>Shelf</TableHead>
+								<TableHead>Location</TableHead>
+								<TableHead>State</TableHead>
 								<TableHead>Unit Cost</TableHead>
 								<TableHead>ABC</TableHead>
 								<TableHead className="text-right">
@@ -523,25 +536,53 @@ function InventoryTab() {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							<TableRow>
-								<TableCell className="font-medium underline underline-offset-2">
-									Chappal
-								</TableCell>
-								<TableCell>-</TableCell>
-								<TableCell>KKIE</TableCell>
-								<TableCell>-</TableCell>
-								<TableCell className="underline underline-offset-2">
-									bin 1
-								</TableCell>
-								<TableCell className="underline underline-offset-2">
-									First Shelf
-								</TableCell>
-								<TableCell>$0.05</TableCell>
-								<TableCell>-</TableCell>
-								<TableCell className="text-right">
-									101
-								</TableCell>
-							</TableRow>
+							{isPending ? (
+								<TableRow>
+									<TableCell
+										colSpan={9}
+										className="text-center py-6 text-muted-foreground"
+									>
+										Loading inventory...
+									</TableCell>
+								</TableRow>
+							) : balances.length === 0 ? (
+								<TableRow>
+									<TableCell
+										colSpan={9}
+										className="text-center py-6 text-muted-foreground"
+									>
+										No inventory found in this warehouse.
+									</TableCell>
+								</TableRow>
+							) : (
+								balances.map((balance: any) => (
+									<TableRow key={balance.id}>
+										<TableCell className="font-medium">
+											{balance.sku.name}
+										</TableCell>
+										<TableCell>
+											{balance.sku.barcode ?? "-"}
+										</TableCell>
+										<TableCell>
+											{balance.sku.code}
+										</TableCell>
+										<TableCell>
+											{balance.lot?.code ?? "-"}
+										</TableCell>
+										<TableCell className="underline underline-offset-2">
+											{balance.location.code}
+										</TableCell>
+										<TableCell>{balance.state}</TableCell>
+										<TableCell>-</TableCell>
+										<TableCell>-</TableCell>
+										<TableCell className="text-right">
+											{Number(
+												balance.quantityAvailable,
+											).toFixed(2)}
+										</TableCell>
+									</TableRow>
+								))
+							)}
 						</TableBody>
 					</Table>
 				</CardContent>
@@ -683,7 +724,19 @@ function BinReplenishmentTab() {
 	);
 }
 
-function LogsTab() {
+function LogsTab({
+	warehouseId,
+	organizationId,
+}: {
+	warehouseId: string;
+	organizationId: string;
+}) {
+	const { data: timeline = [], isPending } = useQuery({
+		...orpc.inventory.timeline.queryOptions({
+			input: { organizationId, warehouseId, limit: 50 },
+		}),
+	});
+
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
@@ -740,32 +793,49 @@ function LogsTab() {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							<TableRow>
-								<TableCell>1:40 AM</TableCell>
-								<TableCell>Inventory Changed</TableCell>
-								<TableCell>
-									<span className="font-medium underline underline-offset-2">
-										Chappal
-									</span>{" "}
-									- KKIE added to{" "}
-									<span className="font-medium">
-										bin 1 / First Shelf / Lvl:1
-									</span>
-								</TableCell>
-							</TableRow>
-							<TableRow>
-								<TableCell>1:39 AM</TableCell>
-								<TableCell>Inventory Changed</TableCell>
-								<TableCell>
-									<span className="font-medium underline underline-offset-2">
-										Chappal
-									</span>{" "}
-									- KKIE added to{" "}
-									<span className="font-medium">
-										bin 1 / First Shelf / Lvl:1
-									</span>
-								</TableCell>
-							</TableRow>
+							{isPending ? (
+								<TableRow>
+									<TableCell
+										colSpan={3}
+										className="text-center py-6 text-muted-foreground"
+									>
+										Loading logs...
+									</TableCell>
+								</TableRow>
+							) : timeline.length === 0 ? (
+								<TableRow>
+									<TableCell
+										colSpan={3}
+										className="text-center py-6 text-muted-foreground"
+									>
+										No inventory logs found.
+									</TableCell>
+								</TableRow>
+							) : (
+								timeline.map((log: any) => (
+									<TableRow key={log.id}>
+										<TableCell>
+											{new Date(
+												log.createdAt,
+											).toLocaleString()}
+										</TableCell>
+										<TableCell>{log.type}</TableCell>
+										<TableCell>
+											<span className="font-medium underline underline-offset-2">
+												{log.sku.name || log.sku.code}
+											</span>{" "}
+											-{" "}
+											{log.quantity > 0
+												? "added to"
+												: "removed from"}{" "}
+											<span className="font-medium">
+												{log.location.code}
+											</span>
+											{log.notes && ` (${log.notes})`}
+										</TableCell>
+									</TableRow>
+								))
+							)}
 						</TableBody>
 					</Table>
 				</CardContent>
@@ -1098,35 +1168,39 @@ function LayoutTab({
 					<div
 						className={`relative h-[440px] overflow-hidden rounded-md border bg-[linear-gradient(to_right,rgba(148,163,184,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.15)_1px,transparent_1px)] bg-size-[24px_24px] ${canvasClassName}`}
 					>
-						{nodes.map((node) => (
-							<button
-								key={node.id}
-								type="button"
-								onClick={() => {
-									setSelectedNodeId(node.id);
-								}}
-								className={`absolute rounded-md border text-left shadow-sm transition-all ${
-									selectedNodeId === node.id
-										? "border-foreground ring-2 ring-foreground/40"
-										: "border-border"
-								}`}
-								style={{
-									left: node.x,
-									top: node.y,
-									width: node.width,
-									height: node.height,
-									backgroundColor: node.color,
-									transform:
-										viewMode === "3d"
-											? "rotateX(16deg) translateZ(10px)"
-											: undefined,
-								}}
-							>
-								<span className="block px-2 py-1 text-xs font-semibold text-slate-900/90">
-									{node.label}
-								</span>
-							</button>
-						))}
+						{viewMode === "3d" ? (
+							<Warehouse3DScene nodes={nodes} />
+						) : (
+							nodes.map((node) => (
+								<button
+									key={node.id}
+									type="button"
+									onClick={() => {
+										setSelectedNodeId(node.id);
+									}}
+									className={`absolute rounded-md border text-left shadow-sm transition-all ${
+										selectedNodeId === node.id
+											? "border-foreground ring-2 ring-foreground/40"
+											: "border-border"
+									}`}
+									style={{
+										left: node.x,
+										top: node.y,
+										width: node.width,
+										height: node.height,
+										backgroundColor: node.color,
+										transform:
+											viewMode === "iso"
+												? "rotateX(16deg) translateZ(10px)"
+												: undefined,
+									}}
+								>
+									<span className="block px-2 py-1 text-xs font-semibold text-slate-900/90">
+										{node.label}
+									</span>
+								</button>
+							))
+						)}
 					</div>
 
 					<div className="flex items-center justify-end gap-2">
@@ -1629,10 +1703,13 @@ export function SettingsTabContent({
 	);
 }
 
-export function InventoryTabContent() {
+export function InventoryTabContent(props: {
+	warehouseId: string;
+	organizationId: string;
+}) {
 	return (
 		<TabsContent value="inventory" className="space-y-4">
-			<InventoryTab />
+			<InventoryTab {...props} />
 		</TabsContent>
 	);
 }
@@ -1645,10 +1722,13 @@ export function CycleCountTabContent() {
 	);
 }
 
-export function LogsTabContent() {
+export function LogsTabContent(props: {
+	warehouseId: string;
+	organizationId: string;
+}) {
 	return (
 		<TabsContent value="logs" className="space-y-4">
-			<LogsTab />
+			<LogsTab {...props} />
 		</TabsContent>
 	);
 }

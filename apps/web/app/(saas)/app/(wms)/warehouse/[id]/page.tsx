@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { LocationsTabContent } from "./components/locations-tab-content";
 import {
 	BinReplenishmentTabContent,
 	BundlesTabContent,
@@ -316,6 +317,12 @@ export default function WarehouseDetailsPage() {
 						Layout
 					</TabsTrigger>
 					<TabsTrigger
+						value="locations"
+						className="px-3 py-2 text-sm font-medium"
+					>
+						Locations
+					</TabsTrigger>
+					<TabsTrigger
 						value="settings"
 						className="px-3 py-2 text-sm font-medium"
 					>
@@ -365,6 +372,10 @@ export default function WarehouseDetailsPage() {
 					organizationId={data.organizationId}
 					warehouseName={data.name}
 				/>
+				<LocationsTabContent
+					warehouseId={data.id}
+					organizationId={data.organizationId}
+				/>
 				<SettingsTabContent
 					values={settingsValues}
 					onChange={(patch) => {
@@ -391,9 +402,15 @@ export default function WarehouseDetailsPage() {
 						setHasDifferentReturnAddress(checked);
 					}}
 				/>
-				<InventoryTabContent />
+				<InventoryTabContent
+					warehouseId={data.id}
+					organizationId={data.organizationId}
+				/>
 				<CycleCountTabContent />
-				<LogsTabContent />
+				<LogsTabContent
+					warehouseId={data.id}
+					organizationId={data.organizationId}
+				/>
 				<ReplenishInventoryTabContent />
 				<BinReplenishmentTabContent />
 				<BundlesTabContent />
