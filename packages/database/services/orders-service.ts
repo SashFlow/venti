@@ -1,5 +1,5 @@
-import { db } from "@repo/database";
-import type { Prisma } from "@repo/database/prisma/generated/client";
+import type { Prisma } from "@prisma/client";
+import { db } from "../prisma";
 
 type ListParams = {
 	organizationId: string;
@@ -36,7 +36,7 @@ type ManifestFilterParams = {
 	organizationId: string;
 	limit: number;
 	offset: number;
-	carrierId?: string;
+	carrier?: string;
 	startDate?: Date;
 	endDate?: Date;
 };
@@ -57,9 +57,11 @@ type ShipmentFilterParams = {
 
 export async function listInboundOrders(params: InboundFilterParams) {
 	const where: Prisma.PurchaseOrderWhereInput = {
-		organizationId: params.organizationId,
+		warehouse: {
+			organizationId: params.organizationId,
+			...(params.warehouseId ? { id: params.warehouseId } : {}),
+		},
 		...(params.supplierId ? { supplierId: params.supplierId } : {}),
-		...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
 		...(params.status && params.status.length > 0
 			? {
 					status: {
@@ -116,7 +118,7 @@ export async function listInboundOrders(params: InboundFilterParams) {
 				poNumber: true,
 				status: true,
 				createdAt: true,
-				expectedDate: true,
+				expectedAt: true,
 				supplier: {
 					select: { name: true },
 				},
@@ -124,7 +126,7 @@ export async function listInboundOrders(params: InboundFilterParams) {
 					select: { name: true },
 				},
 				_count: {
-					select: { lines: true },
+					select: { items: true },
 				},
 			},
 		}),
@@ -136,15 +138,12 @@ export async function listInboundOrders(params: InboundFilterParams) {
 
 export async function listOutboundOrders(params: OutboundFilterParams) {
 	const where: Prisma.SalesOrderWhereInput = {
-		organizationId: params.organizationId,
+		warehouse: {
+			organizationId: params.organizationId,
+			...(params.warehouseId ? { id: params.warehouseId } : {}),
+		},
 		...(params.customerId ? { customerId: params.customerId } : {}),
-		...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
-		...(params.priority
-			? {
-					priority:
-						params.priority as Prisma.EnumSalesOrderPriorityFilter,
-				}
-			: {}),
+		// Removed priority as it's not in the new v3 SalesOrder model
 		...(params.status && params.status.length > 0
 			? {
 					status: {
@@ -170,9 +169,11 @@ export async function listOutboundOrders(params: OutboundFilterParams) {
 							},
 						},
 						{
-							customerName: {
-								contains: params.query,
-								mode: "insensitive" as const,
+							customer: {
+								name: {
+									contains: params.query,
+									mode: "insensitive" as const,
+								},
 							},
 						},
 						{
@@ -191,22 +192,22 @@ export async function listOutboundOrders(params: OutboundFilterParams) {
 	const [orders, total] = await Promise.all([
 		db.salesOrder.findMany({
 			where,
-			orderBy: { createdAt: "desc" },
+			orderBy: { orderedAt: "desc" },
 			take: params.limit,
 			skip: params.offset,
 			select: {
 				id: true,
 				orderNumber: true,
 				status: true,
-				customerName: true,
-				customerRef: true,
-				createdAt: true,
-				requiredByDate: true,
+				customer: {
+					select: { name: true, code: true },
+				},
+				orderedAt: true,
 				warehouse: {
 					select: { name: true },
 				},
 				_count: {
-					select: { lines: true },
+					select: { items: true },
 				},
 			},
 		}),
@@ -217,19 +218,12 @@ export async function listOutboundOrders(params: OutboundFilterParams) {
 }
 
 export async function listTransfers(params: TransferFilterParams) {
-	const where: Prisma.InventoryMovementWhereInput = {
+	const where: Prisma.InventoryTransactionWhereInput = {
 		warehouse: {
 			organizationId: params.organizationId,
 			...(params.warehouseId ? { id: params.warehouseId } : {}),
 		},
-		transactionType: "INTERNAL_TRANSFER" as const,
-		...(params.status && params.status.length > 0
-			? {
-					status: {
-						in: params.status as Prisma.EnumInventoryMovementStatusFilter["in"],
-					},
-				}
-			: {}),
+		transactionType: "MOVE",
 		...(params.startDate || params.endDate
 			? {
 					createdAt: {
@@ -242,7 +236,7 @@ export async function listTransfers(params: TransferFilterParams) {
 			? {
 					OR: [
 						{
-							referenceNumber: {
+							referenceId: {
 								contains: params.query,
 								mode: "insensitive" as const,
 							},
@@ -261,30 +255,29 @@ export async function listTransfers(params: TransferFilterParams) {
 	};
 
 	const [transfers, total] = await Promise.all([
-		db.inventoryMovement.findMany({
+		db.inventoryTransaction.findMany({
 			where,
 			orderBy: { createdAt: "desc" },
 			take: params.limit,
 			skip: params.offset,
 			select: {
 				id: true,
-				referenceNumber: true,
-				status: true,
+				referenceId: true,
+				transactionType: true,
 				quantity: true,
 				createdAt: true,
-				completedAt: true,
 				warehouse: {
 					select: { name: true },
 				},
-				fromStorageUnit: {
+				fromLocation: {
 					select: { code: true },
 				},
-				toStorageUnit: {
+				toLocation: {
 					select: { code: true },
 				},
 			},
 		}),
-		db.inventoryMovement.count({ where }),
+		db.inventoryTransaction.count({ where }),
 	]);
 
 	return { transfers, total };
@@ -296,12 +289,12 @@ export async function listManifests(params: ManifestFilterParams) {
 			organizationId: params.organizationId,
 		},
 		status: {
-			in: ["DISPATCHED", "IN_TRANSIT", "DELIVERED"],
+			in: ["SHIPPED", "DELIVERED"],
 		},
-		...(params.carrierId ? { carrierId: params.carrierId } : {}),
+		...(params.carrier ? { carrier: params.carrier } : {}),
 		...(params.startDate || params.endDate
 			? {
-					createdAt: {
+					shippedAt: {
 						...(params.startDate ? { gte: params.startDate } : {}),
 						...(params.endDate ? { lte: params.endDate } : {}),
 					},
@@ -312,17 +305,13 @@ export async function listManifests(params: ManifestFilterParams) {
 	const [manifests, total] = await Promise.all([
 		db.shipment.findMany({
 			where,
-			orderBy: { createdAt: "desc" },
 			take: params.limit,
 			skip: params.offset,
 			select: {
 				id: true,
-				shipmentNumber: true,
-				createdAt: true,
+				trackingNumber: true,
 				status: true,
-				carrier: {
-					select: { name: true },
-				},
+				carrier: true,
 			},
 		}),
 		db.shipment.count({ where }),
@@ -338,7 +327,7 @@ export async function listManifests(params: ManifestFilterParams) {
 }
 
 export async function listFulfillmentBatches(params: BatchFilterParams) {
-	const where: Prisma.WaveWhereInput = {
+	const where: Prisma.PickWaveWhereInput = {
 		warehouse: {
 			organizationId: params.organizationId,
 		},
@@ -352,7 +341,7 @@ export async function listFulfillmentBatches(params: BatchFilterParams) {
 	};
 
 	const [batches, total] = await Promise.all([
-		db.wave.findMany({
+		db.pickWave.findMany({
 			where,
 			orderBy: { createdAt: "desc" },
 			take: params.limit,
@@ -362,16 +351,12 @@ export async function listFulfillmentBatches(params: BatchFilterParams) {
 				waveNumber: true,
 				status: true,
 				createdAt: true,
-				completedAt: true,
-				releasedBy: {
-					select: { name: true },
-				},
 				_count: {
-					select: { lines: true, salesOrders: true },
+					select: { tasks: true },
 				},
 			},
 		}),
-		db.wave.count({ where }),
+		db.pickWave.count({ where }),
 	]);
 
 	return { batches, total };
@@ -384,26 +369,24 @@ export async function listFulfillmentShipments(params: ShipmentFilterParams) {
 		},
 		status:
 			params.status && params.status.length > 0
-				? { in: params.status as Prisma.EnumShipmentStatusFilter["in"] }
-				: { in: ["PENDING", "READY_TO_SHIP"] },
+				? {
+						in: params.status as Prisma.EnumShipmentStatusFilter<"Shipment">["in"],
+					}
+				: { in: ["PENDING", "PACKED"] },
 	};
 
 	const [shipments, total] = await Promise.all([
 		db.shipment.findMany({
 			where,
-			orderBy: { createdAt: "desc" },
 			take: params.limit,
 			skip: params.offset,
 			select: {
 				id: true,
-				shipmentNumber: true,
+				trackingNumber: true,
 				status: true,
-				createdAt: true,
-				scheduledAt: true,
 				salesOrder: {
 					select: {
-						customerName: true,
-						customerRef: true,
+						customer: { select: { name: true, code: true } },
 					},
 				},
 			},
@@ -417,19 +400,23 @@ export async function listFulfillmentShipments(params: ShipmentFilterParams) {
 export async function updateOutboundOrderStatus(params: {
 	organizationId: string;
 	orderId: string;
-	status: "DRAFT" | "CONFIRMED" | "FULLY_SHIPPED" | "CANCELLED" | "CLOSED";
+	status:
+		| "DRAFT"
+		| "ALLOCATED"
+		| "PICKING"
+		| "PACKING"
+		| "SHIPPED"
+		| "CANCELLED";
 }) {
 	const updated = await db.salesOrder.updateMany({
 		where: {
 			id: params.orderId,
-			organizationId: params.organizationId,
+			warehouse: {
+				organizationId: params.organizationId,
+			},
 		},
 		data: {
 			status: params.status,
-			...(params.status === "FULLY_SHIPPED"
-				? { shippedAt: new Date() }
-				: {}),
-			...(params.status === "CLOSED" ? { closedAt: new Date() } : {}),
 		},
 	});
 
@@ -442,7 +429,6 @@ export async function updateOutboundOrderStatus(params: {
 		select: {
 			id: true,
 			status: true,
-			updatedAt: true,
 		},
 	});
 }
@@ -451,17 +437,16 @@ export async function completeTransfer(params: {
 	organizationId: string;
 	transferId: string;
 }) {
-	const updated = await db.inventoryMovement.updateMany({
+	const updated = await db.inventoryTransaction.updateMany({
 		where: {
 			id: params.transferId,
 			warehouse: {
 				organizationId: params.organizationId,
 			},
-			transactionType: "INTERNAL_TRANSFER",
+			transactionType: "MOVE",
 		},
 		data: {
-			status: "COMPLETED",
-			completedAt: new Date(),
+			metadata: { status: "COMPLETED" },
 		},
 	});
 
@@ -469,12 +454,11 @@ export async function completeTransfer(params: {
 		return null;
 	}
 
-	return db.inventoryMovement.findUnique({
+	return db.inventoryTransaction.findUnique({
 		where: { id: params.transferId },
 		select: {
 			id: true,
-			status: true,
-			completedAt: true,
+			createdAt: true,
 		},
 	});
 }
@@ -482,7 +466,7 @@ export async function completeTransfer(params: {
 export async function updateShipmentStatus(params: {
 	organizationId: string;
 	shipmentId: string;
-	status: "READY_TO_SHIP" | "DISPATCHED" | "DELIVERED";
+	status: "PENDING" | "PACKED" | "SHIPPED" | "DELIVERED" | "FAILED";
 }) {
 	const updated = await db.shipment.updateMany({
 		where: {
@@ -493,12 +477,7 @@ export async function updateShipmentStatus(params: {
 		},
 		data: {
 			status: params.status,
-			...(params.status === "DISPATCHED"
-				? { dispatchedAt: new Date() }
-				: {}),
-			...(params.status === "DELIVERED"
-				? { deliveredAt: new Date() }
-				: {}),
+			...(params.status === "SHIPPED" ? { shippedAt: new Date() } : {}),
 		},
 	});
 
@@ -511,7 +490,6 @@ export async function updateShipmentStatus(params: {
 		select: {
 			id: true,
 			status: true,
-			updatedAt: true,
 		},
 	});
 }
@@ -519,12 +497,18 @@ export async function updateShipmentStatus(params: {
 export async function bulkUpdateOutboundOrderStatus(params: {
 	organizationId: string;
 	orderIds: string[];
-	status: "DRAFT" | "CONFIRMED" | "FULLY_SHIPPED" | "CANCELLED" | "CLOSED";
+	status:
+		| "DRAFT"
+		| "ALLOCATED"
+		| "PICKING"
+		| "PACKING"
+		| "SHIPPED"
+		| "CANCELLED";
 }) {
 	const uniqueOrderIds = [...new Set(params.orderIds)];
 	const targetOrders = await db.salesOrder.findMany({
 		where: {
-			organizationId: params.organizationId,
+			warehouse: { organizationId: params.organizationId },
 			id: { in: uniqueOrderIds },
 		},
 		select: {
@@ -535,27 +519,22 @@ export async function bulkUpdateOutboundOrderStatus(params: {
 
 	const actionableOrderIds = targetOrders
 		.filter((order) => {
-			if (params.status !== "FULLY_SHIPPED") {
+			if (params.status !== "SHIPPED") {
 				return true;
 			}
 
-			return !["FULLY_SHIPPED", "CANCELLED", "CLOSED"].includes(
-				order.status,
-			);
+			return !["SHIPPED", "CANCELLED"].includes(order.status);
 		})
 		.map((order) => order.id);
 
 	const updated = await db.salesOrder.updateMany({
 		where: {
-			organizationId: params.organizationId,
+			warehouse: { organizationId: params.organizationId },
 			id: { in: actionableOrderIds },
 		},
 		data: {
 			status: params.status,
-			...(params.status === "FULLY_SHIPPED"
-				? { shippedAt: new Date() }
-				: {}),
-			...(params.status === "CLOSED" ? { closedAt: new Date() } : {}),
+			...(params.status === "SHIPPED" ? {} : {}),
 		},
 	});
 
@@ -575,7 +554,7 @@ export async function bulkUpdateShipmentStatuses(params: {
 	organizationId: string;
 	updates: Array<{
 		shipmentId: string;
-		status: "READY_TO_SHIP" | "DISPATCHED" | "DELIVERED";
+		status: "PENDING" | "PACKED" | "SHIPPED" | "DELIVERED" | "FAILED";
 	}>;
 }) {
 	const dedupedUpdates = Array.from(
@@ -599,11 +578,8 @@ export async function bulkUpdateShipmentStatuses(params: {
 				},
 				data: {
 					status: update.status,
-					...(update.status === "DISPATCHED"
-						? { dispatchedAt: new Date() }
-						: {}),
-					...(update.status === "DELIVERED"
-						? { deliveredAt: new Date() }
+					...(update.status === "SHIPPED"
+						? { shippedAt: new Date() }
 						: {}),
 				},
 			});
@@ -640,36 +616,25 @@ export async function getPurchaseOrderById(params: {
 	orderId: string;
 }) {
 	return db.purchaseOrder.findFirst({
-		where: { id: params.orderId, organizationId: params.organizationId },
+		where: {
+			id: params.orderId,
+			warehouse: { organizationId: params.organizationId },
+		},
 		select: {
 			id: true,
 			poNumber: true,
 			status: true,
 			createdAt: true,
-			updatedAt: true,
-			expectedDate: true,
-			orderedAt: true,
-			closedAt: true,
-			notes: true,
+			expectedAt: true,
 			supplier: { select: { id: true, name: true } },
 			warehouse: { select: { id: true, name: true } },
-			createdBy: { select: { name: true } },
-			approvedBy: { select: { name: true } },
-			approvedAt: true,
-			lines: {
-				orderBy: { lineNumber: "asc" },
+			items: {
 				select: {
 					id: true,
-					lineNumber: true,
 					orderedQty: true,
 					receivedQty: true,
-					unitCost: true,
-					status: true,
-					expectedDate: true,
-					sku: { select: { id: true, name: true, sku: true } },
-					uom: {
-						select: { id: true, name: true, abbreviation: true },
-					},
+					unitPrice: true,
+					sku: { select: { id: true, name: true, code: true } },
 				},
 			},
 		},
@@ -681,41 +646,31 @@ export async function getSalesOrderById(params: {
 	orderId: string;
 }) {
 	return db.salesOrder.findFirst({
-		where: { id: params.orderId, organizationId: params.organizationId },
+		where: {
+			id: params.orderId,
+			warehouse: { organizationId: params.organizationId },
+		},
 		select: {
 			id: true,
 			orderNumber: true,
 			status: true,
-			priority: true,
-			customerName: true,
-			customerEmail: true,
-			customerRef: true,
-			createdAt: true,
-			updatedAt: true,
-			requestedShipDate: true,
-			requiredByDate: true,
-			shippedAt: true,
-			closedAt: true,
-			notes: true,
-			shippingAddress: true,
+			orderedAt: true,
 			warehouse: { select: { id: true, name: true } },
 			customer: { select: { id: true, name: true } },
-			createdBy: { select: { name: true } },
-			lines: {
-				orderBy: { lineNumber: "asc" },
+			items: {
 				select: {
 					id: true,
-					lineNumber: true,
 					orderedQty: true,
 					allocatedQty: true,
 					pickedQty: true,
-					shippedQty: true,
-					unitPrice: true,
+					sku: { select: { id: true, name: true, code: true } },
+				},
+			},
+			shipment: {
+				select: {
+					id: true,
+					trackingNumber: true,
 					status: true,
-					sku: { select: { id: true, name: true, sku: true } },
-					uom: {
-						select: { id: true, name: true, abbreviation: true },
-					},
 				},
 			},
 		},
@@ -726,31 +681,24 @@ export async function getTransferById(params: {
 	organizationId: string;
 	transferId: string;
 }) {
-	return db.inventoryMovement.findFirst({
+	return db.inventoryTransaction.findFirst({
 		where: {
 			id: params.transferId,
-			transactionType: "INTERNAL_TRANSFER",
+			transactionType: "MOVE",
 			warehouse: { organizationId: params.organizationId },
 		},
 		select: {
 			id: true,
-			referenceNumber: true,
-			status: true,
+			referenceId: true,
+			transactionType: true,
 			quantity: true,
-			notes: true,
+			metadata: true,
 			createdAt: true,
-			updatedAt: true,
-			startedAt: true,
-			completedAt: true,
+
 			warehouse: { select: { id: true, name: true } },
-			fromStorageUnit: { select: { id: true, code: true } },
-			toStorageUnit: { select: { id: true, code: true } },
-			inventoryItem: {
-				select: {
-					id: true,
-					sku: { select: { id: true, name: true, sku: true } },
-				},
-			},
+			fromLocation: { select: { id: true, code: true } },
+			toLocation: { select: { id: true, code: true } },
+			sku: { select: { id: true, name: true, code: true } },
 			performedBy: { select: { name: true } },
 		},
 	});
@@ -767,35 +715,16 @@ export async function getShipmentById(params: {
 		},
 		select: {
 			id: true,
-			shipmentNumber: true,
 			status: true,
 			trackingNumber: true,
-			notes: true,
-			shippingAddress: true,
-			scheduledAt: true,
-			dispatchedAt: true,
-			deliveredAt: true,
-			createdAt: true,
-			updatedAt: true,
+			shippedAt: true,
+			carrier: true,
 			warehouse: { select: { id: true, name: true } },
-			carrier: { select: { id: true, name: true } },
-			dockDoor: { select: { id: true, name: true } },
 			salesOrder: {
 				select: {
 					id: true,
 					orderNumber: true,
-					customerName: true,
-					customerRef: true,
-				},
-			},
-			dispatchedBy: { select: { name: true } },
-			lines: {
-				select: {
-					id: true,
-					shippedQty: true,
-					batchNumber: true,
-					serialNumbers: true,
-					sku: { select: { id: true, name: true, sku: true } },
+					customer: { select: { name: true, code: true } },
 				},
 			},
 		},
@@ -806,7 +735,7 @@ export async function getWaveById(params: {
 	organizationId: string;
 	waveId: string;
 }) {
-	return db.wave.findFirst({
+	return db.pickWave.findFirst({
 		where: {
 			id: params.waveId,
 			warehouse: { organizationId: params.organizationId },
@@ -814,39 +743,9 @@ export async function getWaveById(params: {
 		select: {
 			id: true,
 			waveNumber: true,
-			type: true,
 			status: true,
-			notes: true,
 			createdAt: true,
-			updatedAt: true,
-			releasedAt: true,
-			completedAt: true,
-			warehouse: { select: { id: true, name: true } },
-			releasedBy: { select: { name: true } },
-			salesOrders: {
-				select: {
-					id: true,
-					orderNumber: true,
-					customerName: true,
-					status: true,
-				},
-			},
-			lines: {
-				select: {
-					id: true,
-					qtyToPick: true,
-					qtyPicked: true,
-					salesOrderLine: {
-						select: {
-							lineNumber: true,
-							sku: {
-								select: { id: true, name: true, sku: true },
-							},
-							salesOrder: { select: { orderNumber: true } },
-						},
-					},
-				},
-			},
+			tasks: true,
 		},
 	});
 }
@@ -873,23 +772,16 @@ export async function createPurchaseOrder(params: {
 }) {
 	const order = await db.purchaseOrder.create({
 		data: {
-			organizationId: params.organizationId,
 			warehouseId: params.warehouseId,
 			supplierId: params.supplierId,
 			poNumber: params.poNumber,
 			status: "DRAFT",
-			expectedDate: params.expectedDate,
-			notes: params.notes,
-			createdById: params.createdById,
-			lines: {
+			expectedAt: params.expectedDate,
+			items: {
 				create: params.lines.map((line, index) => ({
-					lineNumber: index + 1,
 					skuId: line.skuId,
-					uomId: line.uomId,
 					orderedQty: line.orderedQty,
-					unitCost: line.unitCost,
-					expectedDate: line.expectedDate,
-					status: "PENDING" as const,
+					unitPrice: line.unitCost,
 				})),
 			},
 		},
@@ -925,27 +817,14 @@ export async function createSalesOrder(params: {
 }) {
 	const order = await db.salesOrder.create({
 		data: {
-			organizationId: params.organizationId,
 			warehouseId: params.warehouseId,
-			customerId: params.customerId,
+			customerId: params.customerId!,
 			orderNumber: params.orderNumber,
-			customerName: params.customerName,
-			customerEmail: params.customerEmail,
-			customerRef: params.customerRef,
-			priority: params.priority ?? "NORMAL",
 			status: "DRAFT",
-			requestedShipDate: params.requestedShipDate,
-			requiredByDate: params.requiredByDate,
-			notes: params.notes,
-			createdById: params.createdById,
-			lines: {
+			items: {
 				create: params.lines.map((line, index) => ({
-					lineNumber: index + 1,
 					skuId: line.skuId,
-					uomId: line.uomId,
 					orderedQty: line.orderedQty,
-					unitPrice: line.unitPrice,
-					status: "PENDING" as const,
 				})),
 			},
 		},
@@ -963,30 +842,29 @@ export async function createTransfer(params: {
 	organizationId: string;
 	performedByUserId: string;
 	warehouseId: string;
-	inventoryItemId: string;
-	fromStorageUnitId?: string;
-	toStorageUnitId?: string;
+	skuId: string;
+	fromLocationId?: string;
+	toLocationId?: string;
 	quantity: number;
-	referenceNumber?: string;
+	referenceId?: string;
 	notes?: string;
 }) {
-	const transfer = await db.inventoryMovement.create({
+	const transfer = await db.inventoryTransaction.create({
 		data: {
 			warehouseId: params.warehouseId,
-			inventoryItemId: params.inventoryItemId,
-			transactionType: "INTERNAL_TRANSFER",
-			status: "PENDING",
-			fromStorageUnitId: params.fromStorageUnitId,
-			toStorageUnitId: params.toStorageUnitId,
+			skuId: params.skuId,
+			transactionType: "MOVE",
+			fromLocationId: params.fromLocationId,
+			toLocationId: params.toLocationId,
 			quantity: params.quantity,
-			referenceNumber: params.referenceNumber,
-			notes: params.notes,
-			performedByUserId: params.performedByUserId,
+			referenceId: params.referenceId,
+			metadata: { notes: params.notes },
+			performedById: params.performedByUserId,
 		},
 		select: {
 			id: true,
-			referenceNumber: true,
-			status: true,
+			referenceId: true,
+			transactionType: true,
 		},
 	});
 
@@ -997,28 +875,20 @@ export async function createShipment(params: {
 	organizationId: string;
 	warehouseId: string;
 	salesOrderId: string;
-	shipmentNumber: string;
-	carrierId?: string;
-	dockDoorId?: string;
 	trackingNumber?: string;
-	scheduledAt?: Date;
-	notes?: string;
+	carrier?: string;
 }) {
 	const shipment = await db.shipment.create({
 		data: {
 			warehouseId: params.warehouseId,
 			salesOrderId: params.salesOrderId,
-			shipmentNumber: params.shipmentNumber,
-			status: "PENDING",
-			carrierId: params.carrierId,
-			dockDoorId: params.dockDoorId,
 			trackingNumber: params.trackingNumber,
-			scheduledAt: params.scheduledAt,
-			notes: params.notes,
+			status: "PENDING",
+			carrier: params.carrier,
 		},
 		select: {
 			id: true,
-			shipmentNumber: true,
+			trackingNumber: true,
 			status: true,
 		},
 	});
@@ -1028,24 +898,15 @@ export async function createShipment(params: {
 
 export async function createWave(params: {
 	organizationId: string;
-	releasedById: string;
 	warehouseId: string;
 	waveNumber: string;
-	type: "SINGLE_ORDER" | "BATCH" | "ZONE" | "CLUSTER";
 	salesOrderIds: string[];
-	notes?: string;
 }) {
-	const wave = await db.wave.create({
+	const wave = await db.pickWave.create({
 		data: {
 			warehouseId: params.warehouseId,
 			waveNumber: params.waveNumber,
-			type: params.type,
-			status: "DRAFT",
-			notes: params.notes,
-			releasedById: params.releasedById,
-			salesOrders: {
-				connect: params.salesOrderIds.map((id) => ({ id })),
-			},
+			status: "CREATED",
 		},
 		select: {
 			id: true,

@@ -90,8 +90,6 @@ export const importSuppliersProcedure = protectedProcedure
 						where: { id: existing.id },
 						data: {
 							name: row.name,
-							email: row.email,
-							phone: row.phone,
 							metadata,
 						},
 					});
@@ -102,8 +100,6 @@ export const importSuppliersProcedure = protectedProcedure
 							organizationId: input.organizationId,
 							code,
 							name: row.name,
-							email: row.email,
-							phone: row.phone,
 							metadata,
 						},
 					});

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { updateWarehouse } from "../services/warehouse-service";
+import { updateWarehouse } from "@repo/database";
 
 const updateWarehouseInput = z.object({
 	organizationId: z.string(),

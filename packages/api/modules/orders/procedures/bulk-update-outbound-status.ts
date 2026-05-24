@@ -1,17 +1,18 @@
+import { bulkUpdateOutboundOrderStatus } from "@repo/database";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { bulkUpdateOutboundOrderStatus } from "../services/orders-service";
 
 const bulkUpdateOutboundStatusInput = z.object({
 	organizationId: z.string(),
 	orderIds: z.array(z.string()).min(1).max(200),
 	status: z.enum([
 		"DRAFT",
-		"CONFIRMED",
-		"FULLY_SHIPPED",
+		"ALLOCATED",
+		"PICKING",
+		"PACKING",
+		"SHIPPED",
 		"CANCELLED",
-		"CLOSED",
 	]),
 });
 

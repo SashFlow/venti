@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { bulkUpdateShipmentStatuses } from "../services/orders-service";
+import { bulkUpdateShipmentStatuses } from "@repo/database";
 
 const bulkUpdateShipmentStatusesInput = z.object({
 	organizationId: z.string(),
@@ -9,7 +9,13 @@ const bulkUpdateShipmentStatusesInput = z.object({
 		.array(
 			z.object({
 				shipmentId: z.string(),
-				status: z.enum(["READY_TO_SHIP", "DISPATCHED", "DELIVERED"]),
+				status: z.enum([
+					"PENDING",
+					"PACKED",
+					"SHIPPED",
+					"DELIVERED",
+					"FAILED",
+				]),
 			}),
 		)
 		.min(1)

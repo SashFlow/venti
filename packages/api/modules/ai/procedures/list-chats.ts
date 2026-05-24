@@ -45,7 +45,7 @@ export const listChats = protectedProcedure
 				}));
 
 		return {
-			chats: chats.map((chat) => ({
+			chats: chats.map((chat: any) => ({
 				...chat,
 				messages: (chat.messages ?? []) as unknown as UIMessage[],
 			})),

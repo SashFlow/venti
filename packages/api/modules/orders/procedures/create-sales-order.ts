@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createSalesOrder } from "../services/orders-service";
+import { createSalesOrder } from "@repo/database";
 
 const lineSchema = z.object({
 	skuId: z.string(),
@@ -21,7 +21,7 @@ export const createSalesOrderProcedure = protectedProcedure
 		z.object({
 			organizationId: z.string(),
 			warehouseId: z.string(),
-			customerId: z.string().optional(),
+			customerId: z.string(),
 			orderNumber: z.string().min(1).max(100),
 			customerName: z.string().optional(),
 			customerEmail: z.string().email().optional(),

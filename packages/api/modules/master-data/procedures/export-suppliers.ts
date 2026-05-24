@@ -51,8 +51,6 @@ export const exportSuppliersProcedure = protectedProcedure
 			select: {
 				code: true,
 				name: true,
-				email: true,
-				phone: true,
 				metadata: true,
 			},
 		});
@@ -60,8 +58,6 @@ export const exportSuppliersProcedure = protectedProcedure
 		const header = [
 			"Code",
 			"Name",
-			"Email",
-			"Phone",
 			"Account Number",
 			"Rep Name",
 			"Street Address",
@@ -83,8 +79,6 @@ export const exportSuppliersProcedure = protectedProcedure
 			return [
 				escapeCsv(supplier.code),
 				escapeCsv(supplier.name),
-				escapeCsv(supplier.email),
-				escapeCsv(supplier.phone),
 				escapeCsv(
 					typeof metadata.accountNumber === "string"
 						? metadata.accountNumber

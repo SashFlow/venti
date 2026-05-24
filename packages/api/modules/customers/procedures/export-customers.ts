@@ -40,8 +40,7 @@ export const exportCustomersProcedure = protectedProcedure
 				OR: query
 					? [
 							{ name: { contains: query, mode: "insensitive" } },
-							{ email: { contains: query, mode: "insensitive" } },
-							{ phone: { contains: query, mode: "insensitive" } },
+							{ code: { contains: query, mode: "insensitive" } },
 						]
 					: undefined,
 			},
@@ -49,6 +48,7 @@ export const exportCustomersProcedure = protectedProcedure
 				createdAt: "desc",
 			},
 			select: {
+				code: true,
 				name: true,
 				email: true,
 				phone: true,

@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { db as prisma } from "../prisma";
 
 export async function listLocations(input: {
 	organizationId: string;

@@ -1,5 +1,5 @@
-import { db } from "@repo/database";
-import type { Prisma } from "@repo/database/prisma/generated/client";
+import { db } from "../prisma";
+import type { Prisma } from "@prisma/client";
 
 const supplierSelect = {
 	id: true,
@@ -8,10 +8,9 @@ const supplierSelect = {
 	name: true,
 	email: true,
 	phone: true,
-	defaultLeadTimeDays: true,
+
 	metadata: true,
 	createdAt: true,
-	updatedAt: true,
 } satisfies Prisma.SupplierSelect;
 
 type ListSuppliersInput = {

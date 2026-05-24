@@ -3,7 +3,7 @@ import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createCustomerLocation } from "../services/customers-service";
+import { createCustomerLocation } from "@repo/database";
 
 const addressSchema = z.object({
 	addressLine1: z.string().trim().min(1).max(255),

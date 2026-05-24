@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { deleteWarehouse } from "../services/warehouse-service";
+import { archiveWarehouse } from "@repo/database";
 
 const deleteWarehouseInput = z.object({
 	organizationId: z.string(),
@@ -19,5 +19,5 @@ export const deleteWarehouseProcedure = protectedProcedure
 	.input(deleteWarehouseInput)
 	.handler(async ({ context: { user }, input }) => {
 		await requireOrganizationMembership(input.organizationId, user.id);
-		return deleteWarehouse(input);
+		return archiveWarehouse(input);
 	});

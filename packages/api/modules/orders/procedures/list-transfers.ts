@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { listTransfers } from "../services/orders-service";
+import { listTransfers } from "@repo/database";
 
 const listTransfersInput = z.object({
 	organizationId: z.string(),

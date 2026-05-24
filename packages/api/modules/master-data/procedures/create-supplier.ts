@@ -4,7 +4,7 @@ import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createSupplier } from "../services/suppliers-service";
+import { createSupplier } from "@repo/database";
 
 const createSupplierInput = z.object({
 	organizationId: z.string(),

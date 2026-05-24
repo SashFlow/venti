@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../../lib/organization-access";
 import { protectedProcedure } from "../../../../orpc/procedures";
-import { updateLocationHierarchy } from "../../services/location-service";
+import { updateLocationHierarchy } from "@repo/database";
 
 const updateLocationHierarchyInput = z.object({
 	organizationId: z.string(),

@@ -2,7 +2,7 @@ import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { getSalesOrderById } from "../services/orders-service";
+import { getSalesOrderById } from "@repo/database";
 
 export const getSalesOrderProcedure = protectedProcedure
 	.route({

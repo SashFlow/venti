@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createPurchaseOrder } from "../services/orders-service";
+import { createPurchaseOrder } from "@repo/database";
 
 const lineSchema = z.object({
 	skuId: z.string(),

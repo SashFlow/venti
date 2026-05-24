@@ -1,14 +1,14 @@
 import { ORPCError } from "@orpc/server";
+import { createSKU } from "@repo/database";
 import type { Prisma } from "@repo/database/prisma/generated/client";
 import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createSKU } from "../services/products-service";
 
 const createSKUInput = z.object({
 	organizationId: z.string(),
-	skuCode: z.string().trim().min(1).max(100),
+	code: z.string().trim().min(1).max(100),
 	name: z.string().trim().min(1).max(255),
 	description: z.string().trim().optional(),
 	lifecycle: z.enum(["ACTIVE", "DISCONTINUED", "OBSOLETE"]).default("ACTIVE"),
@@ -44,29 +44,17 @@ export const createSKUProcedure = protectedProcedure
 			const sku = await createSKU({
 				organizationId: input.organizationId,
 				data: {
-					skuCode: input.skuCode,
+					productId: "default",
+					code: input.code,
 					name: input.name,
-					description: input.description,
-					lifecycle: input.lifecycle,
-					gtin: input.gtin,
-					uomId: input.uomId,
-					categoryId: input.categoryId,
-					widthMm: input.widthMm,
-					lengthMm: input.lengthMm,
-					heightMm: input.heightMm,
-					weightKg: input.weightKg,
-					reorderPoint: input.reorderPoint,
-					minStock: input.minStock,
-					maxStock: input.maxStock,
-					serialTracking: input.serialTracking,
-					batchTracking: input.batchTracking,
-					expiryTracking: input.expiryTracking,
-					metadata: input.metadata as
-						| Prisma.InputJsonValue
-						| undefined,
+					barcode: input.gtin,
+					baseUomId: input.uomId ?? "cm",
+					width: input.widthMm,
+					length: input.lengthMm,
+					height: input.heightMm,
+					weight: input.weightKg,
 				},
 			});
-
 			await writeAuditLog({
 				headers,
 				organizationId: input.organizationId,
@@ -75,7 +63,7 @@ export const createSKUProcedure = protectedProcedure
 				resource: "sku",
 				resourceId: sku.id,
 				metadata: {
-					skuCode: sku.skuCode,
+					code: sku.code,
 					name: sku.name,
 				},
 			});

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../../lib/organization-access";
 import { protectedProcedure } from "../../../../orpc/procedures";
-import { deleteLocation } from "../../services/location-service";
+import { deleteLocation } from "@repo/database";
 
 const deleteLocationInput = z.object({
 	organizationId: z.string(),

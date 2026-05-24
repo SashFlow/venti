@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { getWarehouseById } from "../services/warehouse-service";
+import { getWarehouseById } from "@repo/database";
 
 const getWarehouseInput = z.object({
 	organizationId: z.string(),

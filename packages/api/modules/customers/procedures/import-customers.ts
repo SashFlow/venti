@@ -7,6 +7,7 @@ import { requireOrganizationMembership } from "../../../lib/organization-access"
 import { protectedProcedure } from "../../../orpc/procedures";
 
 const customerImportRowSchema = z.object({
+	code: z.string().trim().min(1).max(255),
 	name: z.string().trim().min(1).max(255),
 	email: z.string().trim().email().max(255).optional(),
 	phone: z.string().trim().max(50).optional(),
@@ -55,9 +56,7 @@ export const importCustomersProcedure = protectedProcedure
 				const existing = await db.customer.findFirst({
 					where: {
 						organizationId: input.organizationId,
-						OR: row.email
-							? [{ email: row.email }, { name: row.name }]
-							: [{ name: row.name }],
+						code: row.code,
 					},
 					select: { id: true },
 				});
@@ -79,6 +78,7 @@ export const importCustomersProcedure = protectedProcedure
 					await db.customer.create({
 						data: {
 							organizationId: input.organizationId,
+							code: row.code,
 							name: row.name,
 							email: row.email,
 							phone: row.phone,

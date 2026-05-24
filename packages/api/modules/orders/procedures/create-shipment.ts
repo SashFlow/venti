@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createShipment } from "../services/orders-service";
+import { createShipment } from "@repo/database";
 
 export const createShipmentProcedure = protectedProcedure
 	.route({

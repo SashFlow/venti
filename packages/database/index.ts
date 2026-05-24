@@ -1,1 +1,10 @@
 export * from "./prisma";
+export * from "./services/customers-service";
+export * from "./services/inventory-service";
+export * from "./services/location-service";
+export * from "./services/orders-service";
+
+export * from "./services/products-service";
+export * from "./services/suppliers-service";
+
+export * from "./services/warehouse-service";

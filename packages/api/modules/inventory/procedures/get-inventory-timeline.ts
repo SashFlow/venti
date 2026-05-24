@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { getInventoryTimeline } from "../services/inventory-service";
+import { getInventoryTimeline } from "@repo/database";
 
 const getInventoryTimelineInput = z.object({
 	organizationId: z.string(),

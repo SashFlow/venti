@@ -2,7 +2,7 @@ import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { getSKUById } from "../services/products-service";
+import { getSKUById } from "@repo/database";
 
 const getSKUInput = z.object({
 	organizationId: z.string(),

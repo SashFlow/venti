@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../../lib/organization-access";
 import { protectedProcedure } from "../../../../orpc/procedures";
-import { createLocation } from "../../services/location-service";
+import { createLocation } from "@repo/database";
 
 const createLocationInput = z.object({
 	organizationId: z.string(),

@@ -1,19 +1,17 @@
-import { db } from "@repo/database";
-import type { Prisma } from "@repo/database/prisma/generated/client";
+import type { Prisma } from "@prisma/client";
+import { db } from "../prisma";
 
 const customerSelect = {
 	id: true,
 	organizationId: true,
+	code: true,
 	name: true,
 	email: true,
 	phone: true,
 	isWholesaler: true,
 	notes: true,
-	lastOrderAt: true,
-	totalOrders: true,
 	metadata: true,
 	createdAt: true,
-	updatedAt: true,
 } satisfies Prisma.CustomerSelect;
 
 type ListCustomersInput = {
@@ -24,13 +22,12 @@ type ListCustomersInput = {
 };
 
 type CustomerPayload = {
+	code: string;
 	name: string;
 	email?: string;
 	phone?: string;
 	isWholesaler?: boolean;
 	notes?: string;
-	lastOrderAt?: Date;
-	totalOrders?: number;
 	metadata?: Prisma.InputJsonValue;
 };
 

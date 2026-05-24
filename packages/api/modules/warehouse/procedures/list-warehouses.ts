@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { listWarehouses } from "../services/warehouse-service";
+import { listWarehouses } from "@repo/database";
 
 const listWarehousesInput = z.object({
 	organizationId: z.string(),
 	query: z.string().optional(),
-	status: z.enum(["active", "archived", "all"]).default("active"),
+	status: z.enum(["active", "INACTIVE", "all"]).default("active"),
 	limit: z.number().min(1).max(100).default(20),
 	offset: z.number().min(0).default(0),
 });

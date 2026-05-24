@@ -3,7 +3,7 @@ import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { deleteCustomerLocation } from "../services/customers-service";
+import { deleteCustomerLocation } from "@repo/database";
 
 const deleteCustomerLocationInput = z.object({
 	organizationId: z.string(),

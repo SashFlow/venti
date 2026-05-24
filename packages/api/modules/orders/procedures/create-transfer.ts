@@ -1,7 +1,7 @@
+import { createTransfer } from "@repo/database";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createTransfer } from "../services/orders-service";
 
 export const createTransferProcedure = protectedProcedure
 	.route({
@@ -14,11 +14,11 @@ export const createTransferProcedure = protectedProcedure
 		z.object({
 			organizationId: z.string(),
 			warehouseId: z.string(),
-			inventoryItemId: z.string(),
-			fromStorageUnitId: z.string().optional(),
-			toStorageUnitId: z.string().optional(),
+			skuId: z.string(),
+			fromLocationId: z.string().optional(),
+			toLocationId: z.string().optional(),
 			quantity: z.number().positive(),
-			referenceNumber: z.string().optional(),
+			referenceId: z.string().optional(),
 			notes: z.string().optional(),
 		}),
 	)

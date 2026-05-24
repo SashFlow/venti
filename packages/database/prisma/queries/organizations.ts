@@ -119,7 +119,10 @@ export async function getPendingInvitationByEmail(email: string) {
 }
 
 export async function updateOrganization(
-	organization: { id: string } & Prisma.OrganizationUpdateInput,
+	organization: { id: string } & Omit<
+		Prisma.OrganizationUpdateInput,
+		"metadata"
+	> & { metadata?: any },
 ) {
 	const { id, ...data } = organization;
 
@@ -127,6 +130,6 @@ export async function updateOrganization(
 		where: {
 			id,
 		},
-		data,
+		data: data as any,
 	});
 }

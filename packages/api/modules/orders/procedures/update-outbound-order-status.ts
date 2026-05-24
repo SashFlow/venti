@@ -1,18 +1,19 @@
 import { ORPCError } from "@orpc/server";
+import { updateOutboundOrderStatus } from "@repo/database";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { updateOutboundOrderStatus } from "../services/orders-service";
 
 const updateOutboundOrderStatusInput = z.object({
 	organizationId: z.string(),
 	orderId: z.string(),
 	status: z.enum([
 		"DRAFT",
-		"CONFIRMED",
-		"FULLY_SHIPPED",
+		"ALLOCATED",
+		"PICKING",
+		"PACKING",
+		"SHIPPED",
 		"CANCELLED",
-		"CLOSED",
 	]),
 });
 

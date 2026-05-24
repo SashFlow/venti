@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { db as prisma } from "../prisma";
 
 export async function listInventoryBalances(input: {
 	organizationId: string;
@@ -43,8 +43,8 @@ export async function getInventoryTimeline(input: {
 		},
 		include: {
 			sku: true,
-			location: true,
-			user: true,
+			toLocation: true,
+			performedBy: true,
 		},
 		orderBy: {
 			createdAt: "desc",
@@ -104,12 +104,12 @@ export async function adjustInventory(input: {
 		await tx.inventoryTransaction.create({
 			data: {
 				warehouseId: input.warehouseId,
-				locationId: input.locationId,
+				toLocationId: input.locationId,
 				skuId: input.skuId,
-				userId: input.userId,
-				type: "ADJUSTMENT",
+				performedById: input.userId,
+				transactionType: "ADJUSTMENT",
 				quantity: input.quantityChange,
-				notes: input.reason,
+				metadata: { notes: input.reason },
 			},
 		});
 

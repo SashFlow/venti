@@ -1,13 +1,14 @@
 import { ORPCError } from "@orpc/server";
+import { createCustomer } from "@repo/database";
 import type { Prisma } from "@repo/database/prisma/generated/client";
 import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createCustomer } from "../services/customers-service";
 
 const createCustomerInput = z.object({
 	organizationId: z.string(),
+	code: z.string().trim().min(1).max(255),
 	name: z.string().trim().min(1).max(255),
 	email: z.string().trim().email().max(255).optional(),
 	phone: z.string().trim().max(50).optional(),
@@ -32,6 +33,7 @@ export const createCustomerProcedure = protectedProcedure
 			const customer = await createCustomer({
 				organizationId: input.organizationId,
 				data: {
+					code: input.code,
 					name: input.name,
 					email: input.email,
 					phone: input.phone,

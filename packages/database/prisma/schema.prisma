@@ -60,6 +60,7 @@ model User {
     scanEvents            ScanEvent[]
     uploadedFiles         UploadFile[]           @relation("UploadedFilesByUser")
     ReturnInspection      ReturnInspection[]
+    aiChats               AiChat[]
 
     @@unique([email])
     @@unique([username])
@@ -176,6 +177,7 @@ model Organization {
     uploadFiles        UploadFile[]        @relation("OrganizationUploads")
     CustomerLocation   CustomerLocation[]
     Product            Product[]
+    aiChats            AiChat[]
 
     @@unique([slug])
     @@index([logoUploadFileId])
@@ -304,6 +306,22 @@ model Purchase {
     @@index([organizationId])
     @@index([userId])
     @@map("purchase")
+}
+
+model AiChat {
+    id             String        @id @default(cuid())
+    organizationId String?
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    userId         String
+    user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    title          String?
+    messages       Json?
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+
+    @@index([organizationId])
+    @@index([userId])
+    @@map("ai_chat")
 }
 
 model AuditLog {
@@ -809,6 +827,12 @@ model Supplier {
     code String
     name String
 
+    email    String?
+    phone    String?
+    metadata Json?
+
+    createdAt DateTime @default(now())
+
     purchaseOrders PurchaseOrder[]
     asns           AdvancedShippingNotice[]
 
@@ -967,6 +991,14 @@ model Customer {
 
     code String
     name String
+
+    email        String?
+    phone        String?
+    notes        String?
+    isWholesaler Boolean @default(false)
+    metadata     Json?
+
+    createdAt DateTime @default(now())
 
     salesOrders      SalesOrder[]
     returnOrders     ReturnOrder[]

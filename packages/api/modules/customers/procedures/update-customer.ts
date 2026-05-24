@@ -1,10 +1,10 @@
 import { ORPCError } from "@orpc/server";
+import { updateCustomer } from "@repo/database";
 import type { Prisma } from "@repo/database/prisma/generated/client";
 import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { updateCustomer } from "../services/customers-service";
 
 const updateCustomerInput = z.object({
 	organizationId: z.string(),
@@ -40,8 +40,6 @@ export const updateCustomerProcedure = protectedProcedure
 				phone: input.phone,
 				isWholesaler: input.isWholesaler,
 				notes: input.notes,
-				lastOrderAt: input.lastOrderAt,
-				totalOrders: input.totalOrders,
 				metadata: input.metadata as Prisma.InputJsonValue | undefined,
 			},
 		});

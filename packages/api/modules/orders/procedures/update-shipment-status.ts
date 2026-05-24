@@ -2,12 +2,12 @@ import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { updateShipmentStatus } from "../services/orders-service";
+import { updateShipmentStatus } from "@repo/database";
 
 const updateShipmentStatusInput = z.object({
 	organizationId: z.string(),
 	shipmentId: z.string(),
-	status: z.enum(["READY_TO_SHIP", "DISPATCHED", "DELIVERED"]),
+	status: z.enum(["PENDING", "PACKED", "SHIPPED", "DELIVERED", "FAILED"]),
 });
 
 export const updateShipmentStatusProcedure = protectedProcedure

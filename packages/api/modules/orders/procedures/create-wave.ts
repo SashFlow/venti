@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
-import { createWave } from "../services/orders-service";
+import { createWave } from "@repo/database";
 
 export const createWaveProcedure = protectedProcedure
 	.route({
@@ -27,6 +27,5 @@ export const createWaveProcedure = protectedProcedure
 
 		return createWave({
 			...input,
-			releasedById: user.id,
 		});
 	});
