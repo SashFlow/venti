@@ -875,19 +875,28 @@ export async function createShipment(params: {
 	organizationId: string;
 	warehouseId: string;
 	salesOrderId: string;
+	shipmentNumber: string;
 	trackingNumber?: string;
-	carrier?: string;
+	carrierId?: string;
+	dockDoorId?: string;
+	scheduledAt?: Date;
+	notes?: string;
 }) {
 	const shipment = await db.shipment.create({
 		data: {
 			warehouseId: params.warehouseId,
 			salesOrderId: params.salesOrderId,
+			shipmentNumber: params.shipmentNumber,
 			trackingNumber: params.trackingNumber,
 			status: "PENDING",
-			carrier: params.carrier,
+			carrier: params.carrierId,
+			dockDoorId: params.dockDoorId,
+			scheduledAt: params.scheduledAt,
+			notes: params.notes,
 		},
 		select: {
 			id: true,
+			shipmentNumber: true,
 			trackingNumber: true,
 			status: true,
 		},

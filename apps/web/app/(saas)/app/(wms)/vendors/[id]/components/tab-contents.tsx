@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@repo/ui/button";
 import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
@@ -167,7 +167,13 @@ export function SettingsTabContent({
 									id="vendor-communication"
 									className="w-full"
 								>
-									<SelectValue />
+									<SelectValue placeholder="Select preference">
+										{COMMUNICATION_OPTIONS.find(
+											(o) =>
+												o.value ===
+												vendor.communicationPreference,
+										)?.label ?? "Select preference"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{COMMUNICATION_OPTIONS.map((option) => (

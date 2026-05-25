@@ -121,7 +121,9 @@ export default function CreatePage() {
 								}}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="Select report type" />
+									<SelectValue placeholder="Select report type">
+										{type || "Select report type"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{REPORT_TYPES.map((option) => (
@@ -143,7 +145,9 @@ export default function CreatePage() {
 								}}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="Select scope" />
+									<SelectValue placeholder="Select scope">
+										{scope || "Select scope"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{REPORT_SCOPES.map((option) => (
@@ -166,7 +170,13 @@ export default function CreatePage() {
 								}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="Select format" />
+									<SelectValue placeholder="Select format">
+										{format === "csv"
+											? "CSV"
+											: format === "xlsx"
+												? "XLSX"
+												: "Select format"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="csv">CSV</SelectItem>

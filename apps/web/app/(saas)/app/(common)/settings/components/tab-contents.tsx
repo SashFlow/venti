@@ -251,7 +251,12 @@ export function NotificationSettingsTabContent({
 								}}
 							>
 								<SelectTrigger className="h-11 w-full">
-									<SelectValue />
+									<SelectValue placeholder="Select scope">
+										{warehouseOptions.find(
+											(o) =>
+												o.value === notificationScope,
+										)?.label ?? "Select scope"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{warehouseOptions.map((option) => (
@@ -276,7 +281,12 @@ export function NotificationSettingsTabContent({
 								}}
 							>
 								<SelectTrigger className="h-11 w-full">
-									<SelectValue />
+									<SelectValue placeholder="Select period">
+										{periodOptions.find(
+											(o) =>
+												o.value === notificationPeriod,
+										)?.label ?? "Select period"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{periodOptions.map((option) => (

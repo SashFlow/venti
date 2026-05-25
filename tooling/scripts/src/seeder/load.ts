@@ -27,6 +27,7 @@ const TABLES_IN_ORDER = [
 	"ReceivingOrder",
 	"SalesOrder",
 	"SalesOrderItem",
+	"Shipment",
 ];
 
 async function main() {

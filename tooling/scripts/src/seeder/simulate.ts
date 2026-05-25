@@ -35,6 +35,7 @@ async function main() {
 		"ReceivingOrder",
 		"SalesOrder",
 		"SalesOrderItem",
+		"Shipment",
 	];
 
 	tables.forEach((t) => exporter.initTable(t));
@@ -267,6 +268,20 @@ function simulateOutbound(
 		warehouseId: wh.id,
 		customerId,
 		orderNumber: `SO-${generateId().slice(0, 8)}`,
+		status: "SHIPPED",
+	});
+
+	exporter.writeRow("Shipment", {
+		id: generateId(),
+		warehouseId: wh.id,
+		salesOrderId: soId,
+		shipmentNumber: `SHIP-${generateId().slice(0, 8)}`,
+		trackingNumber: faker.string.alphanumeric(12).toUpperCase(),
+		carrier: faker.company.name(),
+		dockDoorId: `DOCK-${faker.number.int({ min: 1, max: 10 })}`,
+		scheduledAt: currentDate,
+		notes: "Seeded shipment",
+		shippedAt: currentDate,
 		status: "SHIPPED",
 	});
 

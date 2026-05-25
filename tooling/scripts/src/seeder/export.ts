@@ -170,15 +170,19 @@ export class CsvExporter {
 					"orderedQty",
 					"allocatedQty",
 				];
-			case "shipment":
+			case "Shipment":
 				return [
 					"id",
 					"warehouseId",
 					"salesOrderId",
 					"shipmentNumber",
+					"trackingNumber",
+					"carrier",
+					"dockDoorId",
+					"scheduledAt",
+					"notes",
+					"shippedAt",
 					"status",
-					"createdAt",
-					"updatedAt",
 				];
 			case "shipment_line":
 				return [

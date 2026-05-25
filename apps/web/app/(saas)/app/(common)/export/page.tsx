@@ -178,7 +178,12 @@ export default function ExportPage() {
 						}
 					>
 						<SelectTrigger className="h-12 w-full rounded-xl lg:w-56">
-							<SelectValue placeholder="Filter by status" />
+							<SelectValue placeholder="Filter by status">
+								{statusFilter === "all"
+									? "All statuses"
+									: statusFilter.charAt(0).toUpperCase() +
+										statusFilter.slice(1)}
+							</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">All statuses</SelectItem>

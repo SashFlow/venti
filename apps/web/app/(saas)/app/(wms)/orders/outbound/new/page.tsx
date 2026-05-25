@@ -206,7 +206,11 @@ export default function CreateOutboundOrderPage() {
 								onValueChange={setWarehouseId}
 							>
 								<SelectTrigger id="warehouseId">
-									<SelectValue placeholder="Select warehouse" />
+									<SelectValue placeholder="Select warehouse">
+										{warehouses.find(
+											(w) => w.id === warehouseId,
+										)?.name ?? "Select warehouse"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (
@@ -229,7 +233,11 @@ export default function CreateOutboundOrderPage() {
 								}}
 							>
 								<SelectTrigger id="customerId">
-									<SelectValue placeholder="Select customer (optional)" />
+									<SelectValue placeholder="Select customer (optional)">
+										{customers.find(
+											(c) => c.id === customerId,
+										)?.name ?? "Select customer (optional)"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{customers.map((c) => (
@@ -248,7 +256,11 @@ export default function CreateOutboundOrderPage() {
 								onValueChange={setPriority}
 							>
 								<SelectTrigger id="priority">
-									<SelectValue />
+									<SelectValue placeholder="Select priority">
+										{PRIORITY_OPTIONS.find(
+											(o) => o.value === priority,
+										)?.label ?? "Select priority"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{PRIORITY_OPTIONS.map((o) => (
@@ -379,7 +391,15 @@ export default function CreateOutboundOrderPage() {
 										}
 									>
 										<SelectTrigger>
-											<SelectValue placeholder="Select product" />
+											<SelectValue placeholder="Select product">
+												{line.skuId
+													? skus.find(
+															(s) =>
+																s.id ===
+																line.skuId,
+														)?.name
+													: "Select product"}
+											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
 											{skus.map((s) => (

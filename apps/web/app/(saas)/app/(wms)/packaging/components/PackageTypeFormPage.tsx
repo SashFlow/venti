@@ -239,7 +239,11 @@ export function PackageTypeFormPage({
 						}}
 					>
 						<SelectTrigger className="w-full sm:w-52">
-							<SelectValue placeholder="Select package type" />
+							<SelectValue placeholder="Select package type">
+								{PACKAGE_TYPE_OPTIONS.find(
+									(o) => o.value === form.type,
+								)?.label ?? "Select package type"}
+							</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
 							{PACKAGE_TYPE_OPTIONS.map((option) => (
@@ -407,7 +411,13 @@ export function PackageTypeFormPage({
 								}}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="Unit" />
+									<SelectValue placeholder="Unit">
+										{form.dimensionUnit === "in"
+											? "IN"
+											: form.dimensionUnit === "cm"
+												? "CM"
+												: "Unit"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="in">IN</SelectItem>
@@ -442,7 +452,13 @@ export function PackageTypeFormPage({
 									}}
 								>
 									<SelectTrigger className="w-24">
-										<SelectValue placeholder="Unit" />
+										<SelectValue placeholder="Unit">
+											{form.weightUnit === "lb"
+												? "LB"
+												: form.weightUnit === "kg"
+													? "KG"
+													: "Unit"}
+										</SelectValue>
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="lb">LB</SelectItem>

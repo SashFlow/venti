@@ -197,7 +197,11 @@ export default function CreateInboundOrderPage() {
 								onValueChange={setWarehouseId}
 							>
 								<SelectTrigger id="warehouseId">
-									<SelectValue placeholder="Select warehouse" />
+									<SelectValue placeholder="Select warehouse">
+										{warehouses.find(
+											(w) => w.id === warehouseId,
+										)?.name ?? "Select warehouse"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (
@@ -219,7 +223,11 @@ export default function CreateInboundOrderPage() {
 								onValueChange={setSupplierId}
 							>
 								<SelectTrigger id="supplierId">
-									<SelectValue placeholder="Select supplier" />
+									<SelectValue placeholder="Select supplier">
+										{suppliers.find(
+											(s) => s.id === supplierId,
+										)?.name ?? "Select supplier"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{suppliers.map((s) => (
@@ -294,7 +302,15 @@ export default function CreateInboundOrderPage() {
 										}
 									>
 										<SelectTrigger>
-											<SelectValue placeholder="Select product" />
+											<SelectValue placeholder="Select product">
+												{line.skuId
+													? skus.find(
+															(s) =>
+																s.id ===
+																line.skuId,
+														)?.name
+													: "Select product"}
+											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
 											{skus.map((s) => (

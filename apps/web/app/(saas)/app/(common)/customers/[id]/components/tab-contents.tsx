@@ -739,7 +739,17 @@ export function DeliveryTabContent({
 							}
 						>
 							<SelectTrigger className="w-full md:max-w-xs">
-								<SelectValue />
+								<SelectValue placeholder="Select mode">
+									{scheduleMode === "weekly"
+										? "Weekly"
+										: scheduleMode === "monthly"
+											? "Monthly"
+											: scheduleMode === "quarterly"
+												? "Quarterly"
+												: scheduleMode === "yearly"
+													? "Yearly"
+													: "Select mode"}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="weekly">Weekly</SelectItem>
@@ -829,7 +839,11 @@ export function DeliveryTabContent({
 										}
 									>
 										<SelectTrigger>
-											<SelectValue />
+											<SelectValue placeholder="Select day">
+												{monthlyDay
+													? `Day ${monthlyDay}`
+													: "Select day"}
+											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
 											{Array.from(
@@ -879,7 +893,18 @@ export function DeliveryTabContent({
 										}
 									>
 										<SelectTrigger>
-											<SelectValue />
+											<SelectValue placeholder="Select month">
+												{quarterlyMonth ===
+												"q1-first-month"
+													? "First Month of Quarter"
+													: quarterlyMonth ===
+															"q2-second-month"
+														? "Second Month of Quarter"
+														: quarterlyMonth ===
+																"q3-third-month"
+															? "Third Month of Quarter"
+															: "Select month"}
+											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="q1-first-month">

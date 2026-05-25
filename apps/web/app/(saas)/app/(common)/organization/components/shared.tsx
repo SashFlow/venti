@@ -124,7 +124,10 @@ export function SelectRow({
 				onValueChange={(nextValue) => onValueChange(nextValue ?? "")}
 			>
 				<SelectTrigger className="w-full">
-					<SelectValue />
+					<SelectValue placeholder="Select option">
+						{options.find((o) => o.value === value)?.label ??
+							"Select option"}
+					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
 					{options.map((option) => (

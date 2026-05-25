@@ -575,7 +575,12 @@ export default function SettingsPage() {
 								}}
 							>
 								<SelectTrigger className="w-full">
-									<SelectValue />
+									<SelectValue placeholder="Select scope">
+										{WAREHOUSE_OPTIONS.find(
+											(o) =>
+												o.value === notificationScope,
+										)?.label ?? "Select scope"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{WAREHOUSE_OPTIONS.map((option) => (
@@ -600,7 +605,12 @@ export default function SettingsPage() {
 								}}
 							>
 								<SelectTrigger className="w-full">
-									<SelectValue />
+									<SelectValue placeholder="Select period">
+										{PERIOD_OPTIONS.find(
+											(o) =>
+												o.value === notificationPeriod,
+										)?.label ?? "Select period"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{PERIOD_OPTIONS.map((option) => (
@@ -665,7 +675,9 @@ export default function SettingsPage() {
 								}}
 							>
 								<SelectTrigger className="w-full">
-									<SelectValue />
+									<SelectValue placeholder="Select scope">
+										{tokenScope || "Select scope"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="read-only">
@@ -688,7 +700,11 @@ export default function SettingsPage() {
 								}}
 							>
 								<SelectTrigger className="w-full">
-									<SelectValue />
+									<SelectValue placeholder="Select expiry">
+										{TOKEN_EXPIRY_OPTIONS.find(
+											(o) => o.value === tokenExpiry,
+										)?.label ?? "Select expiry"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{TOKEN_EXPIRY_OPTIONS.map((option) => (
@@ -762,7 +778,11 @@ export default function SettingsPage() {
 								}}
 							>
 								<SelectTrigger className="w-full">
-									<SelectValue />
+									<SelectValue placeholder="Select topic">
+										{WEBHOOK_TOPIC_OPTIONS.find(
+											(o) => o.value === webhookTopic,
+										)?.label ?? "Select topic"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{WEBHOOK_TOPIC_OPTIONS.map((option) => (

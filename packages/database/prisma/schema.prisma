@@ -17,6 +17,7 @@ datasource db {
 
 generator client {
     provider = "prisma-client-js"
+    output   = "./generated/client"
 }
 
 generator zod {
@@ -1072,13 +1073,23 @@ model Shipment {
     salesOrderId String     @unique
     salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
 
+    shipmentNumber String
+
     trackingNumber String?
 
     carrier String?
 
+    dockDoorId String?
+
+    scheduledAt DateTime?
+
+    notes String?
+
     shippedAt DateTime?
 
     status ShipmentStatus
+
+    @@unique([warehouseId, shipmentNumber])
 }
 
 enum ShipmentStatus {

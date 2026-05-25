@@ -190,7 +190,11 @@ export default function AuditLogsPage() {
 							}}
 						>
 							<SelectTrigger className="w-full lg:w-52">
-								<SelectValue placeholder="Filter by resource" />
+								<SelectValue placeholder="Filter by resource">
+									{resourceFilter === "all"
+										? "All resources"
+										: resourceFilter}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="all">

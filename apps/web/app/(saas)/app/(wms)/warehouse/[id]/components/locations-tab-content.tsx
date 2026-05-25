@@ -386,7 +386,22 @@ function LocationsTab({
 									}}
 								>
 									<SelectTrigger>
-										<SelectValue placeholder="Select type" />
+										<SelectValue placeholder="Select type">
+											{newType === "ZONE"
+												? "Zone"
+												: newType === "AISLE"
+													? "Aisle"
+													: newType === "RACK"
+														? "Rack"
+														: newType === "SHELF"
+															? "Shelf"
+															: newType === "BIN"
+																? "Bin"
+																: newType ===
+																		"STAGING"
+																	? "Staging"
+																	: "Select type"}
+										</SelectValue>
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="ZONE">

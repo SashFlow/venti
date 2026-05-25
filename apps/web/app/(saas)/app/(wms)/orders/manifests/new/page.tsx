@@ -28,11 +28,20 @@ export default function CreateManifestPage() {
 
 	const [warehouseId, setWarehouseId] = useState("");
 	const [salesOrderId, setSalesOrderId] = useState("");
-	const [shipmentNumber, setShipmentNumber] = useState("");
-	const [carrierId, setCarrierId] = useState("");
-	const [trackingNumber, setTrackingNumber] = useState("");
-	const [scheduledAt, setScheduledAt] = useState("");
-	const [notes, setNotes] = useState("");
+	const [shipmentNumber, setShipmentNumber] = useState(
+		`SHIP-${Math.floor(Math.random() * 10000)}`,
+	);
+	const [carrierId, setCarrierId] = useState("carrier_123");
+	const [dockDoorId, setDockDoorId] = useState("dock_456");
+	const [trackingNumber, setTrackingNumber] = useState("TRK987654321");
+	const [scheduledAt, setScheduledAt] = useState(() => {
+		const now = new Date();
+		now.setDate(now.getDate() + 1);
+		return now.toISOString().slice(0, 16);
+	});
+	const [notes, setNotes] = useState(
+		"This is a boilerplate note for testing shipments.",
+	);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const warehousesQuery = useQuery({
@@ -80,6 +89,7 @@ export default function CreateManifestPage() {
 				salesOrderId,
 				shipmentNumber: shipmentNumber.trim(),
 				carrierId: carrierId.trim() || undefined,
+				dockDoorId: dockDoorId.trim() || undefined,
 				trackingNumber: trackingNumber.trim() || undefined,
 				scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
 				notes: notes.trim() || undefined,
@@ -135,10 +145,16 @@ export default function CreateManifestPage() {
 							</Label>
 							<Select
 								value={warehouseId}
-								onValueChange={setWarehouseId}
+								onValueChange={(val) =>
+									setWarehouseId(val || "")
+								}
 							>
 								<SelectTrigger id="warehouseId">
-									<SelectValue placeholder="Select warehouse" />
+									<SelectValue placeholder="Select warehouse">
+										{warehouses.find(
+											(w) => w.id === warehouseId,
+										)?.name ?? "Select warehouse"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (
@@ -157,17 +173,26 @@ export default function CreateManifestPage() {
 							</Label>
 							<Select
 								value={salesOrderId}
-								onValueChange={setSalesOrderId}
+								onValueChange={(val) =>
+									setSalesOrderId(val || "")
+								}
 							>
 								<SelectTrigger id="salesOrderId">
-									<SelectValue placeholder="Select sales order" />
+									<SelectValue placeholder="Select sales order">
+										{salesOrderId
+											? salesOrders.find(
+													(o) =>
+														o.id === salesOrderId,
+												)?.orderNumber
+											: "Select sales order"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{salesOrders.map((o) => (
 										<SelectItem key={o.id} value={o.id}>
 											{o.orderNumber}{" "}
-											{o.customerName
-												? `— ${o.customerName}`
+											{o.customer?.name
+												? `— ${o.customer.name}`
 												: ""}
 										</SelectItem>
 									))}
@@ -201,6 +226,26 @@ export default function CreateManifestPage() {
 									setTrackingNumber(e.target.value)
 								}
 								placeholder="Carrier tracking number"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="carrierId">Carrier ID</Label>
+							<Input
+								id="carrierId"
+								value={carrierId}
+								onChange={(e) => setCarrierId(e.target.value)}
+								placeholder="Carrier ID"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="dockDoorId">Dock Door ID</Label>
+							<Input
+								id="dockDoorId"
+								value={dockDoorId}
+								onChange={(e) => setDockDoorId(e.target.value)}
+								placeholder="Dock Door ID"
 							/>
 						</div>
 

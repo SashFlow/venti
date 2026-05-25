@@ -55,7 +55,11 @@ export function LanguageSelector({
 	return (
 		<Select value={value} onValueChange={languageChanged}>
 			<SelectTrigger>
-				<SelectValue />
+				<SelectValue placeholder="Select language">
+					{value
+						? capitalize(languageNames.of(value) ?? value)
+						: "Select language"}
+				</SelectValue>
 			</SelectTrigger>
 
 			<SelectContent>

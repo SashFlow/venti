@@ -143,7 +143,11 @@ export default function CreateWavePage() {
 								onValueChange={setWarehouseId}
 							>
 								<SelectTrigger id="warehouseId">
-									<SelectValue placeholder="Select warehouse" />
+									<SelectValue placeholder="Select warehouse">
+										{warehouses.find(
+											(w) => w.id === warehouseId,
+										)?.name ?? "Select warehouse"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (
@@ -175,7 +179,11 @@ export default function CreateWavePage() {
 								onValueChange={setWaveType}
 							>
 								<SelectTrigger id="waveType">
-									<SelectValue />
+									<SelectValue placeholder="Select type">
+										{WAVE_TYPES.find(
+											(t) => t.value === waveType,
+										)?.label ?? "Select type"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{WAVE_TYPES.map((t) => (

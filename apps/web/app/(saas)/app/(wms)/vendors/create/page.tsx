@@ -351,7 +351,13 @@ export default function CreateVendorPage() {
 										id="vendor-communication"
 										className="w-full"
 									>
-										<SelectValue />
+										<SelectValue placeholder="Select preference">
+											{COMMUNICATION_OPTIONS.find(
+												(o) =>
+													o.value ===
+													communicationPreference,
+											)?.label ?? "Select preference"}
+										</SelectValue>
 									</SelectTrigger>
 									<SelectContent>
 										{COMMUNICATION_OPTIONS.map((option) => (

@@ -311,7 +311,16 @@ export default function IntegrationsPage() {
 									}
 								>
 									<SelectTrigger className="w-full lg:w-52">
-										<SelectValue placeholder="Filter by status" />
+										<SelectValue placeholder="Filter by status">
+											{statusFilter === "all"
+												? "All statuses"
+												: statusFilter === "connected"
+													? "Connected"
+													: statusFilter ===
+															"attention"
+														? "Needs attention"
+														: "Planned"}
+										</SelectValue>
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="all">

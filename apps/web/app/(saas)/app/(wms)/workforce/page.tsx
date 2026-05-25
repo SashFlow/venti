@@ -924,7 +924,16 @@ function MemberRoleGroupAssignments({
 												}
 											>
 												<SelectTrigger>
-													<SelectValue />
+													<SelectValue placeholder="No role group">
+														{member.roleGroupId
+															? (roleGroups.find(
+																	(g) =>
+																		g.id ===
+																		member.roleGroupId,
+																)?.name ??
+																member.roleGroupId)
+															: "No role group"}
+													</SelectValue>
 												</SelectTrigger>
 												<SelectContent>
 													<SelectItem value="none">

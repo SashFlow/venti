@@ -1,3 +1,7 @@
+---
+title: Data Processing Agreement
+---
+
 # Data Processing Agreement (DPA)
 
 This Data Processing Agreement ("DPA") forms part of our Terms of Service between you ("Customer") and us ("Provider").

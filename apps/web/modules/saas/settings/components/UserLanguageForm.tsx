@@ -66,7 +66,10 @@ export function UserLanguageForm() {
 				disabled={updateLocaleMutation.isPending}
 			>
 				<SelectTrigger>
-					<SelectValue />
+					<SelectValue placeholder="Select language">
+						{locales[locale as keyof typeof locales]?.label ??
+							"Select language"}
+					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
 					{Object.entries(locales).map(([key, value]) => (

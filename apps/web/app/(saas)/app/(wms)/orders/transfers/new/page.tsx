@@ -127,7 +127,11 @@ export default function CreateTransferPage() {
 								onValueChange={setWarehouseId}
 							>
 								<SelectTrigger id="warehouseId">
-									<SelectValue placeholder="Select warehouse" />
+									<SelectValue placeholder="Select warehouse">
+										{warehouses.find(
+											(w) => w.id === warehouseId,
+										)?.name ?? "Select warehouse"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{warehouses.map((w) => (

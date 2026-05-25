@@ -167,7 +167,12 @@ export function InventoryTabContent({
 								}
 							>
 								<SelectTrigger className="w-full">
-									<SelectValue />
+									<SelectValue placeholder="Select valuation method">
+										{ABC_VALUATION_OPTIONS.find(
+											(o) =>
+												o.value === abcValuationMethod,
+										)?.label ?? "Select valuation method"}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{ABC_VALUATION_OPTIONS.map((option) => (
