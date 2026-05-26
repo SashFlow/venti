@@ -1,6 +1,5 @@
 import { getOrganizationWithPurchasesAndMembersCount } from "@repo/database";
-import { logger } from "@repo/logs";
-import { setSubscriptionSeats } from "@repo/payments";
+// import { logger } from "@repo/logs";
 
 export async function updateSeatsInOrganizationSubscription(
 	organizationId: string,
@@ -20,15 +19,15 @@ export async function updateSeatsInOrganizationSubscription(
 		return;
 	}
 
-	try {
-		await setSubscriptionSeats({
-			id: activeSubscription.subscriptionId,
-			seats: organization.membersCount,
-		});
-	} catch (error) {
-		logger.error("Could not update seats in organization subscription", {
-			organizationId,
-			error,
-		});
-	}
+	// try {
+	// 	await setSubscriptionSeats({
+	// 		id: activeSubscription.subscriptionId,
+	// 		seats: organization.membersCount,
+	// 	});
+	// } catch (error) {
+	// 	logger.error("Could not update seats in organization subscription", {
+	// 		organizationId,
+	// 		error,
+	// 	});
+	// }
 }

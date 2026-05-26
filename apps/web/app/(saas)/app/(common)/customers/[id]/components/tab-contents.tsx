@@ -60,12 +60,11 @@ export type CustomerOrder = {
 	id: string;
 	orderNumber: string;
 	status: string;
-	customerName?: string | null;
-	customerRef?: string | null;
+	customer?: { name: string; code: string } | null;
+	orderedAt?: Date | string | null;
 	createdAt: Date | string;
-	requiredByDate?: Date | string | null;
 	warehouse: { name: string };
-	_count: { lines: number };
+	_count: { items: number };
 };
 
 type CreateLocationInput = {
@@ -161,7 +160,9 @@ export function SettingsTabContent({
 	const [locationSaving, setLocationSaving] = useState(false);
 
 	const handleCreateLocation = async () => {
-		if (!locationForm.name.trim()) return;
+		if (!locationForm.name.trim()) {
+			return;
+		}
 		setLocationSaving(true);
 		try {
 			await onCreateLocation({
@@ -259,8 +260,8 @@ export function SettingsTabContent({
 						open={locationDialogOpen}
 						onOpenChange={setLocationDialogOpen}
 					>
-						<DialogTrigger asChild>
-							<Button size="sm">Create Location</Button>
+						<DialogTrigger render={<Button size="sm" />}>
+							Create Location
 						</DialogTrigger>
 						<DialogContent>
 							<DialogHeader>
@@ -519,8 +520,7 @@ export function SettingsTabContent({
 						Object.entries(customAttributes).map(
 							([key, value], index) => (
 								<div
-									// biome-ignore lint/suspicious/noArrayIndexKey: stable for this pattern
-									key={index}
+									key={key || `attr-${index}`}
 									className="flex items-center gap-2"
 								>
 									<Input
@@ -534,9 +534,6 @@ export function SettingsTabContent({
 													customAttributes,
 												);
 											entries[index] = [newKey, value];
-											const next = Object.fromEntries(
-												entries,
-											) as Record<string, string>;
 											onCustomAttributeChange(
 												newKey,
 												value,
@@ -590,7 +587,9 @@ type OrdersTabContentProps = {
 };
 
 function formatDate(date: Date | string | null | undefined): string {
-	if (!date) return "—";
+	if (!date) {
+		return "—";
+	}
 	return new Date(date).toLocaleDateString(undefined, {
 		year: "numeric",
 		month: "short",
@@ -609,8 +608,10 @@ export function OrdersTabContent({ orders, isLoading }: OrdersTabContentProps) {
 					{isLoading ? (
 						<div className="space-y-2">
 							{Array.from({ length: 4 }).map((_, i) => (
-								// biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows
-								<Skeleton key={i} className="h-10 w-full" />
+								<Skeleton
+									key={`skeleton-${i}`}
+									className="h-10 w-full"
+								/>
 							))}
 						</div>
 					) : orders.length === 0 ? (
@@ -624,9 +625,9 @@ export function OrdersTabContent({ orders, isLoading }: OrdersTabContentProps) {
 									<TableHead>Order #</TableHead>
 									<TableHead>Status</TableHead>
 									<TableHead>Warehouse</TableHead>
-									<TableHead>Required By</TableHead>
+									<TableHead>Ordered At</TableHead>
 									<TableHead className="text-right">
-										Lines
+										Items
 									</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -645,10 +646,10 @@ export function OrdersTabContent({ orders, isLoading }: OrdersTabContentProps) {
 											{order.warehouse.name}
 										</TableCell>
 										<TableCell>
-											{formatDate(order.requiredByDate)}
+											{formatDate(order.orderedAt)}
 										</TableCell>
 										<TableCell className="text-right">
-											{order._count.lines}
+											{order._count.items}
 										</TableCell>
 									</TableRow>
 								))}

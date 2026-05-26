@@ -10,22 +10,14 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LocationsTabContent } from "./components/locations-tab-content";
 import {
-	BinReplenishmentTabContent,
-	BundlesTabContent,
 	CycleCountTabContent,
 	InventoryTabContent,
 	LayoutTabContent,
 	LogsTabContent,
 	OrdersTabContent,
-	ReplenishInventoryTabContent,
 	SettingsTabContent,
+	type WarehouseSettingsFormValues,
 } from "./components/tab-contents";
-
-type WarehouseSettingsFormValues = {
-	name: string;
-	code: string;
-	timezone: string;
-};
 
 export default function WarehouseDetailsPage() {
 	const { id } = useParams<{ id: string }>();
@@ -37,6 +29,23 @@ export default function WarehouseDetailsPage() {
 			name: "",
 			code: "",
 			timezone: "UTC",
+			sameReturn: true,
+			address: {
+				line1: "",
+				line2: "",
+				city: "",
+				state: "",
+				zip: "",
+				country: "",
+			},
+			returnAddress: {
+				line1: "",
+				line2: "",
+				city: "",
+				state: "",
+				zip: "",
+				country: "",
+			},
 		});
 
 	const { data, isPending } = useQuery({
@@ -69,6 +78,23 @@ export default function WarehouseDetailsPage() {
 			name: data.name,
 			code: data.code,
 			timezone: data.timezone,
+			sameReturn: data.sameReturn ?? true,
+			address: {
+				line1: data.address?.addressLine1 ?? "",
+				line2: data.address?.addressLine2 ?? "",
+				city: data.address?.city ?? "",
+				state: data.address?.state ?? "",
+				zip: data.address?.zip ?? "",
+				country: data.address?.country ?? "",
+			},
+			returnAddress: {
+				line1: data.return?.addressLine1 ?? "",
+				line2: data.return?.addressLine2 ?? "",
+				city: data.return?.city ?? "",
+				state: data.return?.state ?? "",
+				zip: data.return?.zip ?? "",
+				country: data.return?.country ?? "",
+			},
 		});
 	}, [data]);
 
@@ -87,12 +113,44 @@ export default function WarehouseDetailsPage() {
 			return;
 		}
 
+		if (
+			!settingsValues.address.line1 ||
+			!settingsValues.address.city ||
+			!settingsValues.address.state ||
+			!settingsValues.address.zip ||
+			!settingsValues.address.country
+		) {
+			toast.error(
+				"All main address fields (except line 2) are required.",
+			);
+			return;
+		}
+
+		if (
+			!settingsValues.sameReturn &&
+			(!settingsValues.returnAddress.line1 ||
+				!settingsValues.returnAddress.city ||
+				!settingsValues.returnAddress.state ||
+				!settingsValues.returnAddress.zip ||
+				!settingsValues.returnAddress.country)
+		) {
+			toast.error(
+				"All return address fields (except line 2) are required when not using main address.",
+			);
+			return;
+		}
+
 		await updateWarehouseMutation.mutateAsync({
 			organizationId: data.organizationId,
 			id: data.id,
 			name: settingsValues.name.trim(),
 			code: settingsValues.code.trim(),
 			timezone: settingsValues.timezone.trim() || undefined,
+			sameReturn: settingsValues.sameReturn,
+			address: settingsValues.address,
+			returnAddress: settingsValues.sameReturn
+				? undefined
+				: settingsValues.returnAddress,
 		});
 
 		await queryClient.invalidateQueries({
@@ -214,30 +272,23 @@ export default function WarehouseDetailsPage() {
 					className="h-auto w-full justify-start overflow-x-auto"
 				>
 					<TabsTrigger
-						value="inventory"
-						className="py-2 text-sm font-medium"
-					>
-						Inventory
-					</TabsTrigger>
-					<TabsTrigger
 						value="layout"
 						className="px-3 py-2 text-sm font-medium"
 					>
 						Layout
 					</TabsTrigger>
 					<TabsTrigger
-						value="locations"
-						className="px-3 py-2 text-sm font-medium"
+						value="inventory"
+						className="py-2 text-sm font-medium"
 					>
-						Locations
+						Inventory
 					</TabsTrigger>
 					<TabsTrigger
-						value="settings"
+						value="orders"
 						className="px-3 py-2 text-sm font-medium"
 					>
-						Settings
+						Orders
 					</TabsTrigger>
-
 					<TabsTrigger
 						value="cycle-count"
 						className="px-3 py-2 text-sm font-medium"
@@ -250,7 +301,7 @@ export default function WarehouseDetailsPage() {
 					>
 						Logs
 					</TabsTrigger>
-					<TabsTrigger
+					{/* <TabsTrigger
 						value="replenish-inventory"
 						className="px-3 py-2 text-sm font-medium"
 					>
@@ -262,17 +313,18 @@ export default function WarehouseDetailsPage() {
 					>
 						Bin Replenishment
 					</TabsTrigger>
+
 					<TabsTrigger
 						value="bundles"
 						className="px-3 py-2 text-sm font-medium"
 					>
 						Bundles
-					</TabsTrigger>
+					</TabsTrigger> */}
 					<TabsTrigger
-						value="orders"
+						value="settings"
 						className="px-3 py-2 text-sm font-medium"
 					>
-						Orders
+						Settings
 					</TabsTrigger>
 				</TabsList>
 
@@ -316,9 +368,6 @@ export default function WarehouseDetailsPage() {
 					warehouseId={data.id}
 					organizationId={data.organizationId}
 				/>
-				<ReplenishInventoryTabContent />
-				<BinReplenishmentTabContent />
-				<BundlesTabContent />
 				<OrdersTabContent />
 			</Tabs>
 		</div>

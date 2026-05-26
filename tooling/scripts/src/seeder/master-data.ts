@@ -88,7 +88,7 @@ export function generateMasterData(exporter: CsvExporter): State {
 	}
 
 	// Products & SKUs
-	for (let i = 0; i < CONFIG.NUM_SKUS; i++) {
+	for (let i = 0; i < CONFIG.NUM_SKUS_PER_PRODUCT; i++) {
 		const productId = generateId();
 		const skuId = generateId();
 		const isSerialized = Math.random() < CONFIG.SKU_TYPE_PROBS.SERIALIZED;

@@ -47,7 +47,6 @@ model User {
     paymentsCustomerId    String?
     locale                String?
     twoFactorEnabled      Boolean?
-    aiOptOut              Boolean                @default(false)
     sessions              Session[]
     accounts              Account[]
     passkeys              Passkey[]
@@ -61,7 +60,6 @@ model User {
     scanEvents            ScanEvent[]
     uploadedFiles         UploadFile[]           @relation("UploadedFilesByUser")
     ReturnInspection      ReturnInspection[]
-    aiChats               AiChat[]
 
     @@unique([email])
     @@unique([username])
@@ -178,7 +176,6 @@ model Organization {
     uploadFiles        UploadFile[]        @relation("OrganizationUploads")
     CustomerLocation   CustomerLocation[]
     Product            Product[]
-    aiChats            AiChat[]
 
     @@unique([slug])
     @@index([logoUploadFileId])
@@ -222,6 +219,8 @@ model Address {
 
     organizationConfigs OrganizationConfig[]
     customerLocations   CustomerLocation[]
+    warehouses          Warehouse[]          @relation("WarehouseAddress")
+    returnWarehouses    Warehouse[]          @relation("WarehouseReturnAddress")
 
     @@map("address")
 }
@@ -307,22 +306,6 @@ model Purchase {
     @@index([organizationId])
     @@index([userId])
     @@map("purchase")
-}
-
-model AiChat {
-    id             String        @id @default(cuid())
-    organizationId String?
-    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    userId         String
-    user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-    title          String?
-    messages       Json?
-    createdAt      DateTime      @default(now())
-    updatedAt      DateTime      @updatedAt
-
-    @@index([organizationId])
-    @@index([userId])
-    @@map("ai_chat")
 }
 
 model AuditLog {
@@ -425,6 +408,14 @@ model Warehouse {
     name String
 
     timezone String @default("UTC")
+
+    addressId String
+    address   Address @relation("WarehouseAddress", fields: [addressId], references: [id])
+
+    sameReturn Boolean
+
+    returnId String?
+    return   Address? @relation("WarehouseReturnAddress", fields: [returnId], references: [id])
 
     status WarehouseStatus @default(ACTIVE)
 

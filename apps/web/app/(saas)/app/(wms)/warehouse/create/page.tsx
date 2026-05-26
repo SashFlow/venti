@@ -2,6 +2,7 @@
 
 import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
+import { Checkbox } from "@repo/ui/checkbox";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
 import { useSession } from "@saas/auth/hooks/use-session";
@@ -25,9 +26,26 @@ export default function CreateWarehousePage() {
 	const [name, setName] = useState("");
 	const [code, setCode] = useState("");
 	const [timezone, setTimezone] = useState("UTC");
+	const [sameReturn, setSameReturn] = useState(true);
 
+	const [address, setAddress] = useState({
+		line1: "",
+		line2: "",
+		city: "",
+		state: "",
+		zip: "",
+		country: "",
+	});
+
+	const [returnAddress, setReturnAddress] = useState({
+		line1: "",
+		line2: "",
+		city: "",
+		state: "",
+		zip: "",
+		country: "",
+	});
 	const isSubmitting = createWarehouseMutation.isPending;
-
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
 
@@ -42,12 +60,42 @@ export default function CreateWarehousePage() {
 			return;
 		}
 
+		if (
+			!address.line1 ||
+			!address.city ||
+			!address.state ||
+			!address.zip ||
+			!address.country
+		) {
+			toast.error(
+				"All main address fields (except line 2) are required.",
+			);
+			return;
+		}
+
+		if (
+			!sameReturn &&
+			(!returnAddress.line1 ||
+				!returnAddress.city ||
+				!returnAddress.state ||
+				!returnAddress.zip ||
+				!returnAddress.country)
+		) {
+			toast.error(
+				"All return address fields (except line 2) are required when not using main address.",
+			);
+			return;
+		}
+
 		try {
 			const createPromise = createWarehouseMutation.mutateAsync({
 				organizationId,
 				name: name.trim(),
 				code: code.trim(),
 				timezone: timezone.trim() || undefined,
+				sameReturn,
+				address,
+				returnAddress: sameReturn ? undefined : returnAddress,
 			});
 
 			await toast.promise(createPromise, {
@@ -133,6 +181,248 @@ export default function CreateWarehousePage() {
 								placeholder="UTC"
 							/>
 						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="border">
+					<CardHeader>
+						<CardTitle>Main Address</CardTitle>
+					</CardHeader>
+					<CardContent className="grid gap-4 md:grid-cols-2">
+						<div className="space-y-1.5 md:col-span-2">
+							<Label htmlFor="address-line1">
+								Address Line 1{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-line1"
+								value={address.line1}
+								onChange={(e) =>
+									setAddress({
+										...address,
+										line1: e.target.value,
+									})
+								}
+								required
+							/>
+						</div>
+						<div className="space-y-1.5 md:col-span-2">
+							<Label htmlFor="address-line2">
+								Address Line 2
+							</Label>
+							<Input
+								id="address-line2"
+								value={address.line2}
+								onChange={(e) =>
+									setAddress({
+										...address,
+										line2: e.target.value,
+									})
+								}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="address-city">
+								City <span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-city"
+								value={address.city}
+								onChange={(e) =>
+									setAddress({
+										...address,
+										city: e.target.value,
+									})
+								}
+								required
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="address-state">
+								State / Province{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-state"
+								value={address.state}
+								onChange={(e) =>
+									setAddress({
+										...address,
+										state: e.target.value,
+									})
+								}
+								required
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="address-zip">
+								Zip / Postal Code{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-zip"
+								value={address.zip}
+								onChange={(e) =>
+									setAddress({
+										...address,
+										zip: e.target.value,
+									})
+								}
+								required
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="address-country">
+								Country{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-country"
+								value={address.country}
+								onChange={(e) =>
+									setAddress({
+										...address,
+										country: e.target.value,
+									})
+								}
+								required
+							/>
+						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="border">
+					<CardHeader>
+						<CardTitle>Return Address</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="flex items-center space-x-2">
+							<Checkbox
+								id="same-return"
+								checked={sameReturn}
+								onCheckedChange={(checked) =>
+									setSameReturn(checked as boolean)
+								}
+							/>
+							<Label htmlFor="same-return">
+								Same as Main Address
+							</Label>
+						</div>
+
+						{!sameReturn && (
+							<div className="grid gap-4 md:grid-cols-2 mt-4 pt-4 border-t">
+								<div className="space-y-1.5 md:col-span-2">
+									<Label htmlFor="return-line1">
+										Address Line 1{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-line1"
+										value={returnAddress.line1}
+										onChange={(e) =>
+											setReturnAddress({
+												...returnAddress,
+												line1: e.target.value,
+											})
+										}
+										required={!sameReturn}
+									/>
+								</div>
+								<div className="space-y-1.5 md:col-span-2">
+									<Label htmlFor="return-line2">
+										Address Line 2
+									</Label>
+									<Input
+										id="return-line2"
+										value={returnAddress.line2}
+										onChange={(e) =>
+											setReturnAddress({
+												...returnAddress,
+												line2: e.target.value,
+											})
+										}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="return-city">
+										City{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-city"
+										value={returnAddress.city}
+										onChange={(e) =>
+											setReturnAddress({
+												...returnAddress,
+												city: e.target.value,
+											})
+										}
+										required={!sameReturn}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="return-state">
+										State / Province{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-state"
+										value={returnAddress.state}
+										onChange={(e) =>
+											setReturnAddress({
+												...returnAddress,
+												state: e.target.value,
+											})
+										}
+										required={!sameReturn}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="return-zip">
+										Zip / Postal Code{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-zip"
+										value={returnAddress.zip}
+										onChange={(e) =>
+											setReturnAddress({
+												...returnAddress,
+												zip: e.target.value,
+											})
+										}
+										required={!sameReturn}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="return-country">
+										Country{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-country"
+										value={returnAddress.country}
+										onChange={(e) =>
+											setReturnAddress({
+												...returnAddress,
+												country: e.target.value,
+											})
+										}
+										required={!sameReturn}
+									/>
+								</div>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 

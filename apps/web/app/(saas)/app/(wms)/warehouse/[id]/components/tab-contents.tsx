@@ -2,6 +2,7 @@
 
 import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
+import { Checkbox } from "@repo/ui/checkbox";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";
 import {
@@ -65,10 +66,27 @@ function Pager() {
 	);
 }
 
-type WarehouseSettingsFormValues = {
+export type WarehouseSettingsFormValues = {
 	name: string;
 	code: string;
 	timezone: string;
+	sameReturn: boolean;
+	address: {
+		line1: string;
+		line2: string;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+	};
+	returnAddress: {
+		line1: string;
+		line2: string;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+	};
 };
 
 function SettingsTab({
@@ -186,6 +204,262 @@ function SettingsTab({
 								placeholder="UTC"
 							/>
 						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="border mt-4">
+					<CardHeader>
+						<CardTitle>Main Address</CardTitle>
+					</CardHeader>
+					<CardContent className="grid gap-4 md:grid-cols-2">
+						<div className="space-y-1.5 md:col-span-2">
+							<Label htmlFor="address-line1">
+								Address Line 1{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-line1"
+								value={values.address.line1}
+								onChange={(e) =>
+									onChange({
+										address: {
+											...values.address,
+											line1: e.target.value,
+										},
+									})
+								}
+							/>
+						</div>
+						<div className="space-y-1.5 md:col-span-2">
+							<Label htmlFor="address-line2">
+								Address Line 2
+							</Label>
+							<Input
+								id="address-line2"
+								value={values.address.line2}
+								onChange={(e) =>
+									onChange({
+										address: {
+											...values.address,
+											line2: e.target.value,
+										},
+									})
+								}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="address-city">
+								City <span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-city"
+								value={values.address.city}
+								onChange={(e) =>
+									onChange({
+										address: {
+											...values.address,
+											city: e.target.value,
+										},
+									})
+								}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="address-state">
+								State / Province{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-state"
+								value={values.address.state}
+								onChange={(e) =>
+									onChange({
+										address: {
+											...values.address,
+											state: e.target.value,
+										},
+									})
+								}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="address-zip">
+								Zip / Postal Code{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-zip"
+								value={values.address.zip}
+								onChange={(e) =>
+									onChange({
+										address: {
+											...values.address,
+											zip: e.target.value,
+										},
+									})
+								}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="address-country">
+								Country{" "}
+								<span className="text-destructive">*</span>
+							</Label>
+							<Input
+								id="address-country"
+								value={values.address.country}
+								onChange={(e) =>
+									onChange({
+										address: {
+											...values.address,
+											country: e.target.value,
+										},
+									})
+								}
+							/>
+						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="border mt-4">
+					<CardHeader>
+						<CardTitle>Return Address</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="flex items-center space-x-2">
+							<Checkbox
+								id="same-return"
+								checked={values.sameReturn}
+								onCheckedChange={(checked) =>
+									onChange({ sameReturn: checked as boolean })
+								}
+							/>
+							<Label htmlFor="same-return">
+								Same as Main Address
+							</Label>
+						</div>
+
+						{!values.sameReturn && (
+							<div className="grid gap-4 md:grid-cols-2 mt-4 pt-4 border-t">
+								<div className="space-y-1.5 md:col-span-2">
+									<Label htmlFor="return-line1">
+										Address Line 1{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-line1"
+										value={values.returnAddress.line1}
+										onChange={(e) =>
+											onChange({
+												returnAddress: {
+													...values.returnAddress,
+													line1: e.target.value,
+												},
+											})
+										}
+									/>
+								</div>
+								<div className="space-y-1.5 md:col-span-2">
+									<Label htmlFor="return-line2">
+										Address Line 2
+									</Label>
+									<Input
+										id="return-line2"
+										value={values.returnAddress.line2}
+										onChange={(e) =>
+											onChange({
+												returnAddress: {
+													...values.returnAddress,
+													line2: e.target.value,
+												},
+											})
+										}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="return-city">
+										City{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-city"
+										value={values.returnAddress.city}
+										onChange={(e) =>
+											onChange({
+												returnAddress: {
+													...values.returnAddress,
+													city: e.target.value,
+												},
+											})
+										}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="return-state">
+										State / Province{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-state"
+										value={values.returnAddress.state}
+										onChange={(e) =>
+											onChange({
+												returnAddress: {
+													...values.returnAddress,
+													state: e.target.value,
+												},
+											})
+										}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="return-zip">
+										Zip / Postal Code{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-zip"
+										value={values.returnAddress.zip}
+										onChange={(e) =>
+											onChange({
+												returnAddress: {
+													...values.returnAddress,
+													zip: e.target.value,
+												},
+											})
+										}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="return-country">
+										Country{" "}
+										<span className="text-destructive">
+											*
+										</span>
+									</Label>
+									<Input
+										id="return-country"
+										value={values.returnAddress.country}
+										onChange={(e) =>
+											onChange({
+												returnAddress: {
+													...values.returnAddress,
+													country: e.target.value,
+												},
+											})
+										}
+									/>
+								</div>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 			</div>

@@ -87,8 +87,9 @@ function SortableLocationItem({
 			>
 				<GripVerticalIcon className="size-4 text-muted-foreground" />
 			</div>
-			<div
-				className="flex-1 cursor-pointer"
+			<button
+				type="button"
+				className="flex-1 cursor-pointer text-left"
 				onClick={() => onSelect(location)}
 			>
 				<div className="flex items-center justify-between">
@@ -107,7 +108,7 @@ function SortableLocationItem({
 						<ChevronRightIcon className="size-4 text-muted-foreground" />
 					</div>
 				</div>
-			</div>
+			</button>
 			<Button
 				variant="ghost"
 				size="icon"
@@ -275,6 +276,7 @@ function LocationsTab({
 				<CardHeader className="border-b px-4 py-3 bg-muted/20">
 					<div className="flex items-center gap-2 text-sm">
 						<button
+							type="button"
 							className="font-medium hover:underline text-muted-foreground"
 							onClick={() => setParentPath([])}
 						>
@@ -287,6 +289,7 @@ function LocationsTab({
 							>
 								<ChevronRightIcon className="size-4 text-muted-foreground" />
 								<button
+									type="button"
 									className={`hover:underline ${
 										index === parentPath.length - 1
 											? "font-semibold text-foreground"
@@ -356,33 +359,46 @@ function LocationsTab({
 						</h3>
 						<div className="space-y-3">
 							<div className="space-y-1">
-								<label className="text-xs font-medium">
+								<label
+									htmlFor="new-location-code"
+									className="text-xs font-medium"
+								>
 									Code
 								</label>
 								<Input
+									id="new-location-code"
 									placeholder="e.g. A1, R1, B1"
 									value={newCode}
 									onChange={(e) => setNewCode(e.target.value)}
 								/>
 							</div>
 							<div className="space-y-1">
-								<label className="text-xs font-medium">
+								<label
+									htmlFor="new-location-name"
+									className="text-xs font-medium"
+								>
 									Name (Optional)
 								</label>
 								<Input
+									id="new-location-name"
 									placeholder="e.g. North Zone"
 									value={newName}
 									onChange={(e) => setNewName(e.target.value)}
 								/>
 							</div>
 							<div className="space-y-1">
-								<label className="text-xs font-medium">
+								<label
+									htmlFor="new-location-type"
+									className="text-xs font-medium"
+								>
 									Type
 								</label>
 								<Select
 									value={newType}
 									onValueChange={(val) => {
-										if (val) setNewType(val);
+										if (val) {
+											setNewType(val);
+										}
 									}}
 								>
 									<SelectTrigger>

@@ -203,6 +203,7 @@ export async function listOutboundOrders(params: OutboundFilterParams) {
 					select: { name: true, code: true },
 				},
 				orderedAt: true,
+				createdAt: true,
 				warehouse: {
 					select: { name: true },
 				},

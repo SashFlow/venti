@@ -1,21 +1,14 @@
 import { config } from "@repo/config";
-import {
-	db,
-	getInvitationById,
-	getPurchasesByOrganizationId,
-	getPurchasesByUserId,
-	getUserByEmail,
-} from "@repo/database";
+import { db, getUserByEmail } from "@repo/database";
 import type { Locale } from "@repo/i18n";
 import { logger } from "@repo/logs";
 import { sendEmail } from "@repo/mail";
-import { cancelSubscription } from "@repo/payments";
+// import { cancelSubscription } from "@repo/payments";
 import { getBaseUrl } from "@repo/utils";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import {
 	admin,
-	createAuthMiddleware,
 	magicLink,
 	openAPI,
 	organization,
@@ -24,7 +17,6 @@ import {
 } from "better-auth/plugins";
 import { passkey } from "better-auth/plugins/passkey";
 import { parse as parseCookies } from "cookie";
-import { updateSeatsInOrganizationSubscription } from "./lib/organization";
 import { invitationOnlyPlugin } from "./plugins/invitation-only";
 
 const getLocaleFromRequest = (request?: Request) => {
@@ -58,65 +50,6 @@ export const auth = betterAuth({
 			enabled: true,
 			// trustedProviders: ["google", "github"],
 		},
-	},
-	hooks: {
-		after: createAuthMiddleware(async (ctx) => {
-			if (ctx.path.startsWith("/organization/accept-invitation")) {
-				const { invitationId } = ctx.body;
-
-				if (!invitationId) {
-					return;
-				}
-
-				const invitation = await getInvitationById(invitationId);
-
-				if (!invitation) {
-					return;
-				}
-
-				await updateSeatsInOrganizationSubscription(
-					invitation.organizationId,
-				);
-			} else if (ctx.path.startsWith("/organization/remove-member")) {
-				const { organizationId } = ctx.body;
-
-				if (!organizationId) {
-					return;
-				}
-
-				await updateSeatsInOrganizationSubscription(organizationId);
-			}
-		}),
-		before: createAuthMiddleware(async (ctx) => {
-			if (
-				ctx.path.startsWith("/delete-user") ||
-				ctx.path.startsWith("/organization/delete")
-			) {
-				const userId = ctx.context.session?.session.userId;
-				const { organizationId } = ctx.body;
-
-				if (userId || organizationId) {
-					const purchases = organizationId
-						? await getPurchasesByOrganizationId(organizationId)
-						: // biome-ignore lint/style/noNonNullAssertion: This is a valid case
-							await getPurchasesByUserId(userId!);
-					const subscriptions = purchases.filter(
-						(purchase) =>
-							purchase.type === "SUBSCRIPTION" &&
-							purchase.subscriptionId !== null,
-					);
-
-					if (subscriptions.length > 0) {
-						for (const subscription of subscriptions) {
-							await cancelSubscription(
-								// biome-ignore lint/style/noNonNullAssertion: This is a valid case
-								subscription.subscriptionId!,
-							);
-						}
-					}
-				}
-			}
-		}),
 	},
 	user: {
 		additionalFields: {

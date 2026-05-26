@@ -96,6 +96,9 @@ export async function getWarehouseById(params: {
 
 			timezone: true,
 			status: true,
+			sameReturn: true,
+			address: true,
+			return: true,
 			_count: {
 				select: {
 					locations: true,
@@ -117,6 +120,23 @@ export async function createWarehouse(params: {
 	name: string;
 	code: string;
 	timezone?: string;
+	sameReturn: boolean;
+	address: {
+		line1: string;
+		line2?: string;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+	};
+	returnAddress?: {
+		line1: string;
+		line2?: string;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+	};
 }) {
 	const existing = await db.warehouse.findFirst({
 		where: {
@@ -127,24 +147,55 @@ export async function createWarehouse(params: {
 	});
 
 	if (existing) {
-		throw new Error();
+		throw new Error("Warehouse code already exists");
 	}
 
 	const warehouse = await db.warehouse.create({
 		data: {
-			organizationId: params.organizationId,
+			organization: { connect: { id: params.organizationId } },
 			name: params.name,
 			code: params.code,
 			timezone: params.timezone ?? "UTC",
+			sameReturn: params.sameReturn,
+			address: {
+				create: {
+					addressLine1: params.address.line1,
+					addressLine2: params.address.line2,
+					city: params.address.city,
+					state: params.address.state,
+					zip: params.address.zip,
+					country: params.address.country,
+				},
+			},
+			...(params.sameReturn
+				? {}
+				: {
+						return: params.returnAddress
+							? {
+									create: {
+										addressLine1:
+											params.returnAddress.line1,
+										addressLine2:
+											params.returnAddress.line2,
+										city: params.returnAddress.city,
+										state: params.returnAddress.state,
+										zip: params.returnAddress.zip,
+										country: params.returnAddress.country,
+									},
+								}
+							: undefined,
+					}),
 		},
 		select: {
 			id: true,
 			organizationId: true,
 			name: true,
 			code: true,
-
 			timezone: true,
 			status: true,
+			sameReturn: true,
+			address: true,
+			return: true,
 			createdAt: true,
 		},
 	});
@@ -158,6 +209,23 @@ export async function updateWarehouse(params: {
 	name: string;
 	code: string;
 	timezone?: string;
+	sameReturn?: boolean;
+	address?: {
+		line1: string;
+		line2?: string;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+	};
+	returnAddress?: {
+		line1: string;
+		line2?: string;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+	} | null;
 }) {
 	const existing = await db.warehouse.findFirst({
 		where: {
@@ -169,11 +237,13 @@ export async function updateWarehouse(params: {
 		},
 		select: {
 			id: true,
+			addressId: true,
+			returnId: true,
 		},
 	});
 
 	if (!existing) {
-		throw new Error();
+		throw new Error("Warehouse not found");
 	}
 
 	return db.warehouse.update({
@@ -182,6 +252,57 @@ export async function updateWarehouse(params: {
 			name: params.name,
 			code: params.code,
 			timezone: params.timezone,
+			sameReturn: params.sameReturn,
+			...(params.address
+				? {
+						address: {
+							update: {
+								addressLine1: params.address.line1,
+								addressLine2: params.address.line2,
+								city: params.address.city,
+								state: params.address.state,
+								zip: params.address.zip,
+								country: params.address.country,
+							},
+						},
+					}
+				: {}),
+			...(params.sameReturn === false && params.returnAddress
+				? {
+						return: existing.returnId
+							? {
+									update: {
+										addressLine1:
+											params.returnAddress.line1,
+										addressLine2:
+											params.returnAddress.line2,
+										city: params.returnAddress.city,
+										state: params.returnAddress.state,
+										zip: params.returnAddress.zip,
+										country: params.returnAddress.country,
+									},
+								}
+							: {
+									create: {
+										addressLine1:
+											params.returnAddress.line1,
+										addressLine2:
+											params.returnAddress.line2,
+										city: params.returnAddress.city,
+										state: params.returnAddress.state,
+										zip: params.returnAddress.zip,
+										country: params.returnAddress.country,
+									},
+								},
+					}
+				: {}),
+			...(params.sameReturn === true && existing.returnId
+				? {
+						return: {
+							disconnect: true,
+						},
+					}
+				: {}),
 		},
 		select: {
 			id: true,
@@ -190,6 +311,9 @@ export async function updateWarehouse(params: {
 			code: true,
 			timezone: true,
 			status: true,
+			sameReturn: true,
+			address: true,
+			return: true,
 		},
 	});
 }

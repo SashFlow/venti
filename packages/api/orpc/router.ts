@@ -1,6 +1,5 @@
 import type { RouterClient } from "@orpc/server";
 import { adminRouter } from "../modules/admin/router";
-import { aiRouter } from "../modules/ai/router";
 import { contactRouter } from "../modules/contact/router";
 import { customersRouter } from "../modules/customers/router";
 import { inboundRouter } from "../modules/inbound/router";
@@ -33,7 +32,6 @@ export const router = publicProcedure
 		payments: paymentsRouter,
 		workforce: workforceRouter,
 		warehouse: warehouseRouter,
-		ai: aiRouter,
 		customers: customersRouter,
 
 		products: productsRouter,

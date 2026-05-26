@@ -3,6 +3,12 @@ import path from "path";
 export const CONFIG = {
 	START_DATE: new Date("2022-04-01T00:00:00Z"),
 	END_DATE: new Date("2026-05-21T00:00:00Z"),
+	CREATE_ADMIN: true,
+	NAME: "Admin",
+	EMAIL: "sahil@sashflow.com",
+	PASSWORD: "Sahil@123",
+	ORG_NAME: "Daikin",
+
 	NUM_WAREHOUSES: 5,
 	ORDERS_PER_DAY: 50,
 	RECEIPTS_PER_DAY: 10,
