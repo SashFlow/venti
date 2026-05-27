@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function WorkflowsPage() {
 	return (
-		<div className="container mx-auto max-w-7xl space-y-6 py-6 h-[calc(100vh-4rem)] flex flex-col">
+		<div className="container mx-auto space-y-6 py-6 h-[calc(100vh-4rem)] flex flex-col">
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					Workflow Editor

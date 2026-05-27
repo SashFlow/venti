@@ -9,6 +9,7 @@ import {
 	Download,
 	Layers as LayersIcon,
 	LayoutGrid,
+	Map as MapIcon,
 	MousePointer2,
 	Package,
 	PackageOpen,
@@ -52,7 +53,54 @@ const TOOLS: { id: Tool; icon: LucideIcon; label: string }[] = [
 	{ id: "STAIRS", icon: ArrowUpRight, label: "Stairs" },
 ];
 
-const Index = () => {
+const Tabs = [
+	{
+		id: "2d",
+		label: "2D",
+		icon: MapIcon,
+		tip: "2D top-down editor",
+	},
+	{
+		id: "iso",
+		label: "Iso",
+		icon: LayoutGrid,
+		tip: "Isometric preview",
+	},
+	{
+		id: "3d",
+		label: "3D",
+		icon: Box,
+		tip: "3D perspective preview",
+	},
+] as {
+	id: ViewMode;
+	label: string;
+	icon: LucideIcon;
+	tip: string;
+}[];
+
+import { useSidebar } from "@repo/ui/shadcn-sidebar";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useEffect } from "react";
+import {
+	locationsToWarehouse,
+	warehouseToLocationInputs,
+} from "./lib/warehouse-layout-serializer";
+
+type LayoutManagerProps = {
+	warehouseId: string;
+	organizationId: string;
+	warehouseName: string;
+	warehouseCode: string;
+};
+
+const Index = ({
+	warehouseId,
+	organizationId,
+	warehouseName,
+	warehouseCode,
+}: LayoutManagerProps) => {
+	const { open } = useSidebar();
 	const {
 		warehouse,
 		activeFloor,
@@ -73,7 +121,32 @@ const Index = () => {
 		generateShelvesForRack,
 		reset,
 		clearActiveFloor,
-	} = useWarehouse();
+		initFromWarehouse,
+	} = useWarehouse(warehouseId);
+
+	// Load from backend on mount
+	useEffect(() => {
+		async function load() {
+			try {
+				const result = await orpc.warehouse.layout.load.query({
+					organizationId,
+					warehouseId,
+				});
+				if (result && Array.isArray(result)) {
+					const w = locationsToWarehouse(result, {
+						name: warehouseName,
+						code: warehouseCode,
+						timezone: "UTC",
+					});
+					initFromWarehouse(w);
+				}
+			} catch (e) {
+				// fallback: do nothing, keep local state
+			}
+		}
+		load();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [warehouseId, organizationId]);
 
 	const [tool, setTool] = useState<Tool>("select");
 	const [activeZoneId, setActiveZoneId] = useState<string | undefined>(
@@ -135,8 +208,22 @@ const Index = () => {
 		toast.success("Warehouse exported");
 	};
 
+	const handleSave = async () => {
+		try {
+			const locations = warehouseToLocationInputs(warehouse);
+			await orpc.warehouse.layout.save.mutate({
+				organizationId,
+				warehouseId,
+				locations,
+			});
+			toast.success("Layout saved to backend");
+		} catch (e) {
+			toast.error("Failed to save layout");
+		}
+	};
+
 	return (
-		<div className="h-screen w-screen flex flex-col bg-surface text-foreground overflow-hidden">
+		<div className="flex flex-col bg-surface text-foreground overflow-hidden max-h-[800px] w-full max-w-screen md:max-w-[calc(100vw-20rem)]">
 			{/* Header */}
 			<header className="h-14 shrink-0 border-b border-border bg-surface-elevated flex items-center px-4 gap-4">
 				<div className="flex items-center gap-2">
@@ -169,33 +256,7 @@ const Index = () => {
 
 				<div className="ml-auto flex items-center gap-2">
 					<div className="flex items-center bg-secondary rounded-md p-0.5">
-						{(
-							[
-								{
-									id: "2d",
-									label: "2D",
-									icon: Map,
-									tip: "2D top-down editor",
-								},
-								{
-									id: "iso",
-									label: "Iso",
-									icon: LayoutGrid,
-									tip: "Isometric preview",
-								},
-								{
-									id: "3d",
-									label: "3D",
-									icon: Box,
-									tip: "3D perspective preview",
-								},
-							] as {
-								id: ViewMode;
-								label: string;
-								icon: LucideIcon;
-								tip: string;
-							}[]
-						).map(({ id, label, icon: Icon, tip }) => (
+						{Tabs.map(({ id, label, icon: Icon, tip }) => (
 							<Tip key={id} label={tip}>
 								<button
 									type="button"
@@ -213,6 +274,16 @@ const Index = () => {
 							</Tip>
 						))}
 					</div>
+					<Tip label="Save layout to backend">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={handleSave}
+							className="gap-1.5"
+						>
+							💾 Save
+						</Button>
+					</Tip>
 					<Tip label="Download warehouse as JSON">
 						<Button
 							variant="ghost"
@@ -391,7 +462,7 @@ const Index = () => {
 
 				{/* Zones panel */}
 				{view === "2d" && (
-					<aside className="w-56 shrink-0 border-r border-border bg-surface-elevated overflow-auto">
+					<aside className="w-70 shrink-0 border-r border-border bg-surface-elevated overflow-auto">
 						<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 							<h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
 								Zones

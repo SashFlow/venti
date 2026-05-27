@@ -5,6 +5,8 @@ export * from "./services/location-service";
 export * from "./services/orders-service";
 
 export * from "./services/products-service";
+export * from "./services/skus-service";
 export * from "./services/suppliers-service";
-
+export * from "./services/uoms-service";
+export * from "./services/warehouse-layout-service";
 export * from "./services/warehouse-service";

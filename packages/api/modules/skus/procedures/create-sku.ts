@@ -52,6 +52,7 @@ export const createSKUProcedure = protectedProcedure
 					length: input.lengthMm,
 					height: input.heightMm,
 					weight: input.weightKg,
+					metadata: input.metadata as any,
 				},
 			});
 			await writeAuditLog({

@@ -14,7 +14,6 @@ import {
 	InventoryTabContent,
 	LayoutTabContent,
 	LogsTabContent,
-	OrdersTabContent,
 	SettingsTabContent,
 	type WarehouseSettingsFormValues,
 } from "./components/tab-contents";
@@ -219,7 +218,7 @@ export default function WarehouseDetailsPage() {
 
 	if (isPending) {
 		return (
-			<div className="container mx-auto max-w-7xl py-6">
+			<div className="w-full min-h-[200px] flex items-center justify-center py-6">
 				<p className="text-sm text-muted-foreground">
 					Loading warehouse details...
 				</p>
@@ -229,7 +228,7 @@ export default function WarehouseDetailsPage() {
 
 	if (!data) {
 		return (
-			<div className="container mx-auto max-w-7xl py-6">
+			<div className="w-full min-h-[200px] flex items-center justify-center py-6">
 				<p className="text-sm text-muted-foreground">
 					Warehouse not found.
 				</p>
@@ -238,12 +237,10 @@ export default function WarehouseDetailsPage() {
 	}
 
 	return (
-		<div className="container mx-auto max-w-7xl space-y-6 py-6">
-			<div className="flex items-start justify-between gap-3">
+		<div className="w-full h-full flex flex-col gap-6 py-6 px-0 overflow-hidden">
+			<div className="flex items-start justify-between gap-3 px-6">
 				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{data.name}
-					</h1>
+					{/* Warehouse name moved to SidebarHeader breadcrumbs */}
 					<p className="text-sm text-muted-foreground">
 						{data.code} • {data.status}
 					</p>
@@ -262,114 +259,119 @@ export default function WarehouseDetailsPage() {
 				) : null}
 			</div>
 
-			<Tabs
-				defaultValue="inventory"
-				className="space-y-4 flex flex-col"
-				orientation="horizontal"
-			>
-				<TabsList
-					variant="default"
-					className="h-auto w-full justify-start overflow-x-auto"
+			<div className="flex-1 flex flex-col w-full min-w-0 overflow-hidden">
+				<Tabs
+					defaultValue="inventory"
+					className="flex-1 flex flex-col min-w-0 overflow-hidden"
+					orientation="horizontal"
 				>
-					<TabsTrigger
-						value="layout"
-						className="px-3 py-2 text-sm font-medium"
+					<TabsList
+						variant="default"
+						className="h-auto w-full justify-start overflow-x-auto"
 					>
-						Layout
-					</TabsTrigger>
-					<TabsTrigger
-						value="inventory"
-						className="py-2 text-sm font-medium"
-					>
-						Inventory
-					</TabsTrigger>
-					<TabsTrigger
-						value="orders"
-						className="px-3 py-2 text-sm font-medium"
-					>
-						Orders
-					</TabsTrigger>
-					<TabsTrigger
-						value="cycle-count"
-						className="px-3 py-2 text-sm font-medium"
-					>
-						Cycle Count
-					</TabsTrigger>
-					<TabsTrigger
-						value="logs"
-						className="px-3 py-2 text-sm font-medium"
-					>
-						Logs
-					</TabsTrigger>
-					{/* <TabsTrigger
-						value="replenish-inventory"
-						className="px-3 py-2 text-sm font-medium"
-					>
-						Replenish Inventory
-					</TabsTrigger>
-					<TabsTrigger
-						value="bin-replenishment"
-						className="px-3 py-2 text-sm font-medium"
-					>
-						Bin Replenishment
-					</TabsTrigger>
+						<TabsTrigger
+							value="layout"
+							className="px-3 py-2 text-sm font-medium"
+						>
+							Layout
+						</TabsTrigger>
+						<TabsTrigger
+							value="inventory"
+							className="py-2 text-sm font-medium"
+						>
+							Inventory
+						</TabsTrigger>
+						<TabsTrigger
+							value="orders"
+							className="px-3 py-2 text-sm font-medium"
+						>
+							Orders
+						</TabsTrigger>
+						<TabsTrigger
+							value="cycle-count"
+							className="px-3 py-2 text-sm font-medium"
+						>
+							Cycle Count
+						</TabsTrigger>
+						<TabsTrigger
+							value="logs"
+							className="px-3 py-2 text-sm font-medium"
+						>
+							Logs
+						</TabsTrigger>
+						{/* <TabsTrigger
+										value="replenish-inventory"
+										className="px-3 py-2 text-sm font-medium"
+									>
+										Replenish Inventory
+									</TabsTrigger>
+									<TabsTrigger
+										value="bin-replenishment"
+										className="px-3 py-2 text-sm font-medium"
+									>
+										Bin Replenishment
+									</TabsTrigger>
 
-					<TabsTrigger
-						value="bundles"
-						className="px-3 py-2 text-sm font-medium"
-					>
-						Bundles
-					</TabsTrigger> */}
-					<TabsTrigger
-						value="settings"
-						className="px-3 py-2 text-sm font-medium"
-					>
-						Settings
-					</TabsTrigger>
-				</TabsList>
+									<TabsTrigger
+										value="bundles"
+										className="px-3 py-2 text-sm font-medium"
+									>
+										Bundles
+									</TabsTrigger> */}
+						<TabsTrigger
+							value="settings"
+							className="px-3 py-2 text-sm font-medium"
+						>
+							Settings
+						</TabsTrigger>
+					</TabsList>
 
-				<LayoutTabContent
-					warehouseId={data.id}
-					organizationId={data.organizationId}
-					warehouseName={data.name}
-				/>
-				<LocationsTabContent
-					warehouseId={data.id}
-					organizationId={data.organizationId}
-				/>
-				<SettingsTabContent
-					values={settingsValues}
-					onChange={(patch) => {
-						setSettingsValues((current) => ({
-							...current,
-							...patch,
-						}));
-					}}
-					onSave={() => {
-						void handleSettingsSave();
-					}}
-					onDelete={() => {
-						void handleDeleteWarehouse();
-					}}
-					saving={updateWarehouseMutation.isPending}
-					deleting={deleteWarehouseMutation.isPending}
-					readOnly={data.status === "INACTIVE"}
-					onRestore={() => {
-						void handleRestoreWarehouse();
-					}}
-					restoring={restoreWarehouseMutation.isPending}
-				/>
-				<InventoryTabContent
-					warehouseId={data.id}
-					organizationId={data.organizationId}
-				/>
-				<CycleCountTabContent />
-				<LogsTabContent
-					warehouseId={data.id}
-					organizationId={data.organizationId}
-				/>
-				<OrdersTabContent />
-			</Tabs>
+					{/* Tab content area: make it grow and fill width, and scroll if needed */}
+					<div className="flex-1 flex flex-col min-w-0 overflow-x-auto">
+						<LayoutTabContent
+							warehouseId={data.id}
+							organizationId={data.organizationId}
+							warehouseName={data.name}
+							warehouseCode={data.code}
+						/>
+						<LocationsTabContent
+							warehouseId={data.id}
+							organizationId={data.organizationId}
+						/>
+						<SettingsTabContent
+							values={settingsValues}
+							onChange={(patch) => {
+								setSettingsValues((current) => ({
+									...current,
+									...patch,
+								}));
+							}}
+							onSave={() => {
+								void handleSettingsSave();
+							}}
+							onDelete={() => {
+								void handleDeleteWarehouse();
+							}}
+							saving={updateWarehouseMutation.isPending}
+							deleting={deleteWarehouseMutation.isPending}
+							readOnly={data.status === "INACTIVE"}
+							onRestore={() => {
+								void handleRestoreWarehouse();
+							}}
+							restoring={restoreWarehouseMutation.isPending}
+						/>
+						<InventoryTabContent
+							warehouseId={data.id}
+							organizationId={data.organizationId}
+						/>
+						<CycleCountTabContent />
+						<LogsTabContent
+							warehouseId={data.id}
+							organizationId={data.organizationId}
+						/>
+					</div>
+				</Tabs>
+			</div>
 		</div>
 	);
 }

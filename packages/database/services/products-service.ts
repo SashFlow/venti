@@ -1,50 +1,42 @@
-import { Prisma } from "@prisma/client";
 import { db } from "../prisma";
+import { Prisma } from "../prisma/generated/client";
 
-const skuSelect = {
+const productSelect = {
 	id: true,
 	organizationId: true,
 	code: true,
 	name: true,
-	barcode: true,
-	baseUomId: true,
-	productId: true,
-	width: true,
-	length: true,
-	height: true,
-	weight: true,
-	unitPrice: true,
+	description: true,
+	isPerishable: true,
+	isBatchTracked: true,
+	isSerialTracked: true,
 	createdAt: true,
 	updatedAt: true,
-} satisfies Prisma.SKUSelect;
+	skus: {
+		select: {
+			id: true,
+			code: true,
+			name: true,
+		},
+	},
+} satisfies Prisma.ProductSelect;
 
-type ListSKUsInput = {
+type ListProductsInput = {
 	organizationId: string;
 	query?: string;
 	limit: number;
 	offset: number;
 };
 
-type SKUPayload = {
+type ProductPayload = {
 	code: string;
 	name: string;
-	productId: string;
-	barcode?: string;
-	baseUomId: string;
-	width?: number;
-	length?: number;
-	height?: number;
-	weight?: number;
-	unitPrice?: number;
+	description?: string;
+	isPerishable?: boolean;
+	life?: number;
+	isBatchTracked?: boolean;
+	isSerialTracked?: boolean;
 };
-
-function toDecimal(value: number | undefined) {
-	if (value === undefined || Number.isNaN(value)) {
-		return undefined;
-	}
-
-	return new Prisma.Decimal(value);
-}
 
 function buildWhere({
 	organizationId,
@@ -56,7 +48,7 @@ function buildWhere({
 	const trimmedQuery = query?.trim();
 
 	if (!trimmedQuery) {
-		return { organizationId } satisfies Prisma.SKUWhereInput;
+		return { organizationId } satisfies Prisma.ProductWhereInput;
 	}
 
 	return {
@@ -64,113 +56,106 @@ function buildWhere({
 		OR: [
 			{ code: { contains: trimmedQuery, mode: "insensitive" } },
 			{ name: { contains: trimmedQuery, mode: "insensitive" } },
-			{ barcode: { contains: trimmedQuery, mode: "insensitive" } },
 		],
-	} satisfies Prisma.SKUWhereInput;
+	} satisfies Prisma.ProductWhereInput;
 }
 
-export async function listSKUs(input: ListSKUsInput) {
+export async function listProducts(input: ListProductsInput) {
 	const where = buildWhere({
 		organizationId: input.organizationId,
 		query: input.query,
 	});
 
-	const [skus, total] = await Promise.all([
-		db.sKU.findMany({
+	const [products, total] = await Promise.all([
+		db.product.findMany({
 			where,
-			select: skuSelect,
+			select: productSelect,
 			take: input.limit,
 			skip: input.offset,
 			orderBy: {
 				createdAt: "desc",
 			},
 		}),
-		db.sKU.count({ where }),
+		db.product.count({ where }),
 	]);
 
 	return {
-		skus,
+		products,
 		total,
 	};
 }
 
-export async function getSKUById(params: {
+export async function getProductById(params: {
 	organizationId: string;
 	id: string;
 }) {
-	return db.sKU.findFirst({
+	return db.product.findFirst({
 		where: {
 			id: params.id,
 			organizationId: params.organizationId,
 		},
-		select: skuSelect,
+		select: productSelect,
 	});
 }
 
-export async function createSKU(params: {
-	organizationId: string;
-	data: SKUPayload;
-}) {
-	return db.sKU.create({
-		data: {
-			organizationId: params.organizationId,
-			code: params.data.code,
-			name: params.data.name,
-			barcode: params.data.barcode,
-			baseUomId: params.data.baseUomId,
-			productId: params.data.productId,
-			width: toDecimal(params.data.width),
-			length: toDecimal(params.data.length),
-			height: toDecimal(params.data.height),
-			weight: toDecimal(params.data.weight),
-			unitPrice: toDecimal(params.data.unitPrice),
-		},
-		select: skuSelect,
-	});
-}
-
-export async function updateSKU(params: {
-	organizationId: string;
-	id: string;
-	data: Partial<SKUPayload>;
-}) {
-	const existing = await db.sKU.findFirst({
-		where: {
-			id: params.id,
-			organizationId: params.organizationId,
-		},
-		select: { id: true },
-	});
-
-	if (!existing) {
-		return null;
+function toDecimal(value: number | undefined) {
+	if (value === undefined || Number.isNaN(value)) {
+		return undefined;
 	}
+	return new Prisma.Decimal(value);
+}
 
-	return db.sKU.update({
-		where: {
-			id: params.id,
-		},
+export async function createProduct(params: {
+	organizationId: string;
+	data: ProductPayload;
+	skus: Array<{
+		code: string;
+		name: string;
+		barcode?: string;
+		baseUomId: string;
+		price?: number;
+		length?: number;
+		width?: number;
+		height?: number;
+		weight?: number;
+		metadata?: Prisma.InputJsonValue;
+	}>;
+}) {
+	return db.product.create({
 		data: {
+			organizationId: params.organizationId,
 			code: params.data.code,
 			name: params.data.name,
-			barcode: params.data.barcode,
-			baseUomId: params.data.baseUomId,
-			productId: params.data.productId,
-			width: toDecimal(params.data.width),
-			length: toDecimal(params.data.length),
-			height: toDecimal(params.data.height),
-			weight: toDecimal(params.data.weight),
-			unitPrice: toDecimal(params.data.unitPrice),
+			description: params.data.description,
+			isPerishable: params.data.isPerishable,
+			life: params.data.life,
+			isBatchTracked: params.data.isBatchTracked,
+			isSerialTracked: params.data.isSerialTracked,
+			skus: {
+				create: params.skus.map((sku) => ({
+					code: sku.code,
+					name: sku.name,
+					barcode: sku.barcode,
+					baseUomId: sku.baseUomId,
+					unitPrice: toDecimal(sku.price),
+					length: toDecimal(sku.length),
+					width: toDecimal(sku.width),
+					height: toDecimal(sku.height),
+					weight: toDecimal(sku.weight),
+					metadata: sku.metadata ?? Prisma.JsonNull,
+					organizationId: params.organizationId,
+				})),
+			},
 		},
-		select: skuSelect,
+		select: productSelect,
 	});
 }
 
-export async function deleteSKU(params: {
+export async function deleteProduct(params: {
 	organizationId: string;
 	id: string;
 }) {
-	const result = await db.sKU.deleteMany({
+	const result = await db.product.deleteMany({
 		where: {
 			id: params.id,
 			organizationId: params.organizationId,

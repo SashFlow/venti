@@ -62,7 +62,6 @@ export type CustomerOrder = {
 	status: string;
 	customer?: { name: string; code: string } | null;
 	orderedAt?: Date | string | null;
-	createdAt: Date | string;
 	warehouse: { name: string };
 	_count: { items: number };
 };

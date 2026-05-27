@@ -172,7 +172,7 @@ function StorageInspector({
 				</Tip>
 			</div>
 
-			<Tabs defaultValue="identity">
+			<Tabs defaultValue="identity" className="flex flex-col">
 				<TabsList className="grid grid-cols-5 h-8">
 					<TabsTrigger value="identity" className="text-[10px]">
 						ID

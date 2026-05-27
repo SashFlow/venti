@@ -12,6 +12,8 @@ import { updateLocationHierarchyProcedure } from "./procedures/locations/update-
 import { restoreWarehouseProcedure } from "./procedures/restore-warehouse";
 
 import { updateWarehouseProcedure } from "./procedures/update-warehouse";
+import { saveLayoutProcedure } from "./procedures/layout/save-layout";
+import { loadLayoutProcedure } from "./procedures/layout/load-layout";
 
 export const warehouseRouter = {
 	list: listWarehousesProcedure,
@@ -27,4 +29,8 @@ export const warehouseRouter = {
 		delete: deleteLocationProcedure,
 	},
 	capacityWarnings: getCapacityWarningsProcedure,
+	layout: {
+		save: saveLayoutProcedure,
+		load: loadLayoutProcedure,
+	},
 };

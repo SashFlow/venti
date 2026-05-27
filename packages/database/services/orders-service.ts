@@ -1,5 +1,5 @@
-import type { Prisma } from "@prisma/client";
 import { db } from "../prisma";
+import type { Prisma } from "../prisma/generated/client";
 
 type ListParams = {
 	organizationId: string;
@@ -153,7 +153,7 @@ export async function listOutboundOrders(params: OutboundFilterParams) {
 			: {}),
 		...(params.startDate || params.endDate
 			? {
-					createdAt: {
+					orderedAt: {
 						...(params.startDate ? { gte: params.startDate } : {}),
 						...(params.endDate ? { lte: params.endDate } : {}),
 					},
@@ -203,7 +203,6 @@ export async function listOutboundOrders(params: OutboundFilterParams) {
 					select: { name: true, code: true },
 				},
 				orderedAt: true,
-				createdAt: true,
 				warehouse: {
 					select: { name: true },
 				},

@@ -1,5 +1,5 @@
-import type { Prisma } from "@prisma/client";
 import { db } from "../prisma";
+import type { Prisma } from "../prisma/generated/client";
 
 const customerSelect = {
 	id: true,

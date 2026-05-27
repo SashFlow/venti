@@ -420,6 +420,7 @@ model Warehouse {
     status WarehouseStatus @default(ACTIVE)
 
     locations Location[]
+    assets    Asset[]
 
     inventoryBalances InventoryBalance[]
 
@@ -531,16 +532,52 @@ model Location {
 enum LocationType {
     FLOOR
     ZONE
-    AISLE
+    BLOCK
     RACK
     SHELF
     BIN
     PALLET
-    DOCK
-    STAGING
-    PACKING
-    QC
-    QUARANTINE
+}
+
+model Asset {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    warehouseId String
+    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+    name String?
+
+    type AssetType
+
+    // =========================================================================
+    // 3D ENGINE SUPPORT
+    // =========================================================================
+
+    x Decimal? @db.Decimal(12, 2)
+    y Decimal? @db.Decimal(12, 2)
+    z Decimal? @db.Decimal(12, 2)
+
+    width  Decimal? @db.Decimal(12, 2)
+    height Decimal? @db.Decimal(12, 2)
+    depth  Decimal? @db.Decimal(12, 2)
+
+    rotationX Decimal? @db.Decimal(12, 2)
+    rotationY Decimal? @db.Decimal(12, 2)
+    rotationZ Decimal? @db.Decimal(12, 2)
+
+    meshType String?
+    colorHex String?
+
+    @@index([warehouseId, type])
+}
+
+enum AssetType {
+    AISLE
+    DOCK_DOOR
+    STAIRS
+    WALL
 }
 
 // ============================================================================
@@ -563,6 +600,8 @@ model Product {
     isPerishable    Boolean @default(false)
     isBatchTracked  Boolean @default(false)
     isSerialTracked Boolean @default(false)
+
+    life Int? @default(0)
 
     skus SKU[]
 
@@ -593,6 +632,8 @@ model SKU {
 
     baseUomId String
     baseUom   UnitOfMeasure @relation(fields: [baseUomId], references: [id])
+
+    metadata Json?
 
     unitPrice Decimal? @db.Decimal(18, 4)
 

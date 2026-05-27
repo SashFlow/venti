@@ -18,7 +18,9 @@ import {
 	ZONE_DEFAULT_COLORS,
 } from "./warehouse-types";
 
-const STORAGE_KEY = "warehause:warehouse:v3";
+function getStorageKey(warehouseId: string) {
+	return `warehause:warehouse:v3:${warehouseId}`;
+}
 const LEGACY_KEY = "warehause:layout:v2";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -393,9 +395,9 @@ function migrateLegacy(raw: string): Warehouse | null {
 	}
 }
 
-export function loadWarehouse(): Warehouse {
+export function loadWarehouse(warehouseId: string): Warehouse {
 	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
+		const raw = localStorage.getItem(getStorageKey(warehouseId));
 		if (raw) return JSON.parse(raw);
 		const legacy = localStorage.getItem(LEGACY_KEY);
 		if (legacy) {
@@ -406,21 +408,26 @@ export function loadWarehouse(): Warehouse {
 	return defaultWarehouse();
 }
 
-export function saveWarehouse(w: Warehouse) {
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(w));
+export function saveWarehouse(warehouseId: string, w: Warehouse) {
+	localStorage.setItem(getStorageKey(warehouseId), JSON.stringify(w));
 }
 
 // ---------- hook ----------
 
-export function useWarehouse() {
+export function useWarehouse(warehouseId: string) {
 	const [warehouse, setWarehouse] = useState<Warehouse>(() =>
-		loadWarehouse(),
+		loadWarehouse(warehouseId),
 	);
 	const [selection, setSelection] = useState<Selection | null>(null);
 
 	useEffect(() => {
-		saveWarehouse(warehouse);
-	}, [warehouse]);
+		saveWarehouse(warehouseId, warehouse);
+	}, [warehouse, warehouseId]);
+
+	// Replace the entire warehouse state (e.g., after loading from backend)
+	const initFromWarehouse = useCallback((w: Warehouse) => {
+		setWarehouse(w);
+	}, []);
 
 	const activeFloor = useMemo(
 		() =>
@@ -485,24 +492,18 @@ export function useWarehouse() {
 		});
 	}, []);
 
-	// --- storage units (operate on active floor) ---
-	const addStorageUnit = useCallback(
-		(type: StorageUnitType, partial: Partial<StorageUnit> = {}) => {
-			const unit = makeStorageUnit(type, partial);
-			setWarehouse((w) => ({
-				...w,
-				updatedAt: Date.now(),
-				floors: w.floors.map((f) =>
-					f.id === w.activeFloorId
-						? { ...f, storageUnits: [...f.storageUnits, unit] }
-						: f,
-				),
-			}));
-			setSelection({ kind: "storage", id: unit.id });
-			return unit.id;
-		},
-		[],
-	);
+	// Add a single storage unit to the active floor
+	const addStorageUnit = useCallback((unit: StorageUnit) => {
+		setWarehouse((w) => ({
+			...w,
+			updatedAt: Date.now(),
+			floors: w.floors.map((f) =>
+				f.id === w.activeFloorId
+					? { ...f, storageUnits: [...f.storageUnits, unit] }
+					: f,
+			),
+		}));
+	}, []);
 
 	const addStorageUnitsTo = useCallback(
 		(floorId: string, units: StorageUnit[]) => {
@@ -708,6 +709,7 @@ export function useWarehouse() {
 		generateShelvesForRack,
 		reset,
 		clearActiveFloor,
+		initFromWarehouse,
 	};
 }
 

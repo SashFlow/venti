@@ -14,6 +14,7 @@ import {
 	TableRow,
 } from "@repo/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
+import WarehouseLayout from "@saas/warehouse/layout-manager";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -1684,17 +1685,20 @@ export function LayoutTabContent({
 	warehouseId,
 	organizationId,
 	warehouseName,
+	warehouseCode,
 }: {
 	warehouseId: string;
 	organizationId: string;
 	warehouseName: string;
+	warehouseCode: string;
 }) {
 	return (
-		<TabsContent value="layout" className="space-y-4">
-			<LayoutTab
+		<TabsContent value="layout" className="h-full p-0">
+			<WarehouseLayout
 				warehouseId={warehouseId}
 				organizationId={organizationId}
 				warehouseName={warehouseName}
+				warehouseCode={warehouseCode}
 			/>
 		</TabsContent>
 	);

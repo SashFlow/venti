@@ -402,6 +402,7 @@ export default function ThreeView({ warehouse }: { warehouse: Warehouse }) {
 					fov: 45,
 				}}
 				dpr={[1, 2]}
+				className="min-h-[800px]"
 			>
 				<color attach="background" args={["#f4f6fa"]} />
 				<fog
