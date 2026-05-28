@@ -40,7 +40,7 @@ export function NavMain({
 	return (
 		<SidebarGroup>
 			{label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
-			<SidebarMenu>
+			<SidebarMenu className="gap-2">
 				{items.map((item) => {
 					const isModuleActive = pathname.startsWith(item.url);
 
@@ -58,7 +58,7 @@ export function NavMain({
 									className="h-10"
 								>
 									<a href={item.url}>
-										<item.icon className="w-[24px] h-[24px]" />
+										<item.icon className="h-[30px] w-[30[px]" />
 										<span>{item.title}</span>
 									</a>
 								</SidebarMenuButton>

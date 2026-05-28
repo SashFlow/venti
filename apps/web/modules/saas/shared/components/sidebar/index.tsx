@@ -8,10 +8,12 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarSeparator,
 } from "@repo/ui/sidebar";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { Command } from "lucide-react";
 import * as React from "react";
+import Scanner from "../scanner";
 import { NavMain } from "./main";
 import { useNavigation } from "./provider";
 import { NavUser } from "./user";
@@ -26,7 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			className="border-r border-foreground/20"
 			{...props}
 		>
-			<SidebarHeader className="border-b border-foreground/20 max-h-[64px]">
+			<SidebarHeader className="border-b border-foreground/20 max-h-16">
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>
@@ -49,10 +51,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 			<SidebarContent>
 				<NavMain items={[routes.default, ...routes.modules]} />
-				<NavMain label="Management" items={routes.management} />
-				<NavMain label="Admin" items={routes.admin} />
+				{/* <NavMain label="Management" items={routes.management} /> */}
+				{/* <NavMain label="Admin" items={routes.admin} /> */}
 			</SidebarContent>
 			<SidebarFooter className="border-t border-foreground/20">
+				<Scanner />
+				<SidebarSeparator className="m-0" />
 				<NavUser
 					user={{
 						email: user?.email || "",

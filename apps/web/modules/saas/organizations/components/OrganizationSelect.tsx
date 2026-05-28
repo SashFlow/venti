@@ -16,7 +16,6 @@ import {
 	setActiveOrganization,
 	useOrganizationListQuery,
 } from "@saas/organizations/lib/api";
-import { ActivePlanBadge } from "@saas/payments/components/ActivePlanBadge";
 import { UserAvatar } from "@shared/components/UserAvatar";
 import { useRouter } from "@shared/hooks/router";
 import { clearCache } from "@shared/lib/cache";
@@ -50,11 +49,6 @@ export function OrganzationSelect({ className }: { className?: string }) {
 								<span className="block flex-1 truncate">
 									{organization.name}
 								</span>
-								{config.organizations.enableBilling && (
-									<ActivePlanBadge
-										organizationId={organization.id}
-									/>
-								)}
 							</>
 						) : (
 							<>
@@ -68,9 +62,6 @@ export function OrganzationSelect({ className }: { className?: string }) {
 										"organizations.organizationSelect.personalAccount",
 									)}
 								</span>
-								{config.users.enableBilling && (
-									<ActivePlanBadge />
-								)}
 							</>
 						)}
 					</div>
