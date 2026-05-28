@@ -1,6 +1,6 @@
 import "@app/globals.css";
 import "cropperjs/dist/cropper.css";
-import { headingFont, poppins } from "@app/fonts";
+import { headingFont, inter, poppins } from "@app/fonts";
 import { TooltipProvider } from "@repo/ui/tooltip";
 import { cn } from "@repo/ui/utils";
 import { ClientProviders } from "@shared/components/ClientProviders";
@@ -17,7 +17,11 @@ export async function Document({
 		<html
 			lang={locale}
 			suppressHydrationWarning
-			className={cn(poppins.variable, headingFont.variable)}
+			className={cn(
+				inter.variable,
+				poppins.variable,
+				headingFont.variable,
+			)}
 		>
 			<body
 				className={cn(

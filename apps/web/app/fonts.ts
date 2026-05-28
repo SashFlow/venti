@@ -1,6 +1,11 @@
 // app/fonts.ts
-import { Poppins } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import localFont from "next/font/local";
+
+export const inter = Inter({
+	subsets: ["latin"],
+	variable: "--font-inter",
+});
 
 export const poppins = Poppins({
 	subsets: ["latin"],
