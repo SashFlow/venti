@@ -5,7 +5,6 @@ import { Button } from "@repo/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { TooltipProvider } from "@repo/ui/tooltip";
 import { useSession } from "@saas/auth/hooks/use-session";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -85,17 +84,16 @@ const parseMetafieldSchemas = (value: unknown): MetafieldSchema[] | null => {
 };
 
 export default function OrganizationPage() {
-	const { organization: sessionOrganization, session } = useSession();
-	const { activeOrganization, refetchActiveOrganization } =
-		useActiveOrganization();
-	const resolvedOrganization = activeOrganization ?? sessionOrganization;
+	const {
+		organization: sessionOrganization,
+		session,
+		reloadSession,
+	} = useSession();
+
+	const resolvedOrganization = sessionOrganization;
 	const queryClient = useQueryClient();
-	// Derive org ID: prefer loaded org objects, fall back to session.activeOrganizationId
-	// which is available as soon as the session query resolves (before full org loads).
 	const activeOrganizationId =
-		activeOrganization?.id ??
-		sessionOrganization?.id ??
-		session?.activeOrganizationId;
+		sessionOrganization?.id ?? session?.activeOrganizationId;
 	const [toggles, setToggles] = useState(INITIAL_TOGGLES);
 	const [whiteLabelOrgName, setWhiteLabelOrgName] = useState("");
 	const [savingWhiteLabelName, setSavingWhiteLabelName] = useState(false);
@@ -417,12 +415,12 @@ export default function OrganizationPage() {
 			readString(inventory, "abcValuationMethod", "retail_value"),
 		);
 		setItemsDefaultLengthUnit(
-			readString(units, "itemsDefaultLengthUnit", "in"),
+			readString(units, "itemsDefaultLengthUnit", "m"),
 		);
 		setItemsDefaultWeightUnit(
-			readString(units, "itemsDefaultWeightUnit", "lb"),
+			readString(units, "itemsDefaultWeightUnit", "kg"),
 		);
-		setDisplayCurrency(readString(units, "displayCurrency", "usd"));
+		setDisplayCurrency(readString(units, "displayCurrency", "inr"));
 		setVendorsEmail(readString(purchaseOrders, "vendorsEmail", ""));
 		setCustomersRetentionPeriod(
 			readString(dataRetention, "customersRetentionPeriod", "30"),
@@ -524,7 +522,7 @@ export default function OrganizationPage() {
 				throw error;
 			}
 
-			await refetchActiveOrganization();
+			await reloadSession();
 			toast.success("Organization name updated");
 		} catch {
 			toast.error("Failed to update organization name");
@@ -576,7 +574,7 @@ export default function OrganizationPage() {
 				linkToOrganizationLogo: true,
 			});
 
-			await refetchActiveOrganization();
+			await reloadSession();
 			toast.success("Organization logo updated");
 		} catch {
 			toast.error("Failed to upload organization logo");

@@ -290,7 +290,9 @@ function defaultWarehouse(): Warehouse {
 function migrateLegacy(raw: string): Warehouse | null {
 	try {
 		const old = JSON.parse(raw);
-		if (!old?.elements) return null;
+		if (!old?.elements) {
+			return null;
+		}
 		const ground = makeFloor({
 			floorNumber: 1,
 			code: "F1",
@@ -398,11 +400,15 @@ function migrateLegacy(raw: string): Warehouse | null {
 export function loadWarehouse(warehouseId: string): Warehouse {
 	try {
 		const raw = localStorage.getItem(getStorageKey(warehouseId));
-		if (raw) return JSON.parse(raw);
+		if (raw) {
+			return JSON.parse(raw);
+		}
 		const legacy = localStorage.getItem(LEGACY_KEY);
 		if (legacy) {
 			const migrated = migrateLegacy(legacy);
-			if (migrated) return migrated;
+			if (migrated) {
+				return migrated;
+			}
 		}
 	} catch {}
 	return defaultWarehouse();
@@ -481,7 +487,9 @@ export function useWarehouse(warehouseId: string) {
 
 	const removeFloor = useCallback((id: string) => {
 		setWarehouse((w) => {
-			if (w.floors.length <= 1) return w;
+			if (w.floors.length <= 1) {
+				return w;
+			}
 			const floors = w.floors.filter((f) => f.id !== id);
 			return {
 				...w,
@@ -633,7 +641,9 @@ export function useWarehouse(warehouseId: string) {
 						const rack = f.storageUnits.find(
 							(u) => u.id === rackId,
 						);
-						if (!rack) return f;
+						if (!rack) {
+							return f;
+						}
 						// remove existing shelf children
 						const others = f.storageUnits.filter(
 							(u) =>

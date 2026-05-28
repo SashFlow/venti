@@ -3,15 +3,16 @@
 import { config } from "@repo/config";
 import { Card } from "@repo/ui/card";
 import { OrganizationLogo } from "@saas/organizations/components/OrganizationLogo";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
-import { useOrganizationListQuery } from "@saas/organizations/lib/api";
+import {
+	setActiveOrganization,
+	useOrganizationListQuery,
+} from "@saas/organizations/lib/api";
 import { ChevronRightIcon, PlusCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 export function OrganizationsGrid() {
 	const t = useTranslations();
-	const { setActiveOrganization } = useActiveOrganization();
 	const { data: allOrganizations } = useOrganizationListQuery();
 
 	return (

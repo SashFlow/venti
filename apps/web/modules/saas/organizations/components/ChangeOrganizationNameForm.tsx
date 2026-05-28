@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { authClient } from "@repo/auth/client";
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
+import { useSession } from "@saas/auth/hooks/use-session";
 import { organizationListQueryKey } from "@saas/organizations/lib/api";
 import { SettingsItem } from "@saas/shared/components/SettingsItem";
 import { useRouter } from "@shared/hooks/router";
@@ -23,23 +23,23 @@ export function ChangeOrganizationNameForm() {
 	const t = useTranslations();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { activeOrganization } = useActiveOrganization();
+	const { organization } = useSession();
 
 	const form = useForm<FormSchema>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
-			name: activeOrganization?.name ?? "",
+			name: organization?.name ?? "",
 		},
 	});
 
 	const onSubmit = form.handleSubmit(async ({ name }) => {
-		if (!activeOrganization) {
+		if (!organization) {
 			return;
 		}
 
 		try {
 			const { error } = await authClient.organization.update({
-				organizationId: activeOrganization.id,
+				organizationId: organization.id,
 				data: {
 					name,
 				},

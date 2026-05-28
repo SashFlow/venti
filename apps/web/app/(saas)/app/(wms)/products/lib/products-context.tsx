@@ -1,7 +1,6 @@
 "use client";
 
 import { useSession } from "@saas/auth/hooks/use-session";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -30,13 +29,8 @@ const ProductsContext = createContext<ProductsContextValue | undefined>(
 export function ProductsProvider({ children }: PropsWithChildren) {
 	const queryClient = useQueryClient();
 	const { organization: sessionOrganization, session } = useSession();
-	const { activeOrganization } = useActiveOrganization();
-
 	const organizationId =
-		activeOrganization?.id ??
-		sessionOrganization?.id ??
-		session?.activeOrganizationId ??
-		null;
+		sessionOrganization?.id ?? session?.activeOrganizationId ?? null;
 
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);

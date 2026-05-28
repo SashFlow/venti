@@ -151,3 +151,17 @@ export const useUpdateOrganizationMutation = () => {
 		},
 	});
 };
+
+export const setActiveOrganization = async (
+	organizationSlug: string | null,
+) => {
+	await authClient.organization.setActive(
+		organizationSlug
+			? {
+					organizationSlug,
+				}
+			: {
+					organizationId: null,
+				},
+	);
+};

@@ -44,38 +44,6 @@ export const useSessionQuery = () => {
 	});
 };
 
-export const activeOrganizationByIdQueryKey = (id: string) =>
-	["user", "activeOrganizationById", id] as const;
-
-export const useActiveOrganizationQuery = (
-	activeOrganizationId?: string | null,
-) => {
-	return useQuery({
-		queryKey: activeOrganizationByIdQueryKey(activeOrganizationId ?? ""),
-		queryFn: async () => {
-			const { data: activeOrganization, error: organizationError } =
-				await authClient.organization.getFullOrganization({
-					query: {
-						organizationId: activeOrganizationId ?? "",
-					},
-				});
-
-			if (organizationError) {
-				throw new Error(
-					organizationError.message ||
-						"Failed to fetch active organization",
-				);
-			}
-
-			return activeOrganization;
-		},
-		staleTime: Number.POSITIVE_INFINITY,
-		refetchOnWindowFocus: false,
-		retry: false,
-		enabled: config.ui.saas.enabled && !!activeOrganizationId,
-	});
-};
-
 export const userAccountQueryKey = ["user", "accounts"] as const;
 export const useUserAccountsQuery = () => {
 	return useQuery({

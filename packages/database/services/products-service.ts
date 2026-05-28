@@ -4,7 +4,6 @@ import { Prisma } from "../prisma/generated/client";
 const productSelect = {
 	id: true,
 	organizationId: true,
-	code: true,
 	name: true,
 	description: true,
 	isPerishable: true,
@@ -16,7 +15,17 @@ const productSelect = {
 		select: {
 			id: true,
 			code: true,
-			name: true,
+			unitPrice: true,
+			length: true,
+			width: true,
+			height: true,
+			weight: true,
+			metadata: true,
+			balances: {
+				select: {
+					quantityAvailable: true,
+				},
+			},
 		},
 	},
 } satisfies Prisma.ProductSelect;
@@ -29,7 +38,6 @@ type ListProductsInput = {
 };
 
 type ProductPayload = {
-	code: string;
 	name: string;
 	description?: string;
 	isPerishable?: boolean;
@@ -52,10 +60,7 @@ function buildWhere({
 
 	return {
 		organizationId,
-		OR: [
-			{ code: { contains: trimmedQuery, mode: "insensitive" } },
-			{ name: { contains: trimmedQuery, mode: "insensitive" } },
-		],
+		OR: [{ name: { contains: trimmedQuery, mode: "insensitive" } }],
 	} satisfies Prisma.ProductWhereInput;
 }
 
@@ -109,7 +114,6 @@ export async function createProduct(params: {
 	data: ProductPayload;
 	skus: Array<{
 		code: string;
-		baseUomId: string;
 		price?: number;
 		length?: number;
 		width?: number;
@@ -121,7 +125,6 @@ export async function createProduct(params: {
 	return db.product.create({
 		data: {
 			organizationId: params.organizationId,
-			code: params.data.code,
 			name: params.data.name,
 			description: params.data.description,
 			isPerishable: params.data.isPerishable,
@@ -131,7 +134,6 @@ export async function createProduct(params: {
 				create: params.skus.map((sku) => ({
 					code: sku.code,
 					name: params.data.name,
-					baseUomId: sku.baseUomId,
 					unitPrice: toDecimal(sku.price),
 					length: toDecimal(sku.length),
 					width: toDecimal(sku.width),
@@ -146,16 +148,109 @@ export async function createProduct(params: {
 	});
 }
 
+export async function updateProduct(params: {
+	organizationId: string;
+	id: string;
+	data: ProductPayload;
+	skus: Array<{
+		id?: string;
+		code: string;
+		price?: number;
+		length?: number;
+		width?: number;
+		height?: number;
+		weight?: number;
+		metadata?: Prisma.InputJsonValue;
+	}>;
+}) {
+	// First, fetch the existing product and skus
+	const existingProduct = await db.product.findFirst({
+		where: { id: params.id, organizationId: params.organizationId },
+		include: { skus: true },
+	});
+
+	if (!existingProduct) {
+		throw new Error("Product not found");
+	}
+
+	const existingSkuIds = existingProduct.skus.map((s) => s.id);
+	const incomingSkuIds = params.skus
+		.map((s) => s.id)
+		.filter(Boolean) as string[];
+	const skusToDelete = existingSkuIds.filter(
+		(id) => !incomingSkuIds.includes(id),
+	);
+
+	return db.$transaction(async (tx) => {
+		// 1. Delete removed SKUs
+		if (skusToDelete.length > 0) {
+			await tx.sKU.deleteMany({
+				where: { id: { in: skusToDelete }, productId: params.id },
+			});
+		}
+
+		// 2. Update existing and create new SKUs along with updating the product
+		const updatedProduct = await tx.product.update({
+			where: { id: params.id },
+			data: {
+				name: params.data.name,
+				description: params.data.description,
+				isPerishable: params.data.isPerishable,
+				isBatchTracked: params.data.isBatchTracked,
+				isSerialTracked: params.data.isSerialTracked,
+				skus: {
+					upsert: params.skus.map((sku) => ({
+						where: { id: sku.id ?? "new" },
+						update: {
+							code: sku.code,
+							unitPrice: toDecimal(sku.price),
+							length: toDecimal(sku.length),
+							width: toDecimal(sku.width),
+							height: toDecimal(sku.height),
+							weight: toDecimal(sku.weight),
+							metadata: sku.metadata ?? Prisma.JsonNull,
+						},
+						create: {
+							code: sku.code,
+							unitPrice: toDecimal(sku.price),
+							length: toDecimal(sku.length),
+							width: toDecimal(sku.width),
+							height: toDecimal(sku.height),
+							weight: toDecimal(sku.weight),
+							metadata: sku.metadata ?? Prisma.JsonNull,
+							organizationId: params.organizationId,
+						},
+					})),
+				},
+			},
+			select: productSelect,
+		});
+
+		return updatedProduct;
+	});
+}
+
 export async function deleteProduct(params: {
 	organizationId: string;
 	id: string;
 }) {
-	const result = await db.product.deleteMany({
-		where: {
-			id: params.id,
-			organizationId: params.organizationId,
-		},
-	});
+	return db.$transaction(async (tx) => {
+		// Verify product belongs to org
+		const product = await tx.product.findFirst({
+			where: { id: params.id, organizationId: params.organizationId },
+		});
 
-	return result.count > 0;
+		if (!product) return false;
+
+		// Delete SKUs first due to foreign key constraint
+		await tx.sKU.deleteMany({
+			where: { productId: params.id },
+		});
+
+		const result = await tx.product.deleteMany({
+			where: { id: params.id },
+		});
+
+		return result.count > 0;
+	});
 }

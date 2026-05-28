@@ -1,7 +1,7 @@
 "use client";
 
 import { authClient } from "@repo/auth/client";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
+import { useSession } from "@saas/auth/hooks/use-session";
 import { organizationListQueryKey } from "@saas/organizations/lib/api";
 import { SettingsItem } from "@saas/shared/components/SettingsItem";
 import { Spinner } from "@shared/components/Spinner";
@@ -19,8 +19,7 @@ export function OrganizationLogoForm() {
 	const [uploading, setUploading] = useState(false);
 	const [cropDialogOpen, setCropDialogOpen] = useState(false);
 	const [image, setImage] = useState<File | null>(null);
-	const { activeOrganization, refetchActiveOrganization } =
-		useActiveOrganization();
+	const { organization, reloadSession } = useSession();
 	const queryClient = useQueryClient();
 	const getSignedUploadUrlMutation = useMutation(
 		orpc.organizations.createLogoUploadUrl.mutationOptions(),
@@ -38,7 +37,7 @@ export function OrganizationLogoForm() {
 		multiple: false,
 	});
 
-	if (!activeOrganization) {
+	if (!organization) {
 		return null;
 	}
 
@@ -51,7 +50,7 @@ export function OrganizationLogoForm() {
 		try {
 			const { signedUploadUrl, path } =
 				await getSignedUploadUrlMutation.mutateAsync({
-					organizationId: activeOrganization.id,
+					organizationId: organization.id,
 				});
 
 			const response = await fetch(signedUploadUrl, {
@@ -67,7 +66,7 @@ export function OrganizationLogoForm() {
 			}
 
 			const { error } = await authClient.organization.update({
-				organizationId: activeOrganization.id,
+				organizationId: organization.id,
 				data: {
 					logo: path,
 				},
@@ -79,7 +78,7 @@ export function OrganizationLogoForm() {
 
 			toast.success(t("settings.account.avatar.notifications.success"));
 
-			refetchActiveOrganization();
+			reloadSession();
 			queryClient.invalidateQueries({
 				queryKey: organizationListQueryKey,
 			});
@@ -99,8 +98,8 @@ export function OrganizationLogoForm() {
 				<input {...getInputProps()} />
 				<OrganizationLogo
 					className="size-24 cursor-pointer text-xl"
-					logoUrl={activeOrganization.logo}
-					name={activeOrganization.name ?? ""}
+					logoUrl={organization.logo}
+					name={organization.name ?? ""}
 				/>
 
 				{uploading && (

@@ -12,8 +12,10 @@ import {
 	DropdownMenuTrigger,
 } from "@repo/ui/dropdown-menu";
 import { useSession } from "@saas/auth/hooks/use-session";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
-import { useOrganizationListQuery } from "@saas/organizations/lib/api";
+import {
+	setActiveOrganization,
+	useOrganizationListQuery,
+} from "@saas/organizations/lib/api";
 import { ActivePlanBadge } from "@saas/payments/components/ActivePlanBadge";
 import { UserAvatar } from "@shared/components/UserAvatar";
 import { useRouter } from "@shared/hooks/router";
@@ -25,10 +27,8 @@ import { OrganizationLogo } from "./OrganizationLogo";
 
 export function OrganzationSelect({ className }: { className?: string }) {
 	const t = useTranslations();
-	const { user } = useSession();
+	const { user, organization, reloadSession } = useSession();
 	const router = useRouter();
-	const { activeOrganization, setActiveOrganization } =
-		useActiveOrganization();
 	const { data: allOrganizations } = useOrganizationListQuery();
 
 	if (!user) {
@@ -40,19 +40,19 @@ export function OrganzationSelect({ className }: { className?: string }) {
 			<DropdownMenu>
 				<DropdownMenuTrigger className="flex w-full items-center justify-between gap-2 rounded-md border p-2 text-left outline-none focus-visible:bg-primary/10 focus-visible:ring-none">
 					<div className="flex flex-1 items-center justify-start gap-2 text-sm overflow-hidden">
-						{activeOrganization ? (
+						{organization ? (
 							<>
 								<OrganizationLogo
-									name={activeOrganization.name}
-									logoUrl={activeOrganization.logo}
+									name={organization.name}
+									logoUrl={organization.logo}
 									className="hidden size-6 sm:block"
 								/>
 								<span className="block flex-1 truncate">
-									{activeOrganization.name}
+									{organization.name}
 								</span>
 								{config.organizations.enableBilling && (
 									<ActivePlanBadge
-										organizationId={activeOrganization.id}
+										organizationId={organization.id}
 									/>
 								)}
 							</>
@@ -81,7 +81,7 @@ export function OrganzationSelect({ className }: { className?: string }) {
 					{!config.organizations.requireOrganization && (
 						<>
 							<DropdownMenuRadioGroup
-								value={activeOrganization?.id ?? user.id}
+								value={organization?.id ?? user.id}
 								onValueChange={async (value: string) => {
 									if (value === user.id) {
 										await clearCache();
@@ -112,10 +112,11 @@ export function OrganzationSelect({ className }: { className?: string }) {
 						</>
 					)}
 					<DropdownMenuRadioGroup
-						value={activeOrganization?.slug}
+						value={organization?.slug}
 						onValueChange={async (organizationSlug: string) => {
 							await clearCache();
 							setActiveOrganization(organizationSlug);
+							await reloadSession();
 						}}
 					>
 						<DropdownMenuLabel className="text-foreground/60 text-xs">

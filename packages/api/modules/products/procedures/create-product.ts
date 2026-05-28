@@ -8,21 +8,24 @@ import { protectedProcedure } from "../../../orpc/procedures";
 const createProductInput = z.object({
 	organizationId: z.string(),
 	name: z.string().trim().min(1).max(255),
-	code: z.string().trim().min(1).max(100),
 	description: z.string().trim().optional(),
 	isPerishable: z.boolean().default(false),
 	isBatchTracked: z.boolean().default(false),
 	isSerialTracked: z.boolean().default(false),
-	skus: z.array(z.object({
-		code: z.string().trim().min(1, "SKU code is required").max(100),
-		baseUomId: z.string(),
-		price: z.number().positive().optional(),
-		length: z.number().positive().optional(),
-		width: z.number().positive().optional(),
-		height: z.number().positive().optional(),
-		weight: z.number().positive().optional(),
-		metadata: z.record(z.string(), z.unknown()).optional(),
-	})).min(1, "At least one variant is required"),
+	life: z.number().optional(),
+	skus: z
+		.array(
+			z.object({
+				code: z.string().trim().min(1, "SKU code is required").max(100),
+				price: z.number().positive().optional(),
+				length: z.number().positive().optional(),
+				width: z.number().positive().optional(),
+				height: z.number().positive().optional(),
+				weight: z.number().positive().optional(),
+				metadata: z.record(z.string(), z.unknown()).optional(),
+			}),
+		)
+		.min(1, "At least one variant is required"),
 });
 
 export const createProductProcedure = protectedProcedure
@@ -41,16 +44,14 @@ export const createProductProcedure = protectedProcedure
 			const product = await createProduct({
 				organizationId: input.organizationId,
 				data: {
-					code: input.code,
 					name: input.name,
 					description: input.description,
 					isPerishable: input.isPerishable,
 					isBatchTracked: input.isBatchTracked,
 					isSerialTracked: input.isSerialTracked,
 				},
-				skus: input.skus.map(sku => ({
+				skus: input.skus.map((sku) => ({
 					code: sku.code,
-					baseUomId: sku.baseUomId,
 					price: sku.price,
 					length: sku.length,
 					width: sku.width,
@@ -67,7 +68,6 @@ export const createProductProcedure = protectedProcedure
 				resource: "product",
 				resourceId: product.id,
 				metadata: {
-					code: product.code,
 					name: product.name,
 				},
 			});

@@ -14,19 +14,21 @@ import {
 } from "@repo/ui/table";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { orpc } from "@shared/lib/orpc-query-utils";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	ImagePlusIcon,
 	Loader2Icon,
 	ScanBarcodeIcon,
 	XIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 const variantSchema = z.object({
+	id: z.string().optional(),
 	sku: z.string().trim().min(1, "SKU is required"),
 	unitPrice: z.number().positive().optional(),
 	length: z.number().positive().optional(),
@@ -36,13 +38,13 @@ const variantSchema = z.object({
 	metadata: z.record(z.string(), z.string()).optional(),
 });
 
-const createProductSchema = z.object({
+const updateProductSchema = z.object({
 	name: z.string().trim().min(1, "Name is required"),
 	description: z.string().optional(),
 	isPerishable: z.boolean(),
 	isBatchTracked: z.boolean(),
 	isSerialTracked: z.boolean(),
-	life: z.int().optional(),
+	life: z.number().optional(),
 	options: z.array(
 		z
 			.object({
@@ -54,22 +56,34 @@ const createProductSchema = z.object({
 	variants: z.array(variantSchema).min(1, "At least one variant is required"),
 });
 
-type CreateProductFormValues = z.infer<typeof createProductSchema>;
+type UpdateProductFormValues = z.infer<typeof updateProductSchema>;
 
 // Generates a simple unique id
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-export default function CreateProductPage() {
+export default function EditProductPage() {
+	const params = useParams();
+	const productId = params.productId as string;
 	const router = useRouter();
 	const { organization } = useSession();
 	const organizationId = organization?.id ?? null;
 
-	const createProductMutation = useMutation(
-		orpc.products.create.mutationOptions(),
+	const { data: product, isPending: isProductLoading } = useQuery({
+		...orpc.products.get.queryOptions({
+			input: {
+				organizationId: organizationId ?? "",
+				id: productId,
+			},
+		}),
+		enabled: Boolean(organizationId && productId),
+	});
+
+	const updateProductMutation = useMutation(
+		orpc.products.update.mutationOptions(),
 	);
 
-	const form = useForm<CreateProductFormValues>({
-		resolver: zodResolver(createProductSchema),
+	const form = useForm<UpdateProductFormValues>({
+		resolver: zodResolver(updateProductSchema),
 		defaultValues: {
 			name: "",
 			description: "",
@@ -78,17 +92,7 @@ export default function CreateProductPage() {
 			isSerialTracked: false,
 			life: 0,
 			options: [],
-			variants: [
-				{
-					sku: "",
-					metadata: {},
-					unitPrice: undefined,
-					length: undefined,
-					width: undefined,
-					height: undefined,
-					weight: undefined,
-				},
-			],
+			variants: [],
 		},
 	});
 
@@ -111,6 +115,71 @@ export default function CreateProductPage() {
 		name: "variants",
 	});
 
+	const [hasInitialized, setHasInitialized] = useState(false);
+
+	useEffect(() => {
+		if (product && !hasInitialized) {
+			const skus = product.skus || [];
+
+			// Try to reverse-engineer options from metadata
+			const optionNames = new Set<string>();
+			skus.forEach((sku: any) => {
+				if (sku.metadata) {
+					Object.keys(sku.metadata).forEach((key) => {
+						optionNames.add(key);
+					});
+				}
+			});
+
+			const options = Array.from(optionNames).map((name) => ({
+				id: generateId(),
+				name,
+			}));
+
+			form.reset({
+				name: product.name,
+				description: product.description || "",
+				isPerishable: product.isPerishable,
+				isBatchTracked: product.isBatchTracked,
+				isSerialTracked: product.isSerialTracked,
+				life: product.life ?? 0,
+				options,
+				variants: skus.map((sku: any) => {
+					const metadataObj: Record<string, string> = {};
+					if (sku.metadata) {
+						options.forEach((opt) => {
+							if (sku.metadata[opt.name]) {
+								metadataObj[opt.id] = sku.metadata[opt.name];
+							}
+						});
+					}
+
+					return {
+						id: sku.id,
+						sku: sku.code,
+						unitPrice: sku.unitPrice
+							? Number(sku.unitPrice)
+							: undefined,
+						length: sku.length ? Number(sku.length) : undefined,
+						width: sku.width ? Number(sku.width) : undefined,
+						height: sku.height ? Number(sku.height) : undefined,
+						weight: sku.weight ? Number(sku.weight) : undefined,
+						metadata: metadataObj,
+					};
+				}),
+			});
+
+			if (skus.length === 0) {
+				appendVariant({
+					sku: "",
+					metadata: {},
+				});
+			}
+
+			setHasInitialized(true);
+		}
+	}, [product, hasInitialized, form, appendVariant]);
+
 	const onSubmit = form.handleSubmit(async (values) => {
 		if (!organizationId) {
 			toast.error("No active organization selected.");
@@ -118,8 +187,9 @@ export default function CreateProductPage() {
 		}
 
 		try {
-			await createProductMutation.mutateAsync({
+			await updateProductMutation.mutateAsync({
 				organizationId,
+				id: productId,
 				name: values.name,
 				description: values.description,
 				isPerishable: values.isPerishable,
@@ -136,8 +206,9 @@ export default function CreateProductPage() {
 					});
 
 					return {
+						id: v.id,
 						code: v.sku,
-						price: v.unitPrice,
+						unitPrice: v.unitPrice,
 						length: v.length,
 						width: v.width,
 						height: v.height,
@@ -146,19 +217,27 @@ export default function CreateProductPage() {
 					};
 				}),
 			});
-			toast.success("Product created successfully.");
+			toast.success("Product updated successfully.");
 			router.push("/app/products");
 			router.refresh();
-		} catch {
-			toast.error("Failed to create product.");
+		} catch (error) {
+			toast.error("Failed to update product.");
 		}
 	});
+
+	if (isProductLoading) {
+		return (
+			<div className="flex h-[400px] w-full items-center justify-center">
+				<Loader2Icon className="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		);
+	}
 
 	return (
 		<div className="container mx-auto max-w-[1200px] space-y-6 py-8">
 			<div className="flex items-center justify-between">
 				<h1 className="text-2xl font-semibold tracking-tight">
-					Create Product
+					Edit Product
 				</h1>
 			</div>
 
@@ -404,6 +483,7 @@ export default function CreateProductPage() {
 												<Input
 													{...form.register(
 														`variants.${vi}.unitPrice`,
+														{ valueAsNumber: true },
 													)}
 													className="h-9 pl-7 pr-6 text-right"
 													placeholder="0.00"
@@ -418,6 +498,9 @@ export default function CreateProductPage() {
 													<Input
 														{...form.register(
 															`variants.${vi}.length`,
+															{
+																valueAsNumber: true,
+															},
 														)}
 														className="h-9 pr-4 text-right"
 														type="number"
@@ -427,6 +510,9 @@ export default function CreateProductPage() {
 													<Input
 														{...form.register(
 															`variants.${vi}.width`,
+															{
+																valueAsNumber: true,
+															},
 														)}
 														className="h-9 pr-4 text-right"
 														type="number"
@@ -436,6 +522,9 @@ export default function CreateProductPage() {
 													<Input
 														{...form.register(
 															`variants.${vi}.height`,
+															{
+																valueAsNumber: true,
+															},
 														)}
 														className="h-9 pr-4 text-right"
 														type="number"
@@ -449,6 +538,9 @@ export default function CreateProductPage() {
 													<Input
 														{...form.register(
 															`variants.${vi}.weight`,
+															{
+																valueAsNumber: true,
+															},
 														)}
 														className="h-9 pr-4 text-right"
 														type="number"
@@ -528,14 +620,14 @@ export default function CreateProductPage() {
 					<Button
 						type="submit"
 						disabled={
-							createProductMutation.isPending || !organizationId
+							updateProductMutation.isPending || !organizationId
 						}
 						className="min-w-[120px]"
 					>
-						{createProductMutation.isPending && (
+						{updateProductMutation.isPending && (
 							<Loader2Icon className="mr-2 size-4 animate-spin" />
 						)}
-						Save Product
+						Save Changes
 					</Button>
 				</div>
 			</form>

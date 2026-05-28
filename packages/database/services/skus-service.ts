@@ -5,9 +5,7 @@ const skuSelect = {
 	id: true,
 	organizationId: true,
 	code: true,
-	name: true,
 	barcode: true,
-	baseUomId: true,
 	productId: true,
 	width: true,
 	length: true,
@@ -28,10 +26,8 @@ type ListSKUsInput = {
 
 type SKUPayload = {
 	code: string;
-	name: string;
 	productId: string;
 	barcode?: string;
-	baseUomId: string;
 	width?: number;
 	length?: number;
 	height?: number;
@@ -65,7 +61,6 @@ function buildWhere({
 		organizationId,
 		OR: [
 			{ code: { contains: trimmedQuery, mode: "insensitive" } },
-			{ name: { contains: trimmedQuery, mode: "insensitive" } },
 			{ barcode: { contains: trimmedQuery, mode: "insensitive" } },
 		],
 	} satisfies Prisma.SKUWhereInput;
@@ -117,9 +112,7 @@ export async function createSKU(params: {
 		data: {
 			organizationId: params.organizationId,
 			code: params.data.code,
-			name: params.data.name,
 			barcode: params.data.barcode,
-			baseUomId: params.data.baseUomId,
 			productId: params.data.productId,
 			width: toDecimal(params.data.width),
 			length: toDecimal(params.data.length),
@@ -155,9 +148,7 @@ export async function updateSKU(params: {
 		},
 		data: {
 			code: params.data.code,
-			name: params.data.name,
 			barcode: params.data.barcode,
-			baseUomId: params.data.baseUomId,
 			productId: params.data.productId,
 			width: toDecimal(params.data.width),
 			length: toDecimal(params.data.length),

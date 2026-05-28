@@ -11,9 +11,10 @@ import {
 	FormMessage,
 } from "@repo/ui/form";
 import { Input } from "@repo/ui/input";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
+import { useSession } from "@saas/auth/hooks/use-session";
 import {
 	organizationListQueryKey,
+	setActiveOrganization,
 	useCreateOrganizationMutation,
 } from "@saas/organizations/lib/api";
 import { useRouter } from "@shared/hooks/router";
@@ -37,7 +38,7 @@ export function CreateOrganizationForm({
 	const t = useTranslations();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { setActiveOrganization } = useActiveOrganization();
+	const { reloadSession } = useSession();
 	const createOrganizationMutation = useCreateOrganizationMutation();
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -58,12 +59,13 @@ export function CreateOrganizationForm({
 			}
 
 			await setActiveOrganization(newOrganization.slug);
+			await reloadSession();
 
 			await queryClient.invalidateQueries({
 				queryKey: organizationListQueryKey,
 			});
 
-			router.replace(`/app/${newOrganization.slug}`);
+			router.replace("/app/home");
 		} catch {
 			toast.error(t("organizations.createForm.notifications.error"));
 		}

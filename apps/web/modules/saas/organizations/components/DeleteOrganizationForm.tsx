@@ -2,8 +2,11 @@
 
 import { authClient } from "@repo/auth/client";
 import { Button } from "@repo/ui/button";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
-import { useOrganizationListQuery } from "@saas/organizations/lib/api";
+import { useSession } from "@saas/auth/hooks/use-session";
+import {
+	setActiveOrganization,
+	useOrganizationListQuery,
+} from "@saas/organizations/lib/api";
 import { useConfirmationAlert } from "@saas/shared/components/ConfirmationAlertProvider";
 import { SettingsItem } from "@saas/shared/components/SettingsItem";
 import { useRouter } from "@shared/hooks/router";
@@ -15,10 +18,9 @@ export function DeleteOrganizationForm() {
 	const router = useRouter();
 	const { confirm } = useConfirmationAlert();
 	const { refetch: reloadOrganizations } = useOrganizationListQuery();
-	const { activeOrganization, setActiveOrganization } =
-		useActiveOrganization();
+	const { organization } = useSession();
 
-	if (!activeOrganization) {
+	if (!organization) {
 		return null;
 	}
 
@@ -31,7 +33,7 @@ export function DeleteOrganizationForm() {
 			destructive: true,
 			onConfirm: async () => {
 				const { error } = await authClient.organization.delete({
-					organizationId: activeOrganization.id,
+					organizationId: organization.id,
 				});
 
 				if (error) {

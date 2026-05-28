@@ -2,7 +2,6 @@ import { config } from "@repo/config";
 import { SessionProvider } from "@saas/auth/components/SessionProvider";
 import { sessionQueryKey } from "@saas/auth/lib/api";
 import { getOrganizationList, getSession } from "@saas/auth/lib/server";
-import { ActiveOrganizationProvider } from "@saas/organizations/components/ActiveOrganizationProvider";
 import { organizationListQueryKey } from "@saas/organizations/lib/api";
 import { ConfirmationAlertProvider } from "@saas/shared/components/ConfirmationAlertProvider";
 import { Document } from "@shared/components/Document";
@@ -52,11 +51,9 @@ export default async function SaaSLayout({ children }: PropsWithChildren) {
 			<NextIntlClientProvider messages={messages}>
 				<HydrationBoundary state={dehydrate(queryClient)}>
 					<SessionProvider>
-						<ActiveOrganizationProvider>
-							<ConfirmationAlertProvider>
-								{children}
-							</ConfirmationAlertProvider>
-						</ActiveOrganizationProvider>
+						<ConfirmationAlertProvider>
+							{children}
+						</ConfirmationAlertProvider>
 					</SessionProvider>
 				</HydrationBoundary>
 			</NextIntlClientProvider>
