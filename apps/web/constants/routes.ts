@@ -48,6 +48,11 @@ export const NAV_ROUTES = {
 			icon: Users,
 		},
 		{
+			title: "Returns",
+			url: "/app/returns",
+			icon: PackageOpen,
+		},
+		{
 			title: "Vendors",
 			url: "/app/vendors",
 			icon: Store,
@@ -56,11 +61,6 @@ export const NAV_ROUTES = {
 			title: "Customers",
 			url: "/app/customers",
 			icon: UserCheck,
-		},
-		{
-			title: "Packaging",
-			url: "/app/packaging",
-			icon: PackageOpen,
 		},
 	],
 	management: [

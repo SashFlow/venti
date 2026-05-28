@@ -33,7 +33,6 @@ type ProductPayload = {
 	name: string;
 	description?: string;
 	isPerishable?: boolean;
-	life?: number;
 	isBatchTracked?: boolean;
 	isSerialTracked?: boolean;
 };
@@ -110,8 +109,6 @@ export async function createProduct(params: {
 	data: ProductPayload;
 	skus: Array<{
 		code: string;
-		name: string;
-		barcode?: string;
 		baseUomId: string;
 		price?: number;
 		length?: number;
@@ -128,14 +125,12 @@ export async function createProduct(params: {
 			name: params.data.name,
 			description: params.data.description,
 			isPerishable: params.data.isPerishable,
-			life: params.data.life,
 			isBatchTracked: params.data.isBatchTracked,
 			isSerialTracked: params.data.isSerialTracked,
 			skus: {
 				create: params.skus.map((sku) => ({
 					code: sku.code,
-					name: sku.name,
-					barcode: sku.barcode,
+					name: params.data.name,
 					baseUomId: sku.baseUomId,
 					unitPrice: toDecimal(sku.price),
 					length: toDecimal(sku.length),
