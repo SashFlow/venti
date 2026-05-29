@@ -4,7 +4,6 @@ import type { Prisma } from "../prisma/generated/client";
 const customerSelect = {
 	id: true,
 	organizationId: true,
-	code: true,
 	name: true,
 	email: true,
 	phone: true,
@@ -22,7 +21,6 @@ type ListCustomersInput = {
 };
 
 type CustomerPayload = {
-	code: string;
 	name: string;
 	email?: string;
 	phone?: string;

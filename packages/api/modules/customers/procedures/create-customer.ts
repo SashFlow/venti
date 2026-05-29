@@ -8,7 +8,6 @@ import { protectedProcedure } from "../../../orpc/procedures";
 
 const createCustomerInput = z.object({
 	organizationId: z.string(),
-	code: z.string().trim().min(1).max(255),
 	name: z.string().trim().min(1).max(255),
 	email: z.string().trim().email().max(255).optional(),
 	phone: z.string().trim().max(50).optional(),
@@ -33,7 +32,6 @@ export const createCustomerProcedure = protectedProcedure
 			const customer = await createCustomer({
 				organizationId: input.organizationId,
 				data: {
-					code: input.code,
 					name: input.name,
 					email: input.email,
 					phone: input.phone,

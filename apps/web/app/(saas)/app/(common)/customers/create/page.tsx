@@ -146,7 +146,7 @@ export default function CreateCustomerPage() {
 							<Label htmlFor="customer-notes">Notes</Label>
 							<textarea
 								id="customer-notes"
-								className="flex min-h-[96px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+								className="flex min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
 								value={notes}
 								onChange={(e) => setNotes(e.target.value)}
 							/>

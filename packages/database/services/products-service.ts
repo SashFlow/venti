@@ -1,5 +1,9 @@
 import { db } from "../prisma";
-import { Prisma } from "../prisma/generated/client";
+import {
+	type DeadStockAction,
+	Prisma,
+	type ReturnAction,
+} from "../prisma/generated/client";
 
 const productSelect = {
 	id: true,
@@ -9,8 +13,14 @@ const productSelect = {
 	isPerishable: true,
 	isBatchTracked: true,
 	isSerialTracked: true,
+	returnEnabled: true,
+	defaultReturnWindowDays: true,
+	onReturn: true,
+	deadStockValue: true,
+	deadStockAction: true,
 	createdAt: true,
 	updatedAt: true,
+	life: true,
 	skus: {
 		select: {
 			id: true,
@@ -43,6 +53,12 @@ type ProductPayload = {
 	isPerishable?: boolean;
 	isBatchTracked?: boolean;
 	isSerialTracked?: boolean;
+	life?: number;
+	returnEnabled?: boolean;
+	defaultReturnWindowDays?: number;
+	onReturn?: ReturnAction;
+	deadStockValue?: number;
+	deadStockAction?: DeadStockAction;
 };
 
 function buildWhere({
@@ -130,6 +146,13 @@ export async function createProduct(params: {
 			isPerishable: params.data.isPerishable,
 			isBatchTracked: params.data.isBatchTracked,
 			isSerialTracked: params.data.isSerialTracked,
+			returnEnabled: params.data.returnEnabled,
+			defaultReturnWindowDays: params.data.defaultReturnWindowDays,
+			onReturn: params.data.onReturn,
+			deadStockValue: params.data.deadStockValue
+				? toDecimal(params.data.deadStockValue)
+				: undefined,
+			deadStockAction: params.data.deadStockAction,
 			skus: {
 				create: params.skus.map((sku) => ({
 					code: sku.code,
@@ -198,6 +221,14 @@ export async function updateProduct(params: {
 				isPerishable: params.data.isPerishable,
 				isBatchTracked: params.data.isBatchTracked,
 				isSerialTracked: params.data.isSerialTracked,
+				returnEnabled: params.data.returnEnabled,
+				defaultReturnWindowDays: params.data.defaultReturnWindowDays,
+				onReturn: params.data.onReturn,
+				deadStockValue: params.data.deadStockValue
+					? toDecimal(params.data.deadStockValue)
+					: undefined,
+				deadStockAction: params.data.deadStockAction,
+				life: params.data.life,
 				skus: {
 					upsert: params.skus.map((sku) => ({
 						where: { id: sku.id ?? "new" },

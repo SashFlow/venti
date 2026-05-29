@@ -1,5 +1,5 @@
 import { ORPCError } from "@orpc/server";
-import { createProduct } from "@repo/database";
+import { createProduct, DeadStockAction, ReturnAction } from "@repo/database";
 import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
@@ -13,6 +13,11 @@ const createProductInput = z.object({
 	isBatchTracked: z.boolean().default(false),
 	isSerialTracked: z.boolean().default(false),
 	life: z.number().optional(),
+	returnEnabled: z.boolean().default(false),
+	defaultReturnWindowDays: z.number().optional(),
+	onReturn: z.nativeEnum(ReturnAction).optional(),
+	deadStockValue: z.number().optional(),
+	deadStockAction: z.nativeEnum(DeadStockAction).optional(),
 	skus: z
 		.array(
 			z.object({
@@ -49,6 +54,12 @@ export const createProductProcedure = protectedProcedure
 					isPerishable: input.isPerishable,
 					isBatchTracked: input.isBatchTracked,
 					isSerialTracked: input.isSerialTracked,
+					life: input.life,
+					returnEnabled: input.returnEnabled,
+					defaultReturnWindowDays: input.defaultReturnWindowDays,
+					onReturn: input.onReturn,
+					deadStockValue: input.deadStockValue,
+					deadStockAction: input.deadStockAction,
 				},
 				skus: input.skus.map((sku) => ({
 					code: sku.code,

@@ -4,7 +4,6 @@ import type { Prisma } from "../prisma/generated/client";
 const supplierSelect = {
 	id: true,
 	organizationId: true,
-	code: true,
 	name: true,
 	email: true,
 	phone: true,
@@ -21,7 +20,6 @@ type ListSuppliersInput = {
 };
 
 type SupplierPayload = {
-	code: string;
 	name: string;
 	email?: string;
 	phone?: string;
@@ -45,7 +43,6 @@ function buildWhere({
 	return {
 		organizationId,
 		OR: [
-			{ code: { contains: trimmedQuery, mode: "insensitive" } },
 			{ name: { contains: trimmedQuery, mode: "insensitive" } },
 			{ email: { contains: trimmedQuery, mode: "insensitive" } },
 		],

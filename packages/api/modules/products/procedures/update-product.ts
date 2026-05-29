@@ -1,4 +1,4 @@
-import { updateProduct } from "@repo/database";
+import { DeadStockAction, ReturnAction, updateProduct } from "@repo/database";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
@@ -21,6 +21,11 @@ export const updateProductProcedure = protectedProcedure
 			isBatchTracked: z.boolean().optional(),
 			isSerialTracked: z.boolean().optional(),
 			life: z.number().optional(),
+			returnEnabled: z.boolean().optional(),
+			defaultReturnWindowDays: z.number().optional(),
+			onReturn: z.nativeEnum(ReturnAction).optional(),
+			deadStockValue: z.number().optional(),
+			deadStockAction: z.nativeEnum(DeadStockAction).optional(),
 			skus: z
 				.array(
 					z.object({
@@ -49,6 +54,12 @@ export const updateProductProcedure = protectedProcedure
 				isPerishable: input.isPerishable,
 				isBatchTracked: input.isBatchTracked,
 				isSerialTracked: input.isSerialTracked,
+				life: input.life,
+				returnEnabled: input.returnEnabled,
+				defaultReturnWindowDays: input.defaultReturnWindowDays,
+				onReturn: input.onReturn,
+				deadStockValue: input.deadStockValue,
+				deadStockAction: input.deadStockAction,
 			},
 			skus: input.skus.map((s) => ({
 				id: s.id,

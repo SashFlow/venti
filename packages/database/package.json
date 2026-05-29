@@ -15,12 +15,14 @@
 		"dotenv-cli": "^10.0.0",
 		"nanoid": "^5.1.6",
 		"prisma": "6.16.2",
-		"prisma-zod-generator": "^1.25.0"
+		"prisma-zod-generator": "^1.25.0",
+		"tsx": "^4.20.6"
 	},
 	"main": "./index.ts",
 	"name": "@repo/database",
 	"scripts": {
 		"create:setup": "dotenv -c -e ../../.env -- tsx ./prisma/seed/create-setup.ts",
+		"create:products": "dotenv -c -e ../../.env -- tsx ./prisma/seed/products.ts",
 		"generate": "prisma generate --no-hints --schema=./prisma/schema.prisma",
 		"push": "dotenv -c -e ../../.env -- prisma db push --skip-generate --schema=./prisma/schema.prisma",
 		"migrate": "dotenv -c -e ../../.env -- prisma migrate dev --schema=./prisma/schema.prisma",

@@ -5,6 +5,13 @@ import { Button } from "@repo/ui/button";
 import { Checkbox } from "@repo/ui/checkbox";
 import { Input } from "@repo/ui/input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@repo/ui/select";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -25,6 +32,7 @@ import { useRouter } from "next/navigation";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ProductLifecycleFlow } from "../components/product-lifecycle-flow";
 
 const variantSchema = z.object({
 	sku: z.string().trim().min(1, "SKU is required"),
@@ -42,7 +50,12 @@ const createProductSchema = z.object({
 	isPerishable: z.boolean(),
 	isBatchTracked: z.boolean(),
 	isSerialTracked: z.boolean(),
-	life: z.int().optional(),
+	life: z.number().optional(),
+	returnEnabled: z.boolean().default(false),
+	defaultReturnWindowDays: z.number().optional(),
+	onReturn: z.string().optional(),
+	deadStockValue: z.number().optional(),
+	deadStockAction: z.string().optional(),
 	options: z.array(
 		z
 			.object({
@@ -77,6 +90,11 @@ export default function CreateProductPage() {
 			isBatchTracked: false,
 			isSerialTracked: false,
 			life: 0,
+			returnEnabled: false,
+			defaultReturnWindowDays: 30,
+			onReturn: "RESTOCK",
+			deadStockValue: undefined,
+			deadStockAction: "REFURBISH",
 			options: [],
 			variants: [
 				{
@@ -126,6 +144,11 @@ export default function CreateProductPage() {
 				isBatchTracked: values.isBatchTracked,
 				isSerialTracked: values.isSerialTracked,
 				life: values.life,
+				returnEnabled: values.returnEnabled,
+				defaultReturnWindowDays: values.defaultReturnWindowDays,
+				onReturn: values.onReturn as any,
+				deadStockValue: values.deadStockValue,
+				deadStockAction: values.deadStockAction as any,
 				skus: values.variants.map((v: any) => {
 					const metadataRecord: Record<string, string> = {};
 					values.options.forEach((opt: any) => {
@@ -278,6 +301,150 @@ export default function CreateProductPage() {
 							)}
 						</div>
 					)}
+				</div>
+
+				{/* Returns & Dead Stock Section */}
+				<div className="p-6 border rounded-lg shadow-sm space-y-6 bg-card">
+					<div className="grid gap-6 sm:grid-cols-2">
+						<div className="space-y-6">
+							<h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
+								Returns Configuration
+							</h3>
+							<Controller
+								control={form.control}
+								name="returnEnabled"
+								render={({ field }) => (
+									<label className="flex items-center gap-2 cursor-pointer">
+										<Checkbox
+											checked={field.value}
+											onCheckedChange={field.onChange}
+										/>
+										<span className="text-xs font-bold uppercase text-muted-foreground">
+											Enable Returns
+										</span>
+									</label>
+								)}
+							/>
+							{form.watch("returnEnabled") && (
+								<>
+									<div className="space-y-2">
+										<p className="text-xs font-bold uppercase text-muted-foreground">
+											Default Return Window (Days)
+										</p>
+										<Input
+											type="number"
+											{...form.register(
+												"defaultReturnWindowDays",
+												{ valueAsNumber: true },
+											)}
+										/>
+									</div>
+									<div className="space-y-2">
+										<p className="text-xs font-bold uppercase text-muted-foreground">
+											On Return Action
+										</p>
+										<Controller
+											control={form.control}
+											name="onReturn"
+											render={({ field }) => (
+												<Select
+													value={field.value}
+													onValueChange={
+														field.onChange
+													}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Select Action" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="RESTOCK">
+															Restock
+														</SelectItem>
+														<SelectItem value="SCRAP">
+															Scrap
+														</SelectItem>
+														<SelectItem value="REFURBISH">
+															Refurbish
+														</SelectItem>
+														<SelectItem value="RETURN_TO_VENDOR">
+															Return to Vendor
+														</SelectItem>
+														<SelectItem value="RETURN_TO_FACTORY">
+															Return to Factory
+														</SelectItem>
+													</SelectContent>
+												</Select>
+											)}
+										/>
+									</div>
+								</>
+							)}
+						</div>
+
+						<div className="space-y-6">
+							<h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
+								Dead Stock Configuration
+							</h3>
+							<div className="space-y-2">
+								<p className="text-xs font-bold uppercase text-muted-foreground">
+									Dead Stock Value Threshold
+								</p>
+								<Input
+									type="number"
+									step="0.01"
+									{...form.register("deadStockValue", {
+										valueAsNumber: true,
+									})}
+									placeholder="e.g. 10.00"
+								/>
+							</div>
+							<div className="space-y-2">
+								<p className="text-xs font-bold uppercase text-muted-foreground">
+									Dead Stock Action
+								</p>
+								<Controller
+									control={form.control}
+									name="deadStockAction"
+									render={({ field }) => (
+										<Select
+											value={field.value}
+											onValueChange={field.onChange}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select Action" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="SCRAP">
+													Scrap
+												</SelectItem>
+												<SelectItem value="REFURBISH">
+													Refurbish
+												</SelectItem>
+												<SelectItem value="RETURN_TO_VENDOR">
+													Return to Vendor
+												</SelectItem>
+												<SelectItem value="RETURN_TO_FACTORY">
+													Return to Factory
+												</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Lifecycle Flow Visualization */}
+				<div className="border rounded-lg shadow-sm bg-card p-6 space-y-4">
+					<h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+						Product Lifecycle Preview
+					</h3>
+					<ProductLifecycleFlow
+						returnEnabled={form.watch("returnEnabled")}
+						onReturn={form.watch("onReturn")}
+						deadStockAction={form.watch("deadStockAction")}
+					/>
 				</div>
 
 				{/* Variants Section */}

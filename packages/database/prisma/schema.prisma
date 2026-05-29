@@ -602,9 +602,31 @@ model Product {
 
     life Int? @default(0)
 
+    returnEnabled           Boolean      @default(false)
+    defaultReturnWindowDays Int?         @default(30)
+    onReturn                ReturnAction @default(RESTOCK)
+
+    deadStockValue  Decimal?         @db.Decimal(18, 4)
+    deadStockAction DeadStockAction? @default(REFURBISH)
+
     skus SKU[]
 
-    @@unique([organizationId])
+    @@unique([organizationId, name])
+}
+
+enum DeadStockAction {
+    SCRAP
+    REFURBISH
+    RETURN_TO_VENDOR
+    RETURN_TO_FACTORY
+}
+
+enum ReturnAction {
+    RESTOCK
+    SCRAP
+    REFURBISH
+    RETURN_TO_VENDOR
+    RETURN_TO_FACTORY
 }
 
 // ============================================================================
@@ -617,7 +639,7 @@ model SKU {
     updatedAt DateTime @updatedAt
 
     productId String
-    product   Product @relation(fields: [productId], references: [id])
+    product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
     code String
 
@@ -840,7 +862,6 @@ model Supplier {
     organizationId String
     organization   Organization @relation(fields: [organizationId], references: [id])
 
-    code String
     name String
 
     email    String?
@@ -852,7 +873,7 @@ model Supplier {
     purchaseOrders PurchaseOrder[]
     asns           AdvancedShippingNotice[]
 
-    @@unique([organizationId, code])
+    @@unique([organizationId, name])
 }
 
 // ============================================================================
@@ -1005,7 +1026,6 @@ model Customer {
     organizationId String
     organization   Organization @relation(fields: [organizationId], references: [id])
 
-    code String
     name String
 
     email        String?
@@ -1020,7 +1040,7 @@ model Customer {
     returnOrders     ReturnOrder[]
     CustomerLocation CustomerLocation[]
 
-    @@unique([organizationId, code])
+    @@unique([organizationId, name])
 }
 
 // ============================================================================
