@@ -7,25 +7,10 @@ const generateBarcode = () =>
 async function main() {
 	console.log("🌱 Starting database seed...");
 
-	// 1. Create a parent organization for the products
-	const organization = await db.organization.upsert({
-		where: { slug: "daikin-na" },
-		update: {},
-		create: {
-			name: "Daikin North America",
-			slug: "daikin-na",
-			createdAt: new Date(),
-		},
-	});
-
 	// Clean up existing products to prevent unique constraint violations on re-run
 	await db.product.deleteMany({
-		where: { organizationId: organization.id },
+		where: { organizationId: "cmpqv3f240000uxt8nf5qfctu" },
 	});
-
-	console.log(
-		`🏢 Created Organization: ${organization.name} (${organization.id})`,
-	);
 
 	// 2. Define the 25 Product templates and their 5 SKU variations
 	const productsToSeed = [
@@ -445,7 +430,7 @@ async function main() {
 
 		await db.product.create({
 			data: {
-				organizationId: organization.id,
+				organizationId: "cmpqs4n050003uxmsx78netnk",
 				name: template.name,
 				description: template.description,
 				isPerishable: template.isPerishable ?? false,

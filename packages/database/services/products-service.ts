@@ -156,7 +156,6 @@ export async function createProduct(params: {
 			skus: {
 				create: params.skus.map((sku) => ({
 					code: sku.code,
-					name: params.data.name,
 					unitPrice: toDecimal(sku.price),
 					length: toDecimal(sku.length),
 					width: toDecimal(sku.width),

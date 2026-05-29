@@ -51,19 +51,21 @@ const createProductSchema = z.object({
 	isBatchTracked: z.boolean(),
 	isSerialTracked: z.boolean(),
 	life: z.number().optional(),
-	returnEnabled: z.boolean().default(false),
+	returnEnabled: z.boolean(),
 	defaultReturnWindowDays: z.number().optional(),
 	onReturn: z.string().optional(),
 	deadStockValue: z.number().optional(),
 	deadStockAction: z.string().optional(),
-	options: z.array(
-		z
-			.object({
-				id: z.string(),
-				name: z.string().min(1, "Option name is required"),
-			})
-			.optional(),
-	),
+	options: z
+		.array(
+			z
+				.object({
+					id: z.string(),
+					name: z.string().min(1, "Option name is required"),
+				})
+				.optional(),
+		)
+		.optional(),
 	variants: z.array(variantSchema).min(1, "At least one variant is required"),
 });
 
@@ -95,7 +97,6 @@ export default function CreateProductPage() {
 			onReturn: "RESTOCK",
 			deadStockValue: undefined,
 			deadStockAction: "REFURBISH",
-			options: [],
 			variants: [
 				{
 					sku: "",
@@ -130,6 +131,7 @@ export default function CreateProductPage() {
 	});
 
 	const onSubmit = form.handleSubmit(async (values) => {
+		console.log("test");
 		if (!organizationId) {
 			toast.error("No active organization selected.");
 			return;
@@ -151,7 +153,7 @@ export default function CreateProductPage() {
 				deadStockAction: values.deadStockAction as any,
 				skus: values.variants.map((v: any) => {
 					const metadataRecord: Record<string, string> = {};
-					values.options.forEach((opt: any) => {
+					values.options?.forEach((opt: any) => {
 						const val = v.metadata?.[opt.id];
 						if (val) {
 							metadataRecord[opt.name] = val;
@@ -314,7 +316,7 @@ export default function CreateProductPage() {
 								control={form.control}
 								name="returnEnabled"
 								render={({ field }) => (
-									<label className="flex items-center gap-2 cursor-pointer">
+									<div className="flex items-center gap-2 cursor-pointer h-10">
 										<Checkbox
 											checked={field.value}
 											onCheckedChange={field.onChange}
@@ -322,7 +324,7 @@ export default function CreateProductPage() {
 										<span className="text-xs font-bold uppercase text-muted-foreground">
 											Enable Returns
 										</span>
-									</label>
+									</div>
 								)}
 							/>
 							{form.watch("returnEnabled") && (
@@ -385,7 +387,7 @@ export default function CreateProductPage() {
 							<h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
 								Dead Stock Configuration
 							</h3>
-							<div className="space-y-2">
+							{/* <div className="space-y-2">
 								<p className="text-xs font-bold uppercase text-muted-foreground">
 									Dead Stock Value Threshold
 								</p>
@@ -397,8 +399,8 @@ export default function CreateProductPage() {
 									})}
 									placeholder="e.g. 10.00"
 								/>
-							</div>
-							<div className="space-y-2">
+							</div> */}
+							<div className="space-y-2 justify-between items-center flex">
 								<p className="text-xs font-bold uppercase text-muted-foreground">
 									Dead Stock Action
 								</p>
@@ -433,18 +435,6 @@ export default function CreateProductPage() {
 							</div>
 						</div>
 					</div>
-				</div>
-
-				{/* Lifecycle Flow Visualization */}
-				<div className="border rounded-lg shadow-sm bg-card p-6 space-y-4">
-					<h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-						Product Lifecycle Preview
-					</h3>
-					<ProductLifecycleFlow
-						returnEnabled={form.watch("returnEnabled")}
-						onReturn={form.watch("onReturn")}
-						deadStockAction={form.watch("deadStockAction")}
-					/>
 				</div>
 
 				{/* Variants Section */}
@@ -571,6 +561,7 @@ export default function CreateProductPage() {
 												<Input
 													{...form.register(
 														`variants.${vi}.unitPrice`,
+														{ valueAsNumber: true },
 													)}
 													className="h-9 pl-7 pr-6 text-right"
 													placeholder="0.00"
@@ -585,6 +576,7 @@ export default function CreateProductPage() {
 													<Input
 														{...form.register(
 															`variants.${vi}.length`,
+															{ valueAsNumber: true },
 														)}
 														className="h-9 pr-4 text-right"
 														type="number"
@@ -594,6 +586,7 @@ export default function CreateProductPage() {
 													<Input
 														{...form.register(
 															`variants.${vi}.width`,
+															{ valueAsNumber: true },
 														)}
 														className="h-9 pr-4 text-right"
 														type="number"
@@ -603,6 +596,7 @@ export default function CreateProductPage() {
 													<Input
 														{...form.register(
 															`variants.${vi}.height`,
+															{ valueAsNumber: true },
 														)}
 														className="h-9 pr-4 text-right"
 														type="number"
@@ -616,6 +610,7 @@ export default function CreateProductPage() {
 													<Input
 														{...form.register(
 															`variants.${vi}.weight`,
+															{ valueAsNumber: true },
 														)}
 														className="h-9 pr-4 text-right"
 														type="number"
@@ -651,6 +646,18 @@ export default function CreateProductPage() {
 							</TableBody>
 						</Table>
 					</div>
+				</div>
+
+				{/* Lifecycle Flow Visualization */}
+				<div className="border rounded-lg shadow-sm bg-card p-6 space-y-4">
+					<h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+						Product Lifecycle Preview
+					</h3>
+					<ProductLifecycleFlow
+						returnEnabled={form.watch("returnEnabled")}
+						onReturn={form.watch("onReturn")}
+						deadStockAction={form.watch("deadStockAction")}
+					/>
 				</div>
 
 				{/* Product Image Section */}
@@ -698,6 +705,7 @@ export default function CreateProductPage() {
 							createProductMutation.isPending || !organizationId
 						}
 						className="min-w-[120px]"
+						onClick={onSubmit}
 					>
 						{createProductMutation.isPending && (
 							<Loader2Icon className="mr-2 size-4 animate-spin" />

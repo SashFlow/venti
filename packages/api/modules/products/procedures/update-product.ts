@@ -1,4 +1,8 @@
-import { DeadStockAction, ReturnAction, updateProduct } from "@repo/database";
+import { updateProduct } from "@repo/database";
+import {
+	DeadStockAction,
+	ReturnAction,
+} from "@repo/database/prisma/generated/client/client";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
@@ -23,9 +27,9 @@ export const updateProductProcedure = protectedProcedure
 			life: z.number().optional(),
 			returnEnabled: z.boolean().optional(),
 			defaultReturnWindowDays: z.number().optional(),
-			onReturn: z.nativeEnum(ReturnAction).optional(),
+			onReturn: z.enum(ReturnAction).optional(),
 			deadStockValue: z.number().optional(),
-			deadStockAction: z.nativeEnum(DeadStockAction).optional(),
+			deadStockAction: z.enum(DeadStockAction).optional(),
 			skus: z
 				.array(
 					z.object({

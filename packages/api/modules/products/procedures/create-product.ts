@@ -1,5 +1,9 @@
 import { ORPCError } from "@orpc/server";
-import { createProduct, DeadStockAction, ReturnAction } from "@repo/database";
+import { createProduct } from "@repo/database";
+import {
+	DeadStockAction,
+	ReturnAction,
+} from "@repo/database/prisma/generated/client/client";
 import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
@@ -15,9 +19,9 @@ const createProductInput = z.object({
 	life: z.number().optional(),
 	returnEnabled: z.boolean().default(false),
 	defaultReturnWindowDays: z.number().optional(),
-	onReturn: z.nativeEnum(ReturnAction).optional(),
+	onReturn: z.enum(ReturnAction).optional(),
 	deadStockValue: z.number().optional(),
-	deadStockAction: z.nativeEnum(DeadStockAction).optional(),
+	deadStockAction: z.enum(DeadStockAction).optional(),
 	skus: z
 		.array(
 			z.object({

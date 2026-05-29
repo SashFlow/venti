@@ -53,7 +53,7 @@ const updateProductSchema = z.object({
 	isBatchTracked: z.boolean(),
 	isSerialTracked: z.boolean(),
 	life: z.number().optional(),
-	returnEnabled: z.boolean().default(false),
+	returnEnabled: z.boolean(),
 	defaultReturnWindowDays: z.number().optional(),
 	onReturn: z.string().optional(),
 	deadStockValue: z.number().optional(),
@@ -206,6 +206,7 @@ export default function EditProductPage() {
 	}, [product, hasInitialized, form, appendVariant]);
 
 	const onSubmit = form.handleSubmit(async (values) => {
+		console.log("test");
 		if (!organizationId) {
 			toast.error("No active organization selected.");
 			return;
@@ -250,7 +251,7 @@ export default function EditProductPage() {
 			toast.success("Product updated successfully.");
 			router.push("/app/products");
 			router.refresh();
-		} catch (error) {
+		} catch {
 			toast.error("Failed to update product.");
 		}
 	});
@@ -400,7 +401,7 @@ export default function EditProductPage() {
 								control={form.control}
 								name="returnEnabled"
 								render={({ field }) => (
-									<label className="flex items-center gap-2 cursor-pointer">
+									<div className="flex items-center gap-2 cursor-pointer">
 										<Checkbox
 											checked={field.value}
 											onCheckedChange={field.onChange}
@@ -408,7 +409,7 @@ export default function EditProductPage() {
 										<span className="text-xs font-bold uppercase text-muted-foreground">
 											Enable Returns
 										</span>
-									</label>
+									</div>
 								)}
 							/>
 							{form.watch("returnEnabled") && (
@@ -471,7 +472,7 @@ export default function EditProductPage() {
 							<h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
 								Dead Stock Configuration
 							</h3>
-							<div className="space-y-2">
+							{/* <div className="space-y-2">
 								<p className="text-xs font-bold uppercase text-muted-foreground">
 									Dead Stock Value Threshold
 								</p>
@@ -483,7 +484,7 @@ export default function EditProductPage() {
 									})}
 									placeholder="e.g. 10.00"
 								/>
-							</div>
+							</div> */}
 							<div className="space-y-2">
 								<p className="text-xs font-bold uppercase text-muted-foreground">
 									Dead Stock Action
@@ -519,18 +520,6 @@ export default function EditProductPage() {
 							</div>
 						</div>
 					</div>
-				</div>
-
-				{/* Lifecycle Flow Visualization */}
-				<div className="border rounded-lg shadow-sm bg-card p-6 space-y-4">
-					<h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-						Product Lifecycle Preview
-					</h3>
-					<ProductLifecycleFlow
-						returnEnabled={form.watch("returnEnabled")}
-						onReturn={form.watch("onReturn")}
-						deadStockAction={form.watch("deadStockAction")}
-					/>
 				</div>
 
 				{/* Variants Section */}
@@ -750,6 +739,18 @@ export default function EditProductPage() {
 							</TableBody>
 						</Table>
 					</div>
+				</div>
+
+				{/* Lifecycle Flow Visualization */}
+				<div className="border rounded-lg shadow-sm bg-card p-6 space-y-4">
+					<h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+						Product Lifecycle Preview
+					</h3>
+					<ProductLifecycleFlow
+						returnEnabled={form.watch("returnEnabled")}
+						onReturn={form.watch("onReturn")}
+						deadStockAction={form.watch("deadStockAction")}
+					/>
 				</div>
 
 				{/* Product Image Section */}
