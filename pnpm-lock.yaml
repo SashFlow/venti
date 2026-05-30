@@ -534,6 +534,9 @@ importers:
       '@biomejs/biome':
         specifier: 2.2.4
         version: 2.2.4
+      '@faker-js/faker':
+        specifier: ^10.4.0
+        version: 10.4.0
       '@repo/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript

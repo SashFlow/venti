@@ -523,6 +523,7 @@ model Location {
     scanEvents      ScanEvent[]
     InventorySerial InventorySerial[]
     CycleCountItem  CycleCountItem[]
+    assets          Asset[]
 
     @@unique([warehouseId, code])
     @@index([warehouseId, type])
@@ -546,6 +547,9 @@ model Asset {
 
     warehouseId String
     warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+    locationId String?
+    location   Location? @relation(fields: [locationId], references: [id])
 
     name String?
 

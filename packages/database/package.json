@@ -10,6 +10,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.4",
+		"@faker-js/faker": "^10.4.0",
 		"@repo/tsconfig": "workspace:*",
 		"@types/node": "24.6.0",
 		"dotenv-cli": "^10.0.0",
@@ -23,6 +24,7 @@
 	"scripts": {
 		"create:setup": "dotenv -c -e ../../.env -- tsx ./prisma/seed/create-setup.ts",
 		"create:products": "dotenv -c -e ../../.env -- tsx ./prisma/seed/products.ts",
+		"create:layout-and-simulation": "dotenv -c -e ../../.env -- tsx ./prisma/seed/layout-and-simulation.ts",
 		"generate": "prisma generate --no-hints --schema=./prisma/schema.prisma",
 		"push": "dotenv -c -e ../../.env -- prisma db push --skip-generate --schema=./prisma/schema.prisma",
 		"migrate": "dotenv -c -e ../../.env -- prisma migrate dev --schema=./prisma/schema.prisma",
