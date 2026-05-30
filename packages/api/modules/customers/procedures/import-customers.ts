@@ -12,7 +12,7 @@ const customerImportRowSchema = z.object({
 	email: z.string().trim().email().max(255).optional(),
 	phone: z.string().trim().max(50).optional(),
 	notes: z.string().trim().optional(),
-	isWholesaler: z.boolean().optional(),
+	type: z.boolean().optional(),
 	address1: z.string().trim().optional(),
 	address2: z.string().trim().optional(),
 	city: z.string().trim().optional(),
@@ -69,7 +69,7 @@ export const importCustomersProcedure = protectedProcedure
 							email: row.email,
 							phone: row.phone,
 							notes: row.notes,
-							isWholesaler: row.isWholesaler ?? false,
+							type: row.isWholesaler ?? false,
 							metadata,
 						},
 					});
@@ -83,7 +83,7 @@ export const importCustomersProcedure = protectedProcedure
 							email: row.email,
 							phone: row.phone,
 							notes: row.notes,
-							isWholesaler: row.isWholesaler ?? false,
+							type: row.isWholesaler ?? false,
 							metadata,
 						},
 					});

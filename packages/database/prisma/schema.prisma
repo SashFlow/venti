@@ -11,19 +11,19 @@
 // ============================================================================
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
-    provider = "prisma-client-js"
-    output   = "./generated/client"
+  provider = "prisma-client-js"
+  output   = "./generated/client"
 }
 
 generator zod {
-    provider = "prisma-zod-generator"
-    output   = "./zod"
-    config   = "./zod-generator.config.json"
+  provider = "prisma-zod-generator"
+  output   = "./zod"
+  config   = "./zod-generator.config.json"
 }
 
 // ============================================================================
@@ -31,345 +31,350 @@ generator zod {
 // ============================================================================
 
 model User {
-    id                    String                 @id @default(cuid())
-    name                  String
-    email                 String
-    emailVerified         Boolean
-    image                 String?
-    createdAt             DateTime
-    updatedAt             DateTime
-    username              String?
-    role                  String?
-    banned                Boolean?
-    banReason             String?
-    banExpires            DateTime?
-    onboardingComplete    Boolean                @default(false)
-    paymentsCustomerId    String?
-    locale                String?
-    twoFactorEnabled      Boolean?
-    sessions              Session[]
-    accounts              Account[]
-    passkeys              Passkey[]
-    invitations           Invitation[]
-    purchases             Purchase[]
-    members               Member[]
-    twofactors            TwoFactor[]
-    auditLogs             AuditLog[]
-    inventoryTransactions InventoryTransaction[]
-    tasks                 WarehouseTask[]
-    scanEvents            ScanEvent[]
-    uploadedFiles         UploadFile[]           @relation("UploadedFilesByUser")
-    ReturnInspection      ReturnInspection[]
+  id                    String                 @id @default(cuid())
+  name                  String
+  email                 String
+  emailVerified         Boolean
+  image                 String?
+  createdAt             DateTime
+  updatedAt             DateTime
+  username              String?
+  role                  String?
+  banned                Boolean?
+  banReason             String?
+  banExpires            DateTime?
+  onboardingComplete    Boolean                @default(false)
+  paymentsCustomerId    String?
+  locale                String?
+  twoFactorEnabled      Boolean?
+  sessions              Session[]
+  accounts              Account[]
+  passkeys              Passkey[]
+  invitations           Invitation[]
+  purchases             Purchase[]
+  members               Member[]
+  twofactors            TwoFactor[]
+  auditLogs             AuditLog[]
+  inventoryTransactions InventoryTransaction[]
+  tasks                 WarehouseTask[]
+  scanEvents            ScanEvent[]
+  uploadedFiles         UploadFile[]           @relation("UploadedFilesByUser")
+  ReturnInspection      ReturnInspection[]
 
-    @@unique([email])
-    @@unique([username])
-    @@map("user")
+  @@unique([email])
+  @@unique([username])
+  @@map("user")
 }
 
 model Session {
-    id        String   @id @default(cuid())
-    expiresAt DateTime
-    ipAddress String?
-    userAgent String?
-    userId    String
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    impersonatedBy String?
+  impersonatedBy String?
 
-    activeOrganizationId String?
+  activeOrganizationId String?
 
-    token     String
-    createdAt DateTime
-    updatedAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
 
-    @@unique([token])
-    @@index([userId])
-    @@index([expiresAt])
-    @@map("session")
+  @@unique([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
 }
 
 model Account {
-    id           String    @id @default(cuid())
-    accountId    String
-    providerId   String
-    userId       String
-    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    accessToken  String?   @db.Text
-    refreshToken String?   @db.Text
-    idToken      String?   @db.Text
-    expiresAt    DateTime?
-    password     String?
+  id           String    @id @default(cuid())
+  accountId    String
+  providerId   String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String?   @db.Text
+  refreshToken String?   @db.Text
+  idToken      String?   @db.Text
+  expiresAt    DateTime?
+  password     String?
 
-    accessTokenExpiresAt  DateTime?
-    refreshTokenExpiresAt DateTime?
-    scope                 String?
-    createdAt             DateTime
-    updatedAt             DateTime
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime
+  updatedAt             DateTime
 
-    @@index([userId])
-    @@index([providerId, accountId])
-    @@map("account")
+  @@index([userId])
+  @@index([providerId, accountId])
+  @@map("account")
 }
 
 model Verification {
-    id         String   @id @default(cuid())
-    identifier String
-    value      String   @db.Text
-    expiresAt  DateTime
+  id         String   @id @default(cuid())
+  identifier String
+  value      String   @db.Text
+  expiresAt  DateTime
 
-    createdAt DateTime?
-    updatedAt DateTime?
+  createdAt DateTime?
+  updatedAt DateTime?
 
-    @@index([identifier])
-    @@index([expiresAt])
-    @@map("verification")
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verification")
 }
 
 model Passkey {
-    id           String    @id @default(cuid())
-    name         String?
-    publicKey    String
-    userId       String
-    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    credentialID String    @unique
-    counter      Int
-    deviceType   String
-    backedUp     Boolean
-    transports   String?
-    createdAt    DateTime?
+  id           String    @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String    @unique
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime?
 
-    @@index([userId])
-    @@map("passkey")
+  @@index([userId])
+  @@map("passkey")
 }
 
 model TwoFactor {
-    id          String @id @default(cuid())
-    secret      String
-    backupCodes String
-    userId      String
-    user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String @id @default(cuid())
+  secret      String
+  backupCodes String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([userId])
-    @@map("two_factor")
+  @@index([userId])
+  @@map("two_factor")
 }
 
 model Organization {
-    id                 String              @id @default(cuid())
-    name               String
-    slug               String?
-    logo               String?
-    logoUploadFileId   String?
-    logoUploadFile     UploadFile?         @relation("OrganizationLogoUpload", fields: [logoUploadFileId], references: [id], onDelete: SetNull)
-    createdAt          DateTime
-    metadata           Json?
-    paymentsCustomerId String?
-    members            Member[]
-    invitations        Invitation[]
-    purchases          Purchase[]
-    roleGroups         RoleGroup[]
-    warehouses         Warehouse[]
-    orgConfig          OrganizationConfig?
-    auditLogs          AuditLog[]
-    skus               SKU[]
-    suppliers          Supplier[]
-    customers          Customer[]
-    uploadFiles        UploadFile[]        @relation("OrganizationUploads")
-    CustomerLocation   CustomerLocation[]
-    Product            Product[]
+  id                   String                @id @default(cuid())
+  name                 String
+  slug                 String?
+  logo                 String?
+  logoUploadFileId     String?
+  logoUploadFile       UploadFile?           @relation("OrganizationLogoUpload", fields: [logoUploadFileId], references: [id], onDelete: SetNull)
+  createdAt            DateTime
+  metadata             Json?
+  paymentsCustomerId   String?
+  members              Member[]
+  invitations          Invitation[]
+  purchases            Purchase[]
+  roleGroups           RoleGroup[]
+  warehouses           Warehouse[]
+  orgConfig            OrganizationConfig?
+  auditLogs            AuditLog[]
+  skus                 SKU[]
+  suppliers            Supplier[]
+  customers            Customer[]
+  uploadFiles          UploadFile[]          @relation("OrganizationUploads")
+  CustomerLocation     CustomerLocation[]
+  Product              Product[]
+  transportationRoutes TransportationRoute[]
+  CostLedger           CostLedger[]
 
-    @@unique([slug])
-    @@index([logoUploadFileId])
-    @@map("organization")
+  @@unique([slug])
+  @@index([logoUploadFileId])
+  @@map("organization")
 }
 
 model OrganizationConfig {
-    id             String       @id @default(cuid())
-    organizationId String       @unique
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-    headquarterId String?
-    headquarter   Address? @relation(fields: [headquarterId], references: [id], onDelete: SetNull)
+  headquarterId String?
+  headquarter   Address? @relation(fields: [headquarterId], references: [id], onDelete: SetNull)
 
-    fulfillment    Json?
-    inventory      Json?
-    units          Json?
-    barcodeScanner Json?
-    purchaseOrders Json?
-    transfers      Json?
-    cycleCount     Json?
-    dataRetention  Json?
+  fulfillment    Json?
+  inventory      Json?
+  units          Json?
+  barcodeScanner Json?
+  purchaseOrders Json?
+  transfers      Json?
+  cycleCount     Json?
+  dataRetention  Json?
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@map("organization_config")
+  @@map("organization_config")
 }
 
 model Address {
-    id           String  @id @default(cuid())
-    addressLine1 String
-    addressLine2 String?
-    city         String
-    state        String
-    zip          String
-    country      String
+  id           String  @id @default(cuid())
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  zip          String
+  country      String
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    organizationConfigs OrganizationConfig[]
-    customerLocations   CustomerLocation[]
-    warehouses          Warehouse[]          @relation("WarehouseAddress")
-    returnWarehouses    Warehouse[]          @relation("WarehouseReturnAddress")
+  organizationConfigs OrganizationConfig[]
+  customerLocations   CustomerLocation[]
+  warehouses          Warehouse[]           @relation("WarehouseAddress")
+  returnWarehouses    Warehouse[]           @relation("WarehouseReturnAddress")
+  routesFrom          TransportationRoute[] @relation("RouteFromAddress")
+  routesTo            TransportationRoute[] @relation("RouteToAddress")
+  suppliers           Supplier[]
 
-    @@map("address")
+  @@map("address")
 }
 
 model CustomerLocation {
-    id             String       @id @default(cuid())
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-    customerId String
-    customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-    addressId String
-    address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId String
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
 
-    name      String
-    isDefault Boolean @default(false)
-    notes     String?
+  name      String
+  isDefault Boolean @default(false)
+  notes     String?
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@index([organizationId])
-    @@index([customerId])
-    @@map("customer_location")
+  @@index([organizationId])
+  @@index([customerId])
+  @@map("customer_location")
 }
 
 model Member {
-    id             String       @id @default(cuid())
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    userId         String
-    user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-    role           String
-    roleGroupId    String?
-    roleGroup      RoleGroup?   @relation(fields: [roleGroupId], references: [id], onDelete: SetNull)
-    createdAt      DateTime
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String
+  roleGroupId    String?
+  roleGroup      RoleGroup?   @relation(fields: [roleGroupId], references: [id], onDelete: SetNull)
+  createdAt      DateTime
 
-    @@unique([organizationId, userId])
-    @@index([userId])
-    @@index([roleGroupId])
-    @@map("member")
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([roleGroupId])
+  @@map("member")
 }
 
 model Invitation {
-    id             String       @id @default(cuid())
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    email          String
-    role           String?
-    status         String
-    expiresAt      DateTime
-    inviterId      String
-    user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
-    @@index([organizationId])
-    @@index([email])
-    @@index([inviterId])
-    @@index([expiresAt])
-    @@map("invitation")
+  @@index([organizationId])
+  @@index([email])
+  @@index([inviterId])
+  @@index([expiresAt])
+  @@map("invitation")
 }
 
 enum PurchaseType {
-    SUBSCRIPTION
-    ONE_TIME
+  SUBSCRIPTION
+  ONE_TIME
 }
 
 model Purchase {
-    id             String        @id @default(cuid())
-    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    organizationId String?
-    user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId         String?
-    type           PurchaseType
-    customerId     String
-    subscriptionId String?       @unique
-    productId      String
-    status         String?
-    createdAt      DateTime      @default(now())
-    updatedAt      DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String?
+  type           PurchaseType
+  customerId     String
+  subscriptionId String?       @unique
+  productId      String
+  status         String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-    @@index([subscriptionId])
-    @@index([organizationId])
-    @@index([userId])
-    @@map("purchase")
+  @@index([subscriptionId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("purchase")
 }
 
 model AuditLog {
-    id             String        @id @default(cuid())
-    organizationId String?
-    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-    userId         String?
-    user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-    action         String
-    resource       String
-    resourceId     String?
-    metadata       Json?
-    ipAddress      String?
-    userAgent      String?
-    createdAt      DateTime      @default(now())
+  id             String        @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action         String
+  resource       String
+  resourceId     String?
+  metadata       Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
 
-    @@index([organizationId])
-    @@index([userId])
-    @@index([resource])
-    @@index([resourceId])
-    @@index([createdAt])
-    @@map("audit_log")
+  @@index([organizationId])
+  @@index([userId])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([createdAt])
+  @@map("audit_log")
 }
 
 enum UploadFileScope {
-    ORGANIZATION_LOGO
-    USER_AVATAR
-    NOTE_IMAGE
-    GENERIC
+  ORGANIZATION_LOGO
+  USER_AVATAR
+  NOTE_IMAGE
+  GENERIC
 }
 
 enum UploadFileStatus {
-    PENDING
-    UPLOADED
-    FAILED
-    DELETED
+  PENDING
+  UPLOADED
+  FAILED
+  DELETED
 }
 
 model UploadFile {
-    id               String           @id @default(cuid())
-    organizationId   String?
-    organization     Organization?    @relation("OrganizationUploads", fields: [organizationId], references: [id], onDelete: SetNull)
-    uploadedByUserId String?
-    uploadedByUser   User?            @relation("UploadedFilesByUser", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
-    bucket           String           @db.VarChar(100)
-    path             String           @db.VarChar(1024)
-    fileName         String?          @db.VarChar(255)
-    mimeType         String?          @db.VarChar(255)
-    sizeBytes        Int?
-    checksum         String?          @db.VarChar(255)
-    scope            UploadFileScope  @default(GENERIC)
-    status           UploadFileStatus @default(PENDING)
-    metadata         Json?
-    createdAt        DateTime         @default(now())
-    updatedAt        DateTime         @updatedAt
+  id               String           @id @default(cuid())
+  organizationId   String?
+  organization     Organization?    @relation("OrganizationUploads", fields: [organizationId], references: [id], onDelete: SetNull)
+  uploadedByUserId String?
+  uploadedByUser   User?            @relation("UploadedFilesByUser", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  bucket           String           @db.VarChar(100)
+  path             String           @db.VarChar(1024)
+  fileName         String?          @db.VarChar(255)
+  mimeType         String?          @db.VarChar(255)
+  sizeBytes        Int?
+  checksum         String?          @db.VarChar(255)
+  scope            UploadFileScope  @default(GENERIC)
+  status           UploadFileStatus @default(PENDING)
+  metadata         Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-    organizationLogoFor Organization[] @relation("OrganizationLogoUpload")
+  organizationLogoFor Organization[] @relation("OrganizationLogoUpload")
 
-    @@unique([bucket, path])
-    @@index([organizationId])
-    @@index([uploadedByUserId])
-    @@index([scope])
-    @@index([status])
-    @@map("upload_file")
+  @@unique([bucket, path])
+  @@index([organizationId])
+  @@index([uploadedByUserId])
+  @@index([scope])
+  @@index([status])
+  @@map("upload_file")
 }
 
 // ================================================
@@ -377,19 +382,19 @@ model UploadFile {
 // ================================================
 
 model RoleGroup {
-    id             String       @id @default(cuid())
-    createdAt      DateTime     @default(now())
-    updatedAt      DateTime     @updatedAt
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    name           String
-    description    String?
-    warehouses     Warehouse[]  @relation("RoleGroupWarehouses")
-    permissions    String[]
-    members        Member[]
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  warehouses     Warehouse[]  @relation("RoleGroupWarehouses")
+  permissions    String[]
+  members        Member[]
 
-    @@index([organizationId])
-    @@map("role_group")
+  @@index([organizationId])
+  @@map("role_group")
 }
 
 // ============================================================================
@@ -397,61 +402,69 @@ model RoleGroup {
 // ============================================================================
 
 model Warehouse {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
-    code String
-    name String
+  code String
+  name String
 
-    timezone String @default("UTC")
+  timezone String @default("UTC")
 
-    addressId String
-    address   Address @relation("WarehouseAddress", fields: [addressId], references: [id])
+  addressId String
+  address   Address @relation("WarehouseAddress", fields: [addressId], references: [id])
 
-    sameReturn Boolean
+  sameReturn Boolean
 
-    returnId String?
-    return   Address? @relation("WarehouseReturnAddress", fields: [returnId], references: [id])
+  returnId String?
+  return   Address? @relation("WarehouseReturnAddress", fields: [returnId], references: [id])
 
-    status WarehouseStatus @default(ACTIVE)
+  status WarehouseStatus @default(ACTIVE)
 
-    locations Location[]
-    assets    Asset[]
+  holdingCostPerVolumeUnit Decimal? @db.Decimal(18, 4)
+  holdingCostPerWeightUnit Decimal? @db.Decimal(18, 4)
 
-    inventoryBalances InventoryBalance[]
+  locations Location[]
+  assets    Asset[]
 
-    receivingOrders ReceivingOrder[]
-    salesOrders     SalesOrder[]
-    shipments       Shipment[]
+  inventoryBalances InventoryBalance[]
 
-    tasks WarehouseTask[]
+  receivingOrders ReceivingOrder[]
+  salesOrders     SalesOrder[]
+  shipments       Shipment[]
 
-    purchaseOrders PurchaseOrder[]
+  tasks WarehouseTask[]
 
-    asns AdvancedShippingNotice[]
+  purchaseOrders PurchaseOrder[]
 
-    workflows WorkflowDefinition[]
+  asns AdvancedShippingNotice[]
 
-    cycleCounts CycleCountSession[]
+  workflows WorkflowDefinition[]
 
-    returnOrders ReturnOrder[]
+  cycleCounts CycleCountSession[]
 
-    roleGroups           RoleGroup[]            @relation("RoleGroupWarehouses")
-    InventoryTransaction InventoryTransaction[]
-    PickWave             PickWave[]
-    ScanEvent            ScanEvent[]
+  returnOrders ReturnOrder[]
 
-    @@unique([organizationId, code])
+  roleGroups             RoleGroup[]             @relation("RoleGroupWarehouses")
+  InventoryTransaction   InventoryTransaction[]
+  PickWave               PickWave[]
+  ScanEvent              ScanEvent[]
+  sourceTransfers        TransferOrder[]         @relation("TransferSourceWarehouse")
+  destinationTransfers   TransferOrder[]         @relation("TransferDestinationWarehouse")
+  returnToSupplierOrders ReturnToSupplierOrder[]
+  InventoryCost          InventoryCost[]
+  CostLedger             CostLedger[]
+
+  @@unique([organizationId, code])
 }
 
 enum WarehouseStatus {
-    ACTIVE
-    INACTIVE
-    MAINTENANCE
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
 }
 
 // ============================================================================
@@ -459,129 +472,129 @@ enum WarehouseStatus {
 // ============================================================================
 
 model Location {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    parentLocationId String?
-    parentLocation   Location? @relation("LocationHierarchy", fields: [parentLocationId], references: [id])
+  parentLocationId String?
+  parentLocation   Location? @relation("LocationHierarchy", fields: [parentLocationId], references: [id])
 
-    children Location[] @relation("LocationHierarchy")
+  children Location[] @relation("LocationHierarchy")
 
-    code String
-    name String?
+  code String
+  name String?
 
-    type LocationType
+  type LocationType
 
-    barcode String? @unique
+  barcode String? @unique
 
-    sequence Int?
+  sequence Int?
 
-    isPickable   Boolean @default(true)
-    isReceivable Boolean @default(true)
-    isReservable Boolean @default(true)
-    isQuarantine Boolean @default(false)
+  isPickable   Boolean @default(true)
+  isReceivable Boolean @default(true)
+  isReservable Boolean @default(true)
+  isQuarantine Boolean @default(false)
 
-    capacityVolume Decimal? @db.Decimal(18, 4)
-    capacityWeight Decimal? @db.Decimal(18, 4)
+  capacityVolume Decimal? @db.Decimal(18, 4)
+  capacityWeight Decimal? @db.Decimal(18, 4)
 
-    currentVolume Decimal? @db.Decimal(18, 4)
-    currentWeight Decimal? @db.Decimal(18, 4)
+  currentVolume Decimal? @db.Decimal(18, 4)
+  currentWeight Decimal? @db.Decimal(18, 4)
 
-    // =========================================================================
-    // 3D ENGINE SUPPORT
-    // =========================================================================
+  // =========================================================================
+  // 3D ENGINE SUPPORT
+  // =========================================================================
 
-    x Decimal? @db.Decimal(12, 2)
-    y Decimal? @db.Decimal(12, 2)
-    z Decimal? @db.Decimal(12, 2)
+  x Decimal? @db.Decimal(12, 2)
+  y Decimal? @db.Decimal(12, 2)
+  z Decimal? @db.Decimal(12, 2)
 
-    width  Decimal? @db.Decimal(12, 2)
-    height Decimal? @db.Decimal(12, 2)
-    depth  Decimal? @db.Decimal(12, 2)
+  width  Decimal? @db.Decimal(12, 2)
+  height Decimal? @db.Decimal(12, 2)
+  depth  Decimal? @db.Decimal(12, 2)
 
-    rotationX Decimal? @db.Decimal(12, 2)
-    rotationY Decimal? @db.Decimal(12, 2)
-    rotationZ Decimal? @db.Decimal(12, 2)
+  rotationX Decimal? @db.Decimal(12, 2)
+  rotationY Decimal? @db.Decimal(12, 2)
+  rotationZ Decimal? @db.Decimal(12, 2)
 
-    meshType String?
-    colorHex String?
+  meshType String?
+  colorHex String?
 
-    inventoryBalances InventoryBalance[]
+  inventoryBalances InventoryBalance[]
 
-    replenishmentRules ReplenishmentRule[]
+  replenishmentRules ReplenishmentRule[]
 
-    fromTransactions InventoryTransaction[] @relation("TransactionFromLocation")
-    toTransactions   InventoryTransaction[] @relation("TransactionToLocation")
+  fromTransactions InventoryTransaction[] @relation("TransactionFromLocation")
+  toTransactions   InventoryTransaction[] @relation("TransactionToLocation")
 
-    fromTasks WarehouseTask[] @relation("TaskFromLocation")
-    toTasks   WarehouseTask[] @relation("TaskToLocation")
+  fromTasks WarehouseTask[] @relation("TaskFromLocation")
+  toTasks   WarehouseTask[] @relation("TaskToLocation")
 
-    scanEvents      ScanEvent[]
-    InventorySerial InventorySerial[]
-    CycleCountItem  CycleCountItem[]
-    assets          Asset[]
+  scanEvents      ScanEvent[]
+  InventorySerial InventorySerial[]
+  CycleCountItem  CycleCountItem[]
+  assets          Asset[]
 
-    @@unique([warehouseId, code])
-    @@index([warehouseId, type])
-    @@index([parentLocationId])
+  @@unique([warehouseId, code])
+  @@index([warehouseId, type])
+  @@index([parentLocationId])
 }
 
 enum LocationType {
-    FLOOR
-    ZONE
-    BLOCK
-    RACK
-    SHELF
-    BIN
-    PALLET
+  FLOOR
+  ZONE
+  BLOCK
+  RACK
+  SHELF
+  BIN
+  PALLET
 }
 
 model Asset {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    locationId String?
-    location   Location? @relation(fields: [locationId], references: [id])
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
 
-    name String?
+  name String?
 
-    type AssetType
+  type AssetType
 
-    // =========================================================================
-    // 3D ENGINE SUPPORT
-    // =========================================================================
+  // =========================================================================
+  // 3D ENGINE SUPPORT
+  // =========================================================================
 
-    x Decimal? @db.Decimal(12, 2)
-    y Decimal? @db.Decimal(12, 2)
-    z Decimal? @db.Decimal(12, 2)
+  x Decimal? @db.Decimal(12, 2)
+  y Decimal? @db.Decimal(12, 2)
+  z Decimal? @db.Decimal(12, 2)
 
-    width  Decimal? @db.Decimal(12, 2)
-    height Decimal? @db.Decimal(12, 2)
-    depth  Decimal? @db.Decimal(12, 2)
+  width  Decimal? @db.Decimal(12, 2)
+  height Decimal? @db.Decimal(12, 2)
+  depth  Decimal? @db.Decimal(12, 2)
 
-    rotationX Decimal? @db.Decimal(12, 2)
-    rotationY Decimal? @db.Decimal(12, 2)
-    rotationZ Decimal? @db.Decimal(12, 2)
+  rotationX Decimal? @db.Decimal(12, 2)
+  rotationY Decimal? @db.Decimal(12, 2)
+  rotationZ Decimal? @db.Decimal(12, 2)
 
-    meshType String?
-    colorHex String?
+  meshType String?
+  colorHex String?
 
-    @@index([warehouseId, type])
+  @@index([warehouseId, type])
 }
 
 enum AssetType {
-    AISLE
-    DOCK_DOOR
-    STAIRS
-    WALL
+  AISLE
+  DOCK_DOOR
+  STAIRS
+  WALL
 }
 
 // ============================================================================
@@ -589,48 +602,48 @@ enum AssetType {
 // ============================================================================
 
 model Product {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
-    name String
+  name String
 
-    description String?
+  description String?
 
-    isPerishable    Boolean @default(false)
-    isBatchTracked  Boolean @default(false)
-    isSerialTracked Boolean @default(false)
+  isPerishable    Boolean @default(false)
+  isBatchTracked  Boolean @default(false)
+  isSerialTracked Boolean @default(false)
 
-    life Int? @default(0)
+  life Int? @default(0)
 
-    returnEnabled           Boolean      @default(false)
-    defaultReturnWindowDays Int?         @default(30)
-    onReturn                ReturnAction @default(RESTOCK)
+  returnEnabled           Boolean      @default(false)
+  defaultReturnWindowDays Int?         @default(30)
+  onReturn                ReturnAction @default(RESTOCK)
 
-    deadStockValue  Decimal?         @db.Decimal(18, 4)
-    deadStockAction DeadStockAction? @default(REFURBISH)
+  deadStockValue  Decimal?         @db.Decimal(18, 4)
+  deadStockAction DeadStockAction? @default(REFURBISH)
 
-    skus SKU[]
+  skus SKU[]
 
-    @@unique([organizationId, name])
+  @@unique([organizationId, name])
 }
 
 enum DeadStockAction {
-    SCRAP
-    REFURBISH
-    RETURN_TO_VENDOR
-    RETURN_TO_FACTORY
+  SCRAP
+  REFURBISH
+  RETURN_TO_VENDOR
+  RETURN_TO_FACTORY
 }
 
 enum ReturnAction {
-    RESTOCK
-    SCRAP
-    REFURBISH
-    RETURN_TO_VENDOR
-    RETURN_TO_FACTORY
+  RESTOCK
+  SCRAP
+  REFURBISH
+  RETURN_TO_VENDOR
+  RETURN_TO_FACTORY
 }
 
 // ============================================================================
@@ -638,45 +651,48 @@ enum ReturnAction {
 // ============================================================================
 
 model SKU {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    productId String
-    product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-    code String
+  code String
 
-    barcode String?
+  barcode String?
 
-    width  Decimal? @db.Decimal(12, 2)
-    height Decimal? @db.Decimal(12, 2)
-    length Decimal? @db.Decimal(12, 2)
-    weight Decimal? @db.Decimal(12, 2)
+  width  Decimal? @db.Decimal(12, 2)
+  height Decimal? @db.Decimal(12, 2)
+  length Decimal? @db.Decimal(12, 2)
+  weight Decimal? @db.Decimal(12, 2)
 
-    metadata Json?
+  metadata Json?
 
-    unitPrice Decimal? @db.Decimal(18, 4)
+  unitPrice Decimal? @db.Decimal(18, 4)
 
-    balances InventoryBalance[]
-    serials  InventorySerial[]
-    lots     InventoryLot[]
+  balances InventoryBalance[]
+  serials  InventorySerial[]
+  lots     InventoryLot[]
 
-    reservations InventoryReservation[]
+  reservations InventoryReservation[]
 
-    purchaseOrderItems PurchaseOrderItem[]
-    salesOrderItems    SalesOrderItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  salesOrderItems    SalesOrderItem[]
 
-    replenishmentRules   ReplenishmentRule[]
-    Organization         Organization?          @relation(fields: [organizationId], references: [id])
-    organizationId       String?
-    InventoryTransaction InventoryTransaction[]
-    ASNItem              ASNItem[]
-    ReturnOrderItem      ReturnOrderItem[]
-    WarehouseTask        WarehouseTask[]
-    CycleCountItem       CycleCountItem[]
+  replenishmentRules        ReplenishmentRule[]
+  Organization              Organization?               @relation(fields: [organizationId], references: [id])
+  organizationId            String?
+  InventoryTransaction      InventoryTransaction[]
+  ASNItem                   ASNItem[]
+  ReturnOrderItem           ReturnOrderItem[]
+  TransferOrderItem         TransferOrderItem[]
+  ReturnToSupplierOrderItem ReturnToSupplierOrderItem[]
+  WarehouseTask             WarehouseTask[]
+  CycleCountItem            CycleCountItem[]
+  InventoryCost             InventoryCost[]
 
-    @@unique([productId, code])
+  @@unique([productId, code])
 }
 
 // ============================================================================
@@ -684,29 +700,29 @@ model SKU {
 // ============================================================================
 
 model InventoryLot {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    lotNumber String
+  lotNumber String
 
-    manufactureDate DateTime?
-    expiryDate      DateTime?
+  manufactureDate DateTime?
+  expiryDate      DateTime?
 
-    qcStatus QCStatus @default(PENDING)
+  qcStatus QCStatus @default(PENDING)
 
-    balances             InventoryBalance[]
-    InventoryTransaction InventoryTransaction[]
+  balances             InventoryBalance[]
+  InventoryTransaction InventoryTransaction[]
 
-    @@unique([skuId, lotNumber])
+  @@unique([skuId, lotNumber])
 }
 
 enum QCStatus {
-    PENDING
-    PASSED
-    FAILED
-    HOLD
+  PENDING
+  PASSED
+  FAILED
+  HOLD
 }
 
 // ============================================================================
@@ -714,19 +730,19 @@ enum QCStatus {
 // ============================================================================
 
 model InventorySerial {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    serialNumber String
+  serialNumber String
 
-    locationId String?
-    location   Location? @relation(fields: [locationId], references: [id])
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
 
-    status InventoryState
+  status InventoryState
 
-    @@unique([skuId, serialNumber])
+  @@unique([skuId, serialNumber])
 }
 
 // ============================================================================
@@ -734,44 +750,44 @@ model InventorySerial {
 // ============================================================================
 
 model InventoryBalance {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    locationId String
-    location   Location @relation(fields: [locationId], references: [id])
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    lotId String?
-    lot   InventoryLot? @relation(fields: [lotId], references: [id])
+  lotId String?
+  lot   InventoryLot? @relation(fields: [lotId], references: [id])
 
-    state InventoryState @default(AVAILABLE)
+  state InventoryState @default(AVAILABLE)
 
-    quantityAvailable Decimal @default(0) @db.Decimal(18, 4)
-    quantityReserved  Decimal @default(0) @db.Decimal(18, 4)
-    quantityDamaged   Decimal @default(0) @db.Decimal(18, 4)
-    quantityInbound   Decimal @default(0) @db.Decimal(18, 4)
+  quantityAvailable Decimal @default(0) @db.Decimal(18, 4)
+  quantityReserved  Decimal @default(0) @db.Decimal(18, 4)
+  quantityDamaged   Decimal @default(0) @db.Decimal(18, 4)
+  quantityInbound   Decimal @default(0) @db.Decimal(18, 4)
 
-    updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 
-    @@unique([locationId, skuId, lotId, state])
-    @@index([warehouseId, skuId])
-    @@index([locationId, skuId])
+  @@unique([locationId, skuId, lotId, state])
+  @@index([warehouseId, skuId])
+  @@index([locationId, skuId])
 }
 
 enum InventoryState {
-    AVAILABLE
-    RESERVED
-    QC
-    HOLD
-    DAMAGED
-    QUARANTINE
-    EXPIRED
-    INBOUND
-    OUTBOUND
+  AVAILABLE
+  RESERVED
+  QC
+  HOLD
+  DAMAGED
+  QUARANTINE
+  EXPIRED
+  INBOUND
+  OUTBOUND
 }
 
 // ============================================================================
@@ -779,27 +795,27 @@ enum InventoryState {
 // ============================================================================
 
 model InventoryReservation {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    salesOrderItemId String?
-    salesOrderItem   SalesOrderItem? @relation(fields: [salesOrderItemId], references: [id])
+  salesOrderItemId String?
+  salesOrderItem   SalesOrderItem? @relation(fields: [salesOrderItemId], references: [id])
 
-    quantity Decimal @db.Decimal(18, 4)
+  quantity Decimal @db.Decimal(18, 4)
 
-    status ReservationStatus
+  status ReservationStatus
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    @@index([skuId])
+  @@index([skuId])
 }
 
 enum ReservationStatus {
-    ACTIVE
-    RELEASED
-    CONSUMED
+  ACTIVE
+  RELEASED
+  CONSUMED
 }
 
 // ============================================================================
@@ -807,77 +823,91 @@ enum ReservationStatus {
 // ============================================================================
 
 model InventoryTransaction {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    lotId String?
-    lot   InventoryLot? @relation(fields: [lotId], references: [id])
+  lotId String?
+  lot   InventoryLot? @relation(fields: [lotId], references: [id])
 
-    fromLocationId String?
-    fromLocation   Location? @relation("TransactionFromLocation", fields: [fromLocationId], references: [id])
+  fromLocationId String?
+  fromLocation   Location? @relation("TransactionFromLocation", fields: [fromLocationId], references: [id])
 
-    toLocationId String?
-    toLocation   Location? @relation("TransactionToLocation", fields: [toLocationId], references: [id])
+  toLocationId String?
+  toLocation   Location? @relation("TransactionToLocation", fields: [toLocationId], references: [id])
 
-    quantity Decimal @db.Decimal(18, 4)
+  quantity Decimal @db.Decimal(18, 4)
 
-    transactionType InventoryTransactionType
+  unitCost   Decimal? @db.Decimal(18, 4)
+  totalValue Decimal? @db.Decimal(18, 4)
 
-    referenceType String?
-    referenceId   String?
+  transactionType InventoryTransactionType
 
-    performedById String?
-    performedBy   User?   @relation(fields: [performedById], references: [id])
+  referenceType String?
+  referenceId   String?
 
-    metadata Json?
+  performedById String?
+  performedBy   User?   @relation(fields: [performedById], references: [id])
 
-    @@index([warehouseId, createdAt])
-    @@index([skuId, createdAt])
+  metadata Json?
+
+  @@index([warehouseId, createdAt])
+  @@index([skuId, createdAt])
 }
 
 enum InventoryTransactionType {
-    RECEIVE
-    PUTAWAY
-    PICK
-    PACK
-    SHIP
-    MOVE
-    ADJUSTMENT
-    CYCLE_COUNT
-    RETURN
-    DAMAGE
-    REPLENISHMENT
+  RECEIVE
+  PUTAWAY
+  PICK
+  PACK
+  SHIP
+  MOVE
+  ADJUSTMENT
+  CYCLE_COUNT
+  RETURN
+  DAMAGE
+  REPLENISHMENT
 }
 
 // ============================================================================
 // SUPPLIERS
 // ============================================================================
 
+enum SupplierType {
+  VENDOR
+  FACTORY
+}
+
 model Supplier {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
-    name String
+  name String
 
-    email    String?
-    phone    String?
-    metadata Json?
+  type SupplierType @default(VENDOR)
 
-    createdAt DateTime @default(now())
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id])
 
-    purchaseOrders PurchaseOrder[]
-    asns           AdvancedShippingNotice[]
+  email    String?
+  phone    String?
+  metadata Json?
 
-    @@unique([organizationId, name])
+  createdAt DateTime @default(now())
+
+  purchaseOrders         PurchaseOrder[]
+  asns                   AdvancedShippingNotice[]
+  returnToSupplierOrders ReturnToSupplierOrder[]
+
+  @@unique([organizationId, name])
 }
 
 // ============================================================================
@@ -885,56 +915,59 @@ model Supplier {
 // ============================================================================
 
 model AdvancedShippingNotice {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    supplierId String
-    supplier   Supplier @relation(fields: [supplierId], references: [id])
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
 
-    purchaseOrderId String?
-    purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
 
-    asnNumber String
+  transferOrderId String?
+  transferOrder   TransferOrder? @relation(fields: [transferOrderId], references: [id])
 
-    expectedArrival DateTime?
+  asnNumber String
 
-    pallets Int?
-    cartons Int?
+  expectedArrival DateTime?
 
-    status ASNStatus
+  pallets Int?
+  cartons Int?
 
-    createdAt DateTime @default(now())
+  status ASNStatus
 
-    items          ASNItem[]
-    ReceivingOrder ReceivingOrder[]
+  createdAt DateTime @default(now())
 
-    @@unique([warehouseId, asnNumber])
+  items          ASNItem[]
+  ReceivingOrder ReceivingOrder[]
+
+  @@unique([warehouseId, asnNumber])
 }
 
 model ASNItem {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    asnId String
-    asn   AdvancedShippingNotice @relation(fields: [asnId], references: [id])
+  asnId String
+  asn   AdvancedShippingNotice @relation(fields: [asnId], references: [id])
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    expectedQty Decimal @db.Decimal(18, 4)
-    receivedQty Decimal @default(0) @db.Decimal(18, 4)
+  expectedQty Decimal @db.Decimal(18, 4)
+  receivedQty Decimal @default(0) @db.Decimal(18, 4)
 
-    lotNumber String?
+  lotNumber String?
 }
 
 enum ASNStatus {
-    CREATED
-    IN_TRANSIT
-    ARRIVED
-    RECEIVING
-    COMPLETED
-    CANCELLED
+  CREATED
+  IN_TRANSIT
+  ARRIVED
+  RECEIVING
+  COMPLETED
+  CANCELLED
 }
 
 // ============================================================================
@@ -942,52 +975,52 @@ enum ASNStatus {
 // ============================================================================
 
 model PurchaseOrder {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    supplierId String
-    supplier   Supplier @relation(fields: [supplierId], references: [id])
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
 
-    poNumber String
+  poNumber String
 
-    status PurchaseOrderStatus
+  status PurchaseOrderStatus
 
-    expectedAt DateTime?
+  expectedAt DateTime?
 
-    items PurchaseOrderItem[]
+  items PurchaseOrderItem[]
 
-    asns AdvancedShippingNotice[]
+  asns AdvancedShippingNotice[]
 
-    createdAt      DateTime         @default(now())
-    ReceivingOrder ReceivingOrder[]
+  createdAt      DateTime         @default(now())
+  ReceivingOrder ReceivingOrder[]
 
-    @@unique([warehouseId, poNumber])
+  @@unique([warehouseId, poNumber])
 }
 
 enum PurchaseOrderStatus {
-    DRAFT
-    APPROVED
-    IN_TRANSIT
-    PARTIAL
-    RECEIVED
-    CANCELLED
+  DRAFT
+  APPROVED
+  IN_TRANSIT
+  PARTIAL
+  RECEIVED
+  CANCELLED
 }
 
 model PurchaseOrderItem {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    purchaseOrderId String
-    purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    orderedQty  Decimal @db.Decimal(18, 4)
-    receivedQty Decimal @default(0) @db.Decimal(18, 4)
+  orderedQty  Decimal @db.Decimal(18, 4)
+  receivedQty Decimal @default(0) @db.Decimal(18, 4)
 
-    unitPrice Decimal? @db.Decimal(18, 4)
+  unitPrice Decimal? @db.Decimal(18, 4)
 }
 
 // ============================================================================
@@ -995,56 +1028,66 @@ model PurchaseOrderItem {
 // ============================================================================
 
 model ReceivingOrder {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    purchaseOrderId String?
-    purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
 
-    asnId String?
-    asn   AdvancedShippingNotice? @relation(fields: [asnId], references: [id])
+  transferOrderId String?
+  transferOrder   TransferOrder? @relation(fields: [transferOrderId], references: [id])
 
-    status ReceivingStatus
+  asnId String?
+  asn   AdvancedShippingNotice? @relation(fields: [asnId], references: [id])
 
-    receivedAt DateTime?
+  status ReceivingStatus
 
-    createdAt DateTime @default(now())
+  receivedAt DateTime?
+
+  createdAt DateTime @default(now())
 }
 
 enum ReceivingStatus {
-    PENDING
-    RECEIVING
-    COMPLETED
-    CANCELLED
+  PENDING
+  RECEIVING
+  COMPLETED
+  CANCELLED
 }
 
 // ============================================================================
 // CUSTOMER
 // ============================================================================
 
+enum CustomerType {
+  RETAIL
+  WHOLESALE
+  VENDOR
+  TECHNICIAN
+}
+
 model Customer {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
-    name String
+  name String
 
-    email        String?
-    phone        String?
-    notes        String?
-    isWholesaler Boolean @default(false)
-    metadata     Json?
+  email    String?
+  phone    String?
+  notes    String?
+  type     CustomerType @default(RETAIL)
+  metadata Json?
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    salesOrders      SalesOrder[]
-    returnOrders     ReturnOrder[]
-    CustomerLocation CustomerLocation[]
+  salesOrders      SalesOrder[]
+  returnOrders     ReturnOrder[]
+  CustomerLocation CustomerLocation[]
 
-    @@unique([organizationId, name])
+  @@unique([organizationId, name])
 }
 
 // ============================================================================
@@ -1052,51 +1095,51 @@ model Customer {
 // ============================================================================
 
 model SalesOrder {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    customerId String
-    customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
 
-    orderNumber String
+  orderNumber String
 
-    status SalesOrderStatus
+  status SalesOrderStatus
 
-    orderedAt DateTime @default(now())
+  orderedAt DateTime @default(now())
 
-    items SalesOrderItem[]
+  items SalesOrderItem[]
 
-    shipment    Shipment?
-    ReturnOrder ReturnOrder[]
+  shipment    Shipment?
+  ReturnOrder ReturnOrder[]
 
-    @@unique([warehouseId, orderNumber])
+  @@unique([warehouseId, orderNumber])
 }
 
 enum SalesOrderStatus {
-    DRAFT
-    ALLOCATED
-    PICKING
-    PACKING
-    SHIPPED
-    CANCELLED
+  DRAFT
+  ALLOCATED
+  PICKING
+  PACKING
+  SHIPPED
+  CANCELLED
 }
 
 model SalesOrderItem {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    salesOrderId String
-    salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
+  salesOrderId String
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    orderedQty   Decimal @db.Decimal(18, 4)
-    allocatedQty Decimal @default(0) @db.Decimal(18, 4)
-    pickedQty    Decimal @default(0) @db.Decimal(18, 4)
+  orderedQty   Decimal @db.Decimal(18, 4)
+  allocatedQty Decimal @default(0) @db.Decimal(18, 4)
+  pickedQty    Decimal @default(0) @db.Decimal(18, 4)
 
-    reservations InventoryReservation[]
+  reservations InventoryReservation[]
 }
 
 // ============================================================================
@@ -1104,39 +1147,45 @@ model SalesOrderItem {
 // ============================================================================
 
 model Shipment {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    salesOrderId String     @unique
-    salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
+  salesOrderId String?     @unique
+  salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id])
 
-    shipmentNumber String
+  transferOrderId String?        @unique
+  transferOrder   TransferOrder? @relation(fields: [transferOrderId], references: [id])
 
-    trackingNumber String?
+  returnToSupplierOrderId String?                @unique
+  returnToSupplierOrder   ReturnToSupplierOrder? @relation(fields: [returnToSupplierOrderId], references: [id])
 
-    carrier String?
+  shipmentNumber String
 
-    dockDoorId String?
+  trackingNumber String?
 
-    scheduledAt DateTime?
+  carrier String?
 
-    notes String?
+  dockDoorId String?
 
-    shippedAt DateTime?
+  scheduledAt DateTime?
 
-    status ShipmentStatus
+  notes String?
 
-    @@unique([warehouseId, shipmentNumber])
+  shippedAt DateTime?
+
+  status ShipmentStatus
+
+  @@unique([warehouseId, shipmentNumber])
 }
 
 enum ShipmentStatus {
-    PENDING
-    PACKED
-    SHIPPED
-    DELIVERED
-    FAILED
+  PENDING
+  PACKED
+  SHIPPED
+  DELIVERED
+  FAILED
 }
 
 // ============================================================================
@@ -1144,76 +1193,76 @@ enum ShipmentStatus {
 // ============================================================================
 
 model ReturnOrder {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    customerId String
-    customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
 
-    salesOrderId String?
-    salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id])
+  salesOrderId String?
+  salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id])
 
-    returnNumber String
+  returnNumber String
 
-    reason String?
+  reason String?
 
-    status ReturnOrderStatus
+  status ReturnOrderStatus
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    items ReturnOrderItem[]
+  items ReturnOrderItem[]
 
-    inspections ReturnInspection[]
+  inspections ReturnInspection[]
 
-    @@unique([warehouseId, returnNumber])
+  @@unique([warehouseId, returnNumber])
 }
 
 model ReturnOrderItem {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    returnOrderId String
-    returnOrder   ReturnOrder @relation(fields: [returnOrderId], references: [id])
+  returnOrderId String
+  returnOrder   ReturnOrder @relation(fields: [returnOrderId], references: [id])
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    quantity Decimal @db.Decimal(18, 4)
+  quantity Decimal @db.Decimal(18, 4)
 
-    disposition ReturnDisposition?
+  disposition ReturnDisposition?
 }
 
 model ReturnInspection {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    returnOrderId String
-    returnOrder   ReturnOrder @relation(fields: [returnOrderId], references: [id])
+  returnOrderId String
+  returnOrder   ReturnOrder @relation(fields: [returnOrderId], references: [id])
 
-    inspectedById String?
-    inspectedBy   User?   @relation(fields: [inspectedById], references: [id])
+  inspectedById String?
+  inspectedBy   User?   @relation(fields: [inspectedById], references: [id])
 
-    result QCStatus
+  result QCStatus
 
-    notes String?
+  notes String?
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 enum ReturnDisposition {
-    RESTOCK
-    SCRAP
-    REFURBISH
-    RETURN_TO_VENDOR
+  RESTOCK
+  SCRAP
+  REFURBISH
+  RETURN_TO_VENDOR
 }
 
 enum ReturnOrderStatus {
-    CREATED
-    IN_TRANSIT
-    RECEIVED
-    INSPECTING
-    COMPLETED
-    CANCELLED
+  CREATED
+  IN_TRANSIT
+  RECEIVED
+  INSPECTING
+  COMPLETED
+  CANCELLED
 }
 
 // ============================================================================
@@ -1221,27 +1270,27 @@ enum ReturnOrderStatus {
 // ============================================================================
 
 model PickWave {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    waveNumber String
+  waveNumber String
 
-    status WaveStatus
+  status WaveStatus
 
-    tasks WarehouseTask[]
+  tasks WarehouseTask[]
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    @@unique([warehouseId, waveNumber])
+  @@unique([warehouseId, waveNumber])
 }
 
 enum WaveStatus {
-    CREATED
-    RELEASED
-    PICKING
-    COMPLETED
+  CREATED
+  RELEASED
+  PICKING
+  COMPLETED
 }
 
 // ============================================================================
@@ -1249,67 +1298,67 @@ enum WaveStatus {
 // ============================================================================
 
 model WarehouseTask {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    assignedUserId String?
-    assignedUser   User?   @relation(fields: [assignedUserId], references: [id])
+  assignedUserId String?
+  assignedUser   User?   @relation(fields: [assignedUserId], references: [id])
 
-    pickWaveId String?
-    pickWave   PickWave? @relation(fields: [pickWaveId], references: [id])
+  pickWaveId String?
+  pickWave   PickWave? @relation(fields: [pickWaveId], references: [id])
 
-    type WarehouseTaskType
+  type WarehouseTaskType
 
-    status TaskStatus
+  status TaskStatus
 
-    priority TaskPriority
+  priority TaskPriority
 
-    fromLocationId String?
-    fromLocation   Location? @relation("TaskFromLocation", fields: [fromLocationId], references: [id])
+  fromLocationId String?
+  fromLocation   Location? @relation("TaskFromLocation", fields: [fromLocationId], references: [id])
 
-    toLocationId String?
-    toLocation   Location? @relation("TaskToLocation", fields: [toLocationId], references: [id])
+  toLocationId String?
+  toLocation   Location? @relation("TaskToLocation", fields: [toLocationId], references: [id])
 
-    skuId String?
-    sku   SKU?    @relation(fields: [skuId], references: [id])
+  skuId String?
+  sku   SKU?    @relation(fields: [skuId], references: [id])
 
-    quantity Decimal? @db.Decimal(18, 4)
+  quantity Decimal? @db.Decimal(18, 4)
 
-    startedAt   DateTime?
-    completedAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    @@index([warehouseId, status])
+  @@index([warehouseId, status])
 }
 
 enum WarehouseTaskType {
-    RECEIVE
-    PUTAWAY
-    PICK
-    PACK
-    SHIP
-    MOVE
-    REPLENISHMENT
-    CYCLE_COUNT
-    QC
+  RECEIVE
+  PUTAWAY
+  PICK
+  PACK
+  SHIP
+  MOVE
+  REPLENISHMENT
+  CYCLE_COUNT
+  QC
 }
 
 enum TaskStatus {
-    PENDING
-    ASSIGNED
-    IN_PROGRESS
-    COMPLETED
-    CANCELLED
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
 
 enum TaskPriority {
-    LOW
-    NORMAL
-    HIGH
-    URGENT
+  LOW
+  NORMAL
+  HIGH
+  URGENT
 }
 
 // ============================================================================
@@ -1317,105 +1366,105 @@ enum TaskPriority {
 // ============================================================================
 
 model WorkflowDefinition {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    name String
+  name String
 
-    type WorkflowType
+  type WorkflowType
 
-    version Int @default(1)
+  version Int @default(1)
 
-    isActive Boolean @default(true)
+  isActive Boolean @default(true)
 
-    nodes WorkflowNode[]
-    edges WorkflowEdge[]
+  nodes WorkflowNode[]
+  edges WorkflowEdge[]
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    executions WorkflowExecution[]
+  executions WorkflowExecution[]
 }
 
 model WorkflowNode {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    workflowId String
-    workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
+  workflowId String
+  workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
 
-    nodeId String
+  nodeId String
 
-    type String
+  type String
 
-    label String
+  label String
 
-    positionX Decimal @db.Decimal(12, 2)
-    positionY Decimal @db.Decimal(12, 2)
+  positionX Decimal @db.Decimal(12, 2)
+  positionY Decimal @db.Decimal(12, 2)
 
-    metadata Json?
+  metadata Json?
 }
 
 model WorkflowEdge {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    workflowId String
-    workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
+  workflowId String
+  workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
 
-    sourceNodeId String
-    targetNodeId String
+  sourceNodeId String
+  targetNodeId String
 
-    label String?
+  label String?
 
-    metadata Json?
+  metadata Json?
 }
 
 model WorkflowExecution {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    workflowId String
-    workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
+  workflowId String
+  workflow   WorkflowDefinition @relation(fields: [workflowId], references: [id])
 
-    referenceType String?
-    referenceId   String?
+  referenceType String?
+  referenceId   String?
 
-    status WorkflowExecutionStatus
+  status WorkflowExecutionStatus
 
-    startedAt   DateTime  @default(now())
-    completedAt DateTime?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
 
-    steps WorkflowExecutionStep[]
+  steps WorkflowExecutionStep[]
 }
 
 model WorkflowExecutionStep {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    executionId String
-    execution   WorkflowExecution @relation(fields: [executionId], references: [id])
+  executionId String
+  execution   WorkflowExecution @relation(fields: [executionId], references: [id])
 
-    nodeId String
+  nodeId String
 
-    status WorkflowExecutionStatus
+  status WorkflowExecutionStatus
 
-    startedAt   DateTime  @default(now())
-    completedAt DateTime?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
 
-    metadata Json?
+  metadata Json?
 }
 
 enum WorkflowType {
-    INBOUND
-    OUTBOUND
-    INVENTORY
-    RETURNS
+  INBOUND
+  OUTBOUND
+  INVENTORY
+  RETURNS
 }
 
 enum WorkflowExecutionStatus {
-    PENDING
-    RUNNING
-    COMPLETED
-    FAILED
-    CANCELLED
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
 
 // ============================================================================
@@ -1423,19 +1472,19 @@ enum WorkflowExecutionStatus {
 // ============================================================================
 
 model ReplenishmentRule {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    locationId String
-    location   Location @relation(fields: [locationId], references: [id])
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    minQty       Decimal @db.Decimal(18, 4)
-    maxQty       Decimal @db.Decimal(18, 4)
-    replenishQty Decimal @db.Decimal(18, 4)
+  minQty       Decimal @db.Decimal(18, 4)
+  maxQty       Decimal @db.Decimal(18, 4)
+  replenishQty Decimal @db.Decimal(18, 4)
 
-    @@unique([locationId, skuId])
+  @@unique([locationId, skuId])
 }
 
 // ============================================================================
@@ -1443,41 +1492,41 @@ model ReplenishmentRule {
 // ============================================================================
 
 model CycleCountSession {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    status CycleCountStatus
+  status CycleCountStatus
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    items CycleCountItem[]
+  items CycleCountItem[]
 }
 
 model CycleCountItem {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    sessionId String
-    session   CycleCountSession @relation(fields: [sessionId], references: [id])
+  sessionId String
+  session   CycleCountSession @relation(fields: [sessionId], references: [id])
 
-    locationId String
-    location   Location @relation(fields: [locationId], references: [id])
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
 
-    skuId String
-    sku   SKU    @relation(fields: [skuId], references: [id])
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
 
-    expectedQty Decimal @db.Decimal(18, 4)
-    countedQty  Decimal @db.Decimal(18, 4)
+  expectedQty Decimal @db.Decimal(18, 4)
+  countedQty  Decimal @db.Decimal(18, 4)
 
-    variance Decimal @db.Decimal(18, 4)
+  variance Decimal @db.Decimal(18, 4)
 }
 
 enum CycleCountStatus {
-    CREATED
-    COUNTING
-    APPROVED
-    COMPLETED
+  CREATED
+  COUNTING
+  APPROVED
+  COMPLETED
 }
 
 // ============================================================================
@@ -1485,34 +1534,231 @@ enum CycleCountStatus {
 // ============================================================================
 
 model ScanEvent {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    warehouseId String
-    warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
-    userId String?
-    user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
 
-    locationId String?
-    location   Location? @relation(fields: [locationId], references: [id])
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
 
-    barcode String
+  barcode String
 
-    eventType ScanEventType
+  eventType ScanEventType
 
-    metadata Json?
+  metadata Json?
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    @@index([warehouseId, createdAt])
+  @@index([warehouseId, createdAt])
 }
 
 enum ScanEventType {
-    RECEIVE
-    PICK
-    PUTAWAY
-    MOVE
-    PACK
-    SHIP
-    COUNT
+  RECEIVE
+  PICK
+  PUTAWAY
+  MOVE
+  PACK
+  SHIP
+  COUNT
+}
+
+// ============================================================================
+// FINANCIAL & LEDGERING
+// ============================================================================
+
+model InventoryCost {
+  id String @id @default(cuid())
+
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
+
+  averageUnitCost Decimal @default(0) @db.Decimal(18, 4)
+
+  lastCalculatedAt DateTime @default(now())
+
+  @@unique([warehouseId, skuId])
+}
+
+enum LedgerEntryType {
+  PURCHASE
+  FREIGHT
+  HOLDING_COST
+  COGS
+  SHRINKAGE
+  INVENTORY_GAIN
+  SCRAP
+  RTV_CREDIT
+}
+
+model CostLedger {
+  id String @id @default(cuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  type LedgerEntryType
+
+  amount Decimal @db.Decimal(18, 4)
+
+  referenceType String?
+  referenceId   String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([warehouseId, type])
+}
+
+// ============================================================================
+// TRANSPORTATION & ROUTING
+// ============================================================================
+
+model TransportationRoute {
+  id String @id @default(cuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  fromAddressId String
+  fromAddress   Address @relation("RouteFromAddress", fields: [fromAddressId], references: [id])
+
+  toAddressId String
+  toAddress   Address @relation("RouteToAddress", fields: [toAddressId], references: [id])
+
+  distanceKm             Decimal  @db.Decimal(12, 2)
+  baseCostPerKm          Decimal? @db.Decimal(18, 4)
+  costPerWeightUnitPerKm Decimal? @db.Decimal(18, 4)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transferOrders         TransferOrder[]
+  returnToSupplierOrders ReturnToSupplierOrder[]
+
+  @@unique([fromAddressId, toAddressId])
+}
+
+// ============================================================================
+// INTER-WAREHOUSE TRANSFERS
+// ============================================================================
+
+model TransferOrder {
+  id String @id @default(cuid())
+
+  sourceWarehouseId String
+  sourceWarehouse   Warehouse @relation("TransferSourceWarehouse", fields: [sourceWarehouseId], references: [id])
+
+  destinationWarehouseId String
+  destinationWarehouse   Warehouse @relation("TransferDestinationWarehouse", fields: [destinationWarehouseId], references: [id])
+
+  routeId String?
+  route   TransportationRoute? @relation(fields: [routeId], references: [id])
+
+  transferNumber String
+
+  status TransferOrderStatus
+
+  totalWeight Decimal? @db.Decimal(18, 4)
+  freightCost Decimal? @db.Decimal(18, 4)
+
+  shippedAt  DateTime?
+  receivedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  items           TransferOrderItem[]
+  shipment        Shipment?
+  asns            AdvancedShippingNotice[]
+  receivingOrders ReceivingOrder[]
+
+  @@unique([sourceWarehouseId, transferNumber])
+}
+
+enum TransferOrderStatus {
+  DRAFT
+  APPROVED
+  IN_TRANSIT
+  PARTIAL
+  RECEIVED
+  CANCELLED
+}
+
+model TransferOrderItem {
+  id String @id @default(cuid())
+
+  transferOrderId String
+  transferOrder   TransferOrder @relation(fields: [transferOrderId], references: [id])
+
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
+
+  orderedQty  Decimal @db.Decimal(18, 4)
+  shippedQty  Decimal @default(0) @db.Decimal(18, 4)
+  receivedQty Decimal @default(0) @db.Decimal(18, 4)
+}
+
+// ============================================================================
+// RETURN TO SUPPLIER
+// ============================================================================
+
+model ReturnToSupplierOrder {
+  id String @id @default(cuid())
+
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  routeId String?
+  route   TransportationRoute? @relation(fields: [routeId], references: [id])
+
+  rtvNumber String
+
+  status ReturnToSupplierStatus
+
+  totalWeight Decimal? @db.Decimal(18, 4)
+  freightCost Decimal? @db.Decimal(18, 4)
+
+  shippedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  items    ReturnToSupplierOrderItem[]
+  shipment Shipment?
+
+  @@unique([warehouseId, rtvNumber])
+}
+
+enum ReturnToSupplierStatus {
+  DRAFT
+  APPROVED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model ReturnToSupplierOrderItem {
+  id String @id @default(cuid())
+
+  returnToSupplierOrderId String
+  returnToSupplierOrder   ReturnToSupplierOrder @relation(fields: [returnToSupplierOrderId], references: [id])
+
+  skuId String
+  sku   SKU    @relation(fields: [skuId], references: [id])
+
+  quantity   Decimal @db.Decimal(18, 4)
+  shippedQty Decimal @default(0) @db.Decimal(18, 4)
 }

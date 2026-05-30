@@ -52,7 +52,7 @@ export const exportCustomersProcedure = protectedProcedure
 				name: true,
 				email: true,
 				phone: true,
-				isWholesaler: true,
+				type: true,
 				notes: true,
 				metadata: true,
 			},

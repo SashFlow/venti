@@ -9,3 +9,6 @@ export * from "./services/skus-service";
 export * from "./services/suppliers-service";
 export * from "./services/warehouse-layout-service";
 export * from "./services/warehouse-service";
+
+export * from "./services/inventory-cost-service";
+export * from "./services/inventory-logistics-service";

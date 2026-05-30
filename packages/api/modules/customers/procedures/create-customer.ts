@@ -35,7 +35,7 @@ export const createCustomerProcedure = protectedProcedure
 					name: input.name,
 					email: input.email,
 					phone: input.phone,
-					isWholesaler: input.isWholesaler,
+					type: input.isWholesaler ? "WHOLESALE" : "RETAIL",
 					notes: input.notes,
 					metadata: input.metadata as
 						| Prisma.InputJsonValue

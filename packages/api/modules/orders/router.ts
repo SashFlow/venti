@@ -1,3 +1,4 @@
+import { shipSalesOrderProcedure } from "./procedures/ship-sales-order";
 import { bulkUpdateOutboundStatusProcedure } from "./procedures/bulk-update-outbound-status";
 import { bulkUpdateShipmentStatusesProcedure } from "./procedures/bulk-update-shipment-statuses";
 import { completeTransferProcedure } from "./procedures/complete-transfer";
@@ -21,6 +22,7 @@ import { updateOutboundOrderStatusProcedure } from "./procedures/update-outbound
 import { updateShipmentStatusProcedure } from "./procedures/update-shipment-status";
 
 export const ordersRouter = {
+        shipSalesOrder: shipSalesOrderProcedure,
 	// List
 	listInbound: listInboundOrdersProcedure,
 	listOutbound: listOutboundOrdersProcedure,

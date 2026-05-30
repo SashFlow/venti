@@ -200,7 +200,7 @@ export async function listOutboundOrders(params: OutboundFilterParams) {
 				orderNumber: true,
 				status: true,
 				customer: {
-					select: { name: true, code: true },
+					select: { name: true, email: true },
 				},
 				orderedAt: true,
 				warehouse: {
@@ -386,7 +386,7 @@ export async function listFulfillmentShipments(params: ShipmentFilterParams) {
 				status: true,
 				salesOrder: {
 					select: {
-						customer: { select: { name: true, code: true } },
+						customer: { select: { name: true, email: true } },
 					},
 				},
 			},
@@ -634,7 +634,7 @@ export async function getPurchaseOrderById(params: {
 					orderedQty: true,
 					receivedQty: true,
 					unitPrice: true,
-					sku: { select: { id: true, name: true, code: true } },
+					sku: { select: { id: true, code: true } },
 				},
 			},
 		},
@@ -663,7 +663,7 @@ export async function getSalesOrderById(params: {
 					orderedQty: true,
 					allocatedQty: true,
 					pickedQty: true,
-					sku: { select: { id: true, name: true, code: true } },
+					sku: { select: { id: true, code: true } },
 				},
 			},
 			shipment: {
@@ -698,7 +698,7 @@ export async function getTransferById(params: {
 			warehouse: { select: { id: true, name: true } },
 			fromLocation: { select: { id: true, code: true } },
 			toLocation: { select: { id: true, code: true } },
-			sku: { select: { id: true, name: true, code: true } },
+			sku: { select: { id: true, code: true } },
 			performedBy: { select: { name: true } },
 		},
 	});
@@ -724,7 +724,7 @@ export async function getShipmentById(params: {
 				select: {
 					id: true,
 					orderNumber: true,
-					customer: { select: { name: true, code: true } },
+					customer: { select: { name: true, email: true } },
 				},
 			},
 		},

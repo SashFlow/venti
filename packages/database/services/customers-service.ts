@@ -7,7 +7,7 @@ const customerSelect = {
 	name: true,
 	email: true,
 	phone: true,
-	isWholesaler: true,
+	type: true,
 	notes: true,
 	metadata: true,
 	createdAt: true,
@@ -24,7 +24,7 @@ type CustomerPayload = {
 	name: string;
 	email?: string;
 	phone?: string;
-	isWholesaler?: boolean;
+	type?: "RETAIL" | "WHOLESALE" | "VENDOR" | "TECHNICIAN";
 	notes?: string;
 	metadata?: Prisma.InputJsonValue;
 };
