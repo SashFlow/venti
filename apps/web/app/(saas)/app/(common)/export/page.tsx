@@ -27,6 +27,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
 	DEFAULT_EXPORT_JOBS,
 	EXPORT_STORAGE_KEY,
@@ -107,7 +108,14 @@ export default function ExportPage() {
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button variant="outline">
+					<Button
+						variant="outline"
+						onClick={() =>
+							toast.message(
+								"Export request queued (WIP). Supports GDPR Art. 15 / DPDP right to access — full job API coming in Phase 2.",
+							)
+						}
+					>
 						<DownloadIcon className="mr-2 size-4" />
 						Export Manifest
 					</Button>

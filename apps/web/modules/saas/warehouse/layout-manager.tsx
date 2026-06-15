@@ -20,14 +20,19 @@ import {
 	Trash2,
 	Truck,
 } from "lucide-react";
-import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AgvFleetPanel } from "./components/AgvFleetPanel";
 import CanvasEditor from "./components/CanvasEditor";
 import Inspector from "./components/Inspector";
 import IsoView from "./components/IsoView";
 import ThreeView from "./components/ThreeView";
 import { Tip } from "./components/Tip";
-import { useWarehouse } from "./lib/warehouse-store";
+import { useWarehouseInventory } from "./hooks/use-warehouse-inventory";
+import { parseRoutePlan } from "./lib/route-viz-types";
+import {
+	locationsToWarehouse,
+	warehouseToLocationInputs,
+} from "./lib/warehouse-layout-serializer";
 import type {
 	Asset,
 	HandlingUnit,
@@ -40,6 +45,8 @@ import type {
 	ZoneType,
 } from "./lib/warehouse-types";
 import { ZONE_DEFAULT_COLORS } from "./lib/warehouse-types";
+import { useWarehouse } from "./lib/warehouse-store";
+import { useAgvFleet } from "./hooks/use-agv-fleet";
 
 const TOOLS: { id: Tool; icon: LucideIcon; label: string }[] = [
 	{ id: "select", icon: MousePointer2, label: "Select" },
@@ -81,11 +88,9 @@ const Tabs = [
 
 import { useSidebar } from "@repo/ui/shadcn-sidebar";
 import { orpc } from "@shared/lib/orpc-query-utils";
-import { useEffect } from "react";
-import {
-	locationsToWarehouse,
-	warehouseToLocationInputs,
-} from "./lib/warehouse-layout-serializer";
+import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 type LayoutManagerProps = {
 	warehouseId: string;
@@ -101,6 +106,10 @@ const Index = ({
 	warehouseCode,
 }: LayoutManagerProps) => {
 	const { open } = useSidebar();
+	const searchParams = useSearchParams();
+	const waveIdParam = searchParams.get("waveId");
+	const viewParam = searchParams.get("view");
+	const highlightLocationId = searchParams.get("highlightLocationId");
 	const {
 		warehouse,
 		activeFloor,
@@ -123,6 +132,7 @@ const Index = ({
 		clearActiveFloor,
 		initFromWarehouse,
 	} = useWarehouse(warehouseId);
+	const { fleet: agvFleet } = useAgvFleet();
 
 	// Load from backend on mount
 	useEffect(() => {
@@ -132,12 +142,20 @@ const Index = ({
 					organizationId,
 					warehouseId,
 				});
-				if (result && Array.isArray(result)) {
-					const w = locationsToWarehouse(result, {
-						name: warehouseName,
-						code: warehouseCode,
-						timezone: "UTC",
-					});
+				const locations = Array.isArray(result)
+					? result
+					: (result?.locations ?? []);
+				const assets = Array.isArray(result) ? [] : (result?.assets ?? []);
+				if (locations.length > 0) {
+					const w = locationsToWarehouse(
+						locations,
+						{
+							name: warehouseName,
+							code: warehouseCode,
+							timezone: "UTC",
+						},
+						assets,
+					);
 					initFromWarehouse(w);
 				}
 			} catch (e) {
@@ -149,10 +167,54 @@ const Index = ({
 	}, [warehouseId, organizationId]);
 
 	const [tool, setTool] = useState<Tool>("select");
+	const [operationsMode, setOperationsMode] = useState(false);
+	const [highlightPicker, setHighlightPicker] = useState<string | null>(
+		"all",
+	);
 	const [activeZoneId, setActiveZoneId] = useState<string | undefined>(
 		warehouse.zones[0]?.id,
 	);
 	const [view, setView] = useState<ViewMode>("2d");
+
+	const { data: waveData } = useQuery({
+		...orpc.orders.getWave.queryOptions({
+			input: {
+				organizationId,
+				waveId: waveIdParam ?? "",
+			},
+		}),
+		enabled: Boolean(organizationId && waveIdParam),
+	});
+
+	const routePlan = useMemo(
+		() => parseRoutePlan(waveData?.wave?.routePlan),
+		[waveData?.wave?.routePlan],
+	);
+
+	useEffect(() => {
+		if (!waveIdParam && !highlightLocationId) {
+			return;
+		}
+		setOperationsMode(true);
+		setTool("select");
+		if (viewParam === "3d" || viewParam === "2d" || viewParam === "iso") {
+			setView(viewParam);
+		} else if (highlightLocationId || waveIdParam) {
+			setView("3d");
+		}
+	}, [waveIdParam, viewParam, highlightLocationId]);
+
+	useEffect(() => {
+		if (highlightLocationId) {
+			setSelection({ kind: "storage", id: highlightLocationId });
+		}
+	}, [highlightLocationId, setSelection]);
+
+	const { byLocationId, maxQty, getSummary } = useWarehouseInventory(
+		organizationId,
+		warehouseId,
+		operationsMode,
+	);
 
 	const selectedStorage = useMemo(() => {
 		if (!selection || selection.kind !== "storage") {
@@ -255,6 +317,62 @@ const Index = ({
 				</div>
 
 				<div className="ml-auto flex items-center gap-2">
+					{routePlan && (
+						<div className="flex items-center bg-secondary rounded-md p-0.5">
+							<button
+								type="button"
+								onClick={() => setHighlightPicker("all")}
+								className={cn(
+									"px-2 h-7 text-xs font-medium rounded transition-all",
+									highlightPicker === "all"
+										? "bg-surface-elevated text-foreground shadow-sm"
+										: "text-muted-foreground hover:text-foreground",
+								)}
+							>
+								All routes
+							</button>
+							{routePlan.pickers.map((picker) => (
+								<button
+									key={picker.label}
+									type="button"
+									onClick={() =>
+										setHighlightPicker(picker.label)
+									}
+									className={cn(
+										"px-2 h-7 text-xs font-medium rounded inline-flex items-center gap-1 transition-all",
+										highlightPicker === picker.label
+											? "bg-surface-elevated text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
+									<span
+										className="size-2 rounded-full"
+										style={{
+											backgroundColor: picker.color,
+										}}
+									/>
+									{picker.label}
+								</button>
+							))}
+						</div>
+					)}
+					<Tip label="Toggle layout design vs inventory operations view">
+						<button
+							type="button"
+							onClick={() => {
+								setOperationsMode((v) => !v);
+								setTool("select");
+							}}
+							className={cn(
+								"px-3 h-7 text-xs font-medium rounded border transition-all",
+								operationsMode
+									? "bg-primary text-primary-foreground border-primary"
+									: "bg-secondary text-muted-foreground border-border hover:text-foreground",
+							)}
+						>
+							{operationsMode ? "Operations" : "Layout"}
+						</button>
+					</Tip>
 					<div className="flex items-center bg-secondary rounded-md p-0.5">
 						{Tabs.map(({ id, label, icon: Icon, tip }) => (
 							<Tip key={id} label={tip}>
@@ -390,7 +508,8 @@ const Index = ({
 				{/* Tool + zones sidebar */}
 				{view === "2d" && (
 					<aside className="w-14 shrink-0 border-r border-border bg-surface-elevated flex flex-col items-center py-3 gap-1">
-						{TOOLS.map(({ id, icon: Icon, label }) => (
+						{!operationsMode &&
+							TOOLS.map(({ id, icon: Icon, label }) => (
 							<Tip key={id} label={label} side="right">
 								<button
 									type="button"
@@ -407,6 +526,8 @@ const Index = ({
 							</Tip>
 						))}
 						<div className="flex-1" />
+						{!operationsMode && (
+							<>
 						<Tip
 							label="Add handling unit (pallet, carton, …)"
 							side="right"
@@ -457,6 +578,8 @@ const Index = ({
 								<RotateCcw className="w-4 h-4 mx-auto" />
 							</button>
 						</Tip>
+							</>
+						)}
 					</aside>
 				)}
 
@@ -611,9 +734,13 @@ const Index = ({
 							<CanvasEditor
 								warehouse={warehouse}
 								floor={activeFloor}
-								tool={tool}
+								tool={operationsMode ? "select" : tool}
 								zones={warehouse.zones}
 								activeZoneId={activeZoneId}
+								operationsMode={operationsMode}
+								readOnly={operationsMode}
+								inventoryByLocationId={byLocationId}
+								maxInventoryQty={maxQty || 1}
 								selectedId={
 									selection?.kind === "storage"
 										? selection.id
@@ -631,8 +758,10 @@ const Index = ({
 									)
 								}
 								onUpdate={updateStorageUnit}
+								routePlan={routePlan}
+								highlightPicker={highlightPicker}
 							/>
-							{tool !== "select" && (
+							{!operationsMode && tool !== "select" && (
 								<div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-foreground/90 text-background text-xs font-mono px-3 py-1.5 rounded-full shadow-lg">
 									Drag on the canvas to draw a {tool}
 									{tool === "AREA" &&
@@ -642,28 +771,92 @@ const Index = ({
 							)}
 						</>
 					)}
-					{view === "3d" && <ThreeView warehouse={warehouse} />}
+					{view === "3d" && (
+						<ThreeView
+							warehouse={warehouse}
+							operationsMode={operationsMode}
+							inventoryByLocationId={byLocationId}
+							maxInventoryQty={maxQty || 1}
+							selectedId={
+								selection?.kind === "storage"
+									? selection.id
+									: null
+							}
+							onSelect={(id) =>
+								setSelection({ kind: "storage", id })
+							}
+							routePlan={routePlan}
+							highlightPicker={highlightPicker}
+							agvFleet={agvFleet}
+						/>
+					)}
 					{view === "iso" && <IsoView warehouse={warehouse} />}
 				</main>
 
 				{/* Inspector */}
-				{view === "2d" && (
+				{(view === "2d" || (view === "3d" && operationsMode)) && (
 					<aside className="w-80 shrink-0 border-l border-border bg-surface-elevated overflow-auto">
 						<div className="px-4 py-3 border-b border-border">
 							<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								Properties
+								{operationsMode ? "Bin Details" : "Properties"}
 							</h2>
 						</div>
-						<Inspector
-							warehouse={warehouse}
-							storage={selectedStorage}
-							handling={selectedHandling}
-							onUpdateStorage={updateStorageUnit}
-							onRemoveStorage={removeStorageUnit}
-							onUpdateHandling={updateHandlingUnit}
-							onRemoveHandling={removeHandlingUnit}
-							onGenerateShelves={generateShelvesForRack}
-						/>
+						{operationsMode && (
+							<div className="p-3 border-b border-border">
+								<AgvFleetPanel />
+							</div>
+						)}
+						{operationsMode &&
+							selection?.kind === "storage" &&
+							(() => {
+								const summary = getSummary(selection.id);
+								return (
+									<div className="px-4 py-3 border-b border-border text-sm space-y-2">
+										<p className="font-medium">
+											{selectedStorage?.code ??
+												summary?.locationCode ??
+												"Bin"}
+										</p>
+										{summary && summary.totalQty > 0 ? (
+											<div className="space-y-1">
+												<p className="text-muted-foreground text-xs">
+													Total qty: {summary.totalQty}
+												</p>
+												{summary.items.map((item) => (
+													<div
+														key={`${item.skuCode}-${item.qty}`}
+														className="text-xs font-mono"
+													>
+														{item.skuCode} —{" "}
+														{item.skuName} ×{" "}
+														{item.qty}
+														{item.lotNumber
+															? ` (lot ${item.lotNumber})`
+															: ""}
+													</div>
+												))}
+											</div>
+										) : (
+											<p className="text-xs text-muted-foreground">
+												Available capacity — no
+												inventory on hand.
+											</p>
+										)}
+									</div>
+								);
+							})()}
+						{!operationsMode && (
+							<Inspector
+								warehouse={warehouse}
+								storage={selectedStorage}
+								handling={selectedHandling}
+								onUpdateStorage={updateStorageUnit}
+								onRemoveStorage={removeStorageUnit}
+								onUpdateHandling={updateHandlingUnit}
+								onRemoveHandling={removeHandlingUnit}
+								onGenerateShelves={generateShelvesForRack}
+							/>
+						)}
 					</aside>
 				)}
 			</div>

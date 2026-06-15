@@ -16,6 +16,12 @@ import {
 	PX_PER_M,
 	STORAGE_UNIT_COLORS,
 } from "../lib/warehouse-types";
+import {
+	computeHeatmapRatio,
+	heatmapColor,
+} from "../lib/inventory-heatmap";
+import type { RouteVizPlan } from "../lib/route-viz-types";
+import { routeCoordToMm } from "../lib/route-viz-types";
 
 interface Props {
 	warehouse: Warehouse;
@@ -24,6 +30,15 @@ interface Props {
 	selectedId: string | null;
 	zones: Zone[];
 	activeZoneId?: string;
+	operationsMode?: boolean;
+	readOnly?: boolean;
+	inventoryByLocationId?: Map<
+		string,
+		{ totalQty: number; items: Array<{ skuCode: string; qty: number }> }
+	>;
+	maxInventoryQty?: number;
+	routePlan?: RouteVizPlan | null;
+	highlightPicker?: string | null;
 	onSelect: (id: string | null) => void;
 	onAdd: (type: StorageUnitType, partial: Partial<StorageUnit>) => void;
 	onUpdate: (id: string, patch: Partial<StorageUnit>) => void;
@@ -55,9 +70,15 @@ export default function CanvasEditor({
 	selectedId,
 	zones,
 	activeZoneId,
+	operationsMode = false,
+	readOnly = false,
+	inventoryByLocationId,
+	maxInventoryQty = 1,
 	onSelect,
 	onAdd,
 	onUpdate,
+	routePlan,
+	highlightPicker,
 }: Props) {
 	const ref = useRef<HTMLDivElement>(null);
 	const [drag, setDrag] = useState<null | {
@@ -97,7 +118,7 @@ export default function CanvasEditor({
 	};
 
 	const handleDown = (e: React.MouseEvent) => {
-		if (e.button !== 0) {
+		if (readOnly || e.button !== 0) {
 			return;
 		}
 		const { xMm, yMm } = toMm(e.clientX, e.clientY);
@@ -227,7 +248,11 @@ export default function CanvasEditor({
 		: null;
 
 	const startMove = (e: React.MouseEvent, u: StorageUnit | Asset) => {
-		if (tool !== "select") {
+		if (readOnly || tool !== "select") {
+			if (tool === "select") {
+				e.stopPropagation();
+				onSelect(u.id);
+			}
 			return;
 		}
 		e.stopPropagation();
@@ -337,7 +362,19 @@ export default function CanvasEditor({
 			{/* Floor info */}
 			<div className="absolute top-3 left-3 z-30 bg-surface-elevated/90 backdrop-blur border border-border rounded px-2 py-1 text-[10px] font-mono text-muted-foreground shadow-sm pointer-events-none">
 				{floor.name ?? floor.code} · 1 cell = 1 m · snap 0.25 m
+				{operationsMode ? " · Operations view" : ""}
 			</div>
+			{operationsMode && (
+				<div className="absolute top-3 right-3 z-30 rounded-md border border-border bg-surface-elevated/95 px-2 py-1 text-[10px] shadow-sm pointer-events-none">
+					<div
+						className="h-2 w-20 rounded-full"
+						style={{
+							background:
+								"linear-gradient(to right, #22c55e, #f59e0b, #ef4444)",
+						}}
+					/>
+				</div>
+			)}
 
 			<div
 				ref={ref}
@@ -362,12 +399,25 @@ export default function CanvasEditor({
 					const y = (u.startYMm / 1000) * CELL;
 					const w = (u.widthMm / 1000) * CELL;
 					const l = (u.lengthMm / 1000) * CELL;
-					const color =
-						u.colorHex ??
-						(STORAGE_UNIT_COLORS[
-							u.type as keyof typeof STORAGE_UNIT_COLORS
-						] ||
-							ASSET_COLORS[u.type as keyof typeof ASSET_COLORS]);
+					const color = (() => {
+						if (
+							operationsMode &&
+							(u.type === "BIN" || u.type === "PALLET")
+						) {
+							const summary = inventoryByLocationId?.get(u.id);
+							const qty = summary?.totalQty ?? 0;
+							return heatmapColor(
+								computeHeatmapRatio(qty, maxInventoryQty),
+							);
+						}
+						return (
+							u.colorHex ??
+							(STORAGE_UNIT_COLORS[
+								u.type as keyof typeof STORAGE_UNIT_COLORS
+							] ||
+								ASSET_COLORS[u.type as keyof typeof ASSET_COLORS])
+						);
+					})();
 					const common: React.CSSProperties = {
 						position: "absolute",
 						left: x,
@@ -537,6 +587,53 @@ export default function CanvasEditor({
 						</div>
 					);
 				})}
+
+				{routePlan && (
+					<svg
+						className="absolute inset-0 pointer-events-none z-25"
+						width={W}
+						height={H}
+						aria-label="Pick route paths"
+						role="img"
+					>
+						{routePlan.pickers.map((picker) => {
+							if (
+								highlightPicker &&
+								highlightPicker !== "all" &&
+								picker.label !== highlightPicker
+							) {
+								return null;
+							}
+							const points = picker.stops
+								.map((stop) => {
+									const xMm = routeCoordToMm(stop.x);
+									const zMm = routeCoordToMm(stop.z);
+									return `${(xMm / 1000) * CELL},${(zMm / 1000) * CELL}`;
+								})
+								.join(" ");
+							if (!points.includes(",")) {
+								return null;
+							}
+							return (
+								<polyline
+									key={picker.label}
+									points={points}
+									fill="none"
+									stroke={picker.color}
+									strokeWidth={3}
+									strokeOpacity={
+										highlightPicker &&
+										highlightPicker !== "all"
+											? 1
+											: 0.85
+									}
+									strokeLinejoin="round"
+									strokeLinecap="round"
+								/>
+							);
+						})}
+					</svg>
+				)}
 
 				{previewRect && (
 					<div

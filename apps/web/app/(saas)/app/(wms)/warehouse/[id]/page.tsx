@@ -5,9 +5,10 @@ import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { DemoRunner } from "@saas/demo/DemoRunner";
 import { LocationsTabContent } from "./components/locations-tab-content";
 import {
 	CycleCountTabContent,
@@ -21,6 +22,8 @@ import {
 export default function WarehouseDetailsPage() {
 	const { id } = useParams<{ id: string }>();
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const activeTab = searchParams.get("tab") ?? "inventory";
 	const { organization } = useSession();
 	const queryClient = useQueryClient();
 	const [settingsValues, setSettingsValues] =
@@ -240,10 +243,10 @@ export default function WarehouseDetailsPage() {
 		<div className="w-full h-full flex flex-col gap-6 py-6 px-0 overflow-hidden">
 			<div className="flex items-start justify-between gap-3 px-6">
 				<div className="space-y-1">
-					{/* Warehouse name moved to SidebarHeader breadcrumbs */}
 					<p className="text-sm text-muted-foreground">
 						{data.code} • {data.status}
 					</p>
+					<DemoRunner compact />
 				</div>
 				{data.status === "INACTIVE" ? (
 					<Button
@@ -261,7 +264,14 @@ export default function WarehouseDetailsPage() {
 
 			<div className="flex-1 flex flex-col w-full min-w-0 overflow-hidden">
 				<Tabs
-					defaultValue="inventory"
+					value={activeTab}
+					onValueChange={(tab) => {
+						const params = new URLSearchParams(searchParams.toString());
+						params.set("tab", tab);
+						router.replace(
+							`/app/warehouse/${id}?${params.toString()}`,
+						);
+					}}
 					className="flex-1 flex flex-col min-w-0 overflow-hidden"
 					orientation="horizontal"
 				>

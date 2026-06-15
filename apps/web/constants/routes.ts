@@ -1,4 +1,5 @@
 import {
+	BarChart3,
 	Bot,
 	Building2,
 	ClipboardList,
@@ -36,6 +37,11 @@ export const NAV_ROUTES = {
 			title: "Orders",
 			url: "/app/orders",
 			icon: ShoppingCart,
+		},
+		{
+			title: "Analytics",
+			url: "/app/analytics",
+			icon: BarChart3,
 		},
 		{
 			title: "Autopilot",

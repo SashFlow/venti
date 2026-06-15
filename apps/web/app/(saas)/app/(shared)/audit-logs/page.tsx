@@ -18,79 +18,47 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/table";
+import { useSession } from "@saas/auth/hooks/use-session";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useQuery } from "@tanstack/react-query";
 import { DownloadIcon, SearchIcon, ShieldIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
-type AuditEntry = {
-	id: string;
-	timestamp: string;
-	action: string;
-	resource: string;
-	actor: string;
-	channel: string;
-	severity: "info" | "review";
-	summary: string;
-};
-
-const AUDIT_ENTRIES: AuditEntry[] = [
-	{
-		id: "AUD-2041",
-		timestamp: "12 May 2026, 09:42",
-		action: "UPDATE_SUPPLIER",
-		resource: "Vendor",
-		actor: "Aarav Patel",
-		channel: "Web",
-		severity: "info",
-		summary: "Updated supplier banking and contact metadata.",
-	},
-	{
-		id: "AUD-2037",
-		timestamp: "12 May 2026, 08:58",
-		action: "IMPORT_CUSTOMERS",
-		resource: "Customer",
-		actor: "Priya Nair",
-		channel: "Import",
-		severity: "review",
-		summary: "Imported 64 records with 3 field warnings.",
-	},
-	{
-		id: "AUD-2031",
-		timestamp: "12 May 2026, 08:14",
-		action: "DELETE_PACKAGE_TYPE",
-		resource: "Packaging",
-		actor: "System Admin",
-		channel: "Web",
-		severity: "review",
-		summary: "Removed deprecated parcel carton from all warehouses.",
-	},
-	{
-		id: "AUD-2026",
-		timestamp: "12 May 2026, 07:26",
-		action: "CREATE_CUSTOMER",
-		resource: "Customer",
-		actor: "Meera Shah",
-		channel: "API",
-		severity: "info",
-		summary: "Created wholesale customer profile from ERP sync.",
-	},
-];
-
-function severityTone(severity: AuditEntry["severity"]) {
+function severityTone(severity: "info" | "review") {
 	if (severity === "info") {
 		return "border-emerald-200 bg-emerald-50 text-emerald-700";
 	}
-
 	return "border-amber-200 bg-amber-50 text-amber-700";
 }
 
+function formatTimestamp(iso: string) {
+	return new Date(iso).toLocaleString("en-IN", {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+}
+
 export default function AuditLogsPage() {
+	const { organization } = useSession();
+	const organizationId = organization?.id ?? "";
 	const [query, setQuery] = useState("");
 	const [resourceFilter, setResourceFilter] = useState("all");
 
+	const { data, isPending } = useQuery({
+		...orpc.organizations.listAuditLogs.queryOptions({
+			input: { organizationId, limit: 100 },
+		}),
+		enabled: Boolean(organizationId),
+	});
+
+	const entries = data?.logs ?? [];
+
 	const filteredEntries = useMemo(() => {
 		const normalizedQuery = query.trim().toLowerCase();
-
-		return AUDIT_ENTRIES.filter((entry) => {
+		return entries.filter((entry) => {
 			const matchesResource =
 				resourceFilter === "all" || entry.resource === resourceFilter;
 			const matchesQuery =
@@ -98,10 +66,11 @@ export default function AuditLogsPage() {
 				entry.action.toLowerCase().includes(normalizedQuery) ||
 				entry.actor.toLowerCase().includes(normalizedQuery) ||
 				entry.summary.toLowerCase().includes(normalizedQuery);
-
 			return matchesResource && matchesQuery;
 		});
-	}, [query, resourceFilter]);
+	}, [entries, query, resourceFilter]);
+
+	const reviewCount = entries.filter((e) => e.severity === "review").length;
 
 	return (
 		<div className="container mx-auto max-w-7xl space-y-6 py-8">
@@ -111,18 +80,14 @@ export default function AuditLogsPage() {
 						Audit Logs
 					</h1>
 					<p className="max-w-3xl text-muted-foreground">
-						Review operator actions, import history, and destructive
-						changes across the workspace. Read APIs are not exposed
-						yet, so this screen is structured and ready while
-						server-side log query procedures are added.
+						Review operator actions, approvals, and high-impact
+						mutations across the workspace.
 					</p>
 				</div>
-				<div className="flex items-center gap-2">
-					<Button variant="outline">
-						<DownloadIcon className="mr-2 size-4" />
-						Export View
-					</Button>
-				</div>
+				<Button variant="outline">
+					<DownloadIcon className="mr-2 size-4" />
+					Export View
+				</Button>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-3">
@@ -130,10 +95,10 @@ export default function AuditLogsPage() {
 					<CardContent className="flex items-center justify-between gap-3 p-5">
 						<div>
 							<p className="text-sm text-muted-foreground">
-								Logged today
+								Total entries
 							</p>
 							<p className="text-3xl font-semibold tracking-tight">
-								128
+								{data?.total ?? 0}
 							</p>
 						</div>
 						<ShieldIcon className="size-5 text-sky-600" />
@@ -145,23 +110,15 @@ export default function AuditLogsPage() {
 							Needs review
 						</p>
 						<p className="text-3xl font-semibold tracking-tight">
-							9
-						</p>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Deletes, bulk imports, and high-impact mutations.
+							{reviewCount}
 						</p>
 					</CardContent>
 				</Card>
 				<Card>
 					<CardContent className="p-5">
-						<p className="text-sm text-muted-foreground">
-							Latest writer
-						</p>
-						<p className="text-3xl font-semibold tracking-tight">
-							09:42
-						</p>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Supplier update captured from the web workspace.
+						<p className="text-sm text-muted-foreground">Source</p>
+						<p className="text-lg font-semibold tracking-tight">
+							Live audit trail
 						</p>
 					</CardContent>
 				</Card>
@@ -174,9 +131,7 @@ export default function AuditLogsPage() {
 							<SearchIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
 								value={query}
-								onChange={(event) =>
-									setQuery(event.target.value)
-								}
+								onChange={(event) => setQuery(event.target.value)}
 								placeholder="Search actions, actors, or summaries"
 								className="pl-9"
 							/>
@@ -184,97 +139,64 @@ export default function AuditLogsPage() {
 						<Select
 							value={resourceFilter}
 							onValueChange={(value) => {
-								if (value) {
-									setResourceFilter(value);
-								}
+								if (value) setResourceFilter(value);
 							}}
 						>
 							<SelectTrigger className="w-full lg:w-52">
-								<SelectValue placeholder="Filter by resource">
-									{resourceFilter === "all"
-										? "All resources"
-										: resourceFilter}
-								</SelectValue>
+								<SelectValue placeholder="Filter by resource" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">
-									All resources
-								</SelectItem>
+								<SelectItem value="all">All resources</SelectItem>
+								<SelectItem value="ReturnOrder">ReturnOrder</SelectItem>
 								<SelectItem value="Vendor">Vendor</SelectItem>
-								<SelectItem value="Customer">
-									Customer
-								</SelectItem>
-								<SelectItem value="Packaging">
-									Packaging
-								</SelectItem>
+								<SelectItem value="Customer">Customer</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
 
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Time</TableHead>
-								<TableHead>Action</TableHead>
-								<TableHead>Resource</TableHead>
-								<TableHead>Actor</TableHead>
-								<TableHead>Channel</TableHead>
-								<TableHead>Summary</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{filteredEntries.map((entry) => (
-								<TableRow key={entry.id}>
-									<TableCell className="whitespace-nowrap">
-										{entry.timestamp}
-									</TableCell>
-									<TableCell className="font-medium">
-										{entry.action}
-									</TableCell>
-									<TableCell>{entry.resource}</TableCell>
-									<TableCell>{entry.actor}</TableCell>
-									<TableCell>{entry.channel}</TableCell>
-									<TableCell>
-										<div className="flex items-center gap-3">
-											<span
-												className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${severityTone(entry.severity)}`}
-											>
-												{entry.severity === "info"
-													? "Logged"
-													: "Review"}
-											</span>
-											<span className="text-muted-foreground">
-												{entry.summary}
-											</span>
-										</div>
-									</TableCell>
-								</TableRow>
-							))}
-							{filteredEntries.length === 0 ? (
+					{isPending ? (
+						<p className="text-sm text-muted-foreground py-8 text-center">
+							Loading audit logs…
+						</p>
+					) : filteredEntries.length === 0 ? (
+						<p className="text-sm text-muted-foreground py-8 text-center">
+							No audit entries yet. Approve an insight or complete a
+							return to populate the trail.
+						</p>
+					) : (
+						<Table>
+							<TableHeader>
 								<TableRow>
-									<TableCell
-										colSpan={6}
-										className="h-28 text-center text-muted-foreground"
-									>
-										No audit entries match the current
-										filter.
-									</TableCell>
+									<TableHead>Time</TableHead>
+									<TableHead>Action</TableHead>
+									<TableHead>Resource</TableHead>
+									<TableHead>Actor</TableHead>
+									<TableHead>Summary</TableHead>
 								</TableRow>
-							) : null}
-						</TableBody>
-					</Table>
-				</CardContent>
-			</Card>
-
-			<Card className="border-dashed">
-				<CardHeader>
-					<CardTitle className="text-base">Backend status</CardTitle>
-				</CardHeader>
-				<CardContent className="text-sm text-muted-foreground">
-					Writes already happen through the shared audit utility in
-					the API layer, but log listing and export procedures still
-					need to be exposed before this page can switch from staged
-					entries to live data.
+							</TableHeader>
+							<TableBody>
+								{filteredEntries.map((entry) => (
+									<TableRow key={entry.id}>
+										<TableCell className="whitespace-nowrap text-sm">
+											{formatTimestamp(entry.timestamp)}
+										</TableCell>
+										<TableCell>
+											<span
+												className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${severityTone(entry.severity)}`}
+											>
+												{entry.action}
+											</span>
+										</TableCell>
+										<TableCell>{entry.resource}</TableCell>
+										<TableCell>{entry.actor}</TableCell>
+										<TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+											{entry.summary}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					)}
 				</CardContent>
 			</Card>
 		</div>

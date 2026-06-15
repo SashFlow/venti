@@ -735,19 +735,133 @@ export async function getWaveById(params: {
 	organizationId: string;
 	waveId: string;
 }) {
-	return db.pickWave.findFirst({
+	const wave = await db.pickWave.findFirst({
 		where: {
 			id: params.waveId,
 			warehouse: { organizationId: params.organizationId },
 		},
-		select: {
-			id: true,
-			waveNumber: true,
-			status: true,
-			createdAt: true,
-			tasks: true,
+		include: {
+			warehouse: { select: { id: true, name: true } },
+			releasedBy: { select: { id: true, name: true } },
+			salesOrders: {
+				include: {
+					salesOrder: {
+						include: {
+							customer: { select: { name: true } },
+						},
+					},
+				},
+			},
+			lines: {
+				include: {
+					location: {
+						select: {
+							id: true,
+							code: true,
+							x: true,
+							y: true,
+							z: true,
+						},
+					},
+					salesOrderItem: {
+						include: {
+							sku: {
+								select: {
+									id: true,
+									code: true,
+									barcode: true,
+									product: { select: { name: true } },
+								},
+							},
+							salesOrder: {
+								select: { id: true, orderNumber: true },
+							},
+						},
+					},
+				},
+				orderBy: { pickSequence: "asc" },
+			},
 		},
 	});
+
+	if (!wave) {
+		return null;
+	}
+
+	const orderIds = wave.salesOrders.map((link) => link.salesOrderId);
+	const orderItems = await db.salesOrderItem.findMany({
+		where: { salesOrderId: { in: orderIds } },
+		orderBy: { id: "asc" },
+		select: { id: true, salesOrderId: true },
+	});
+
+	const lineIndexByItemId = new Map<string, number>();
+	for (const orderId of orderIds) {
+		const items = orderItems.filter((item) => item.salesOrderId === orderId);
+		items.forEach((item, idx) => {
+			lineIndexByItemId.set(item.id, idx + 1);
+		});
+	}
+
+	return {
+		id: wave.id,
+		waveNumber: wave.waveNumber,
+		type: wave.type,
+		status: wave.status,
+		notes: wave.notes,
+		releasedAt: wave.releasedAt,
+		completedAt: wave.completedAt,
+		createdAt: wave.createdAt,
+		warehouse: wave.warehouse,
+		releasedBy: wave.releasedBy,
+		routePlan: wave.routePlan,
+		naiveDistanceM: wave.naiveDistanceM
+			? Number(wave.naiveDistanceM)
+			: null,
+		optimizedDistanceM: wave.optimizedDistanceM
+			? Number(wave.optimizedDistanceM)
+			: null,
+		savingsPercent: wave.savingsPercent
+			? Number(wave.savingsPercent)
+			: null,
+		pickerCount: wave.pickerCount,
+		salesOrders: wave.salesOrders.map((link) => ({
+			id: link.salesOrder.id,
+			orderNumber: link.salesOrder.orderNumber,
+			status: link.salesOrder.status,
+			customerName: link.salesOrder.customer?.name ?? null,
+		})),
+		lines: wave.lines.map((line) => ({
+			id: line.id,
+			qtyToPick: line.qtyToPick,
+			qtyPicked: line.qtyPicked,
+			pickSequence: line.pickSequence,
+			pickerLabel: line.pickerLabel,
+			cartId: line.cartId,
+			zoneCode: line.zoneCode,
+			location: line.location
+				? {
+						id: line.location.id,
+						code: line.location.code,
+						x: line.location.x ? Number(line.location.x) : null,
+						y: line.location.y ? Number(line.location.y) : null,
+						z: line.location.z ? Number(line.location.z) : null,
+					}
+				: null,
+			salesOrderLine: {
+				lineNumber:
+					lineIndexByItemId.get(line.salesOrderItemId) ?? null,
+				sku: {
+					sku: line.salesOrderItem.sku.code,
+					barcode: line.salesOrderItem.sku.barcode,
+					name:
+						line.salesOrderItem.sku.product?.name ??
+						line.salesOrderItem.sku.code,
+				},
+				salesOrder: line.salesOrderItem.salesOrder,
+			},
+		})),
+	};
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -909,20 +1023,69 @@ export async function createWave(params: {
 	organizationId: string;
 	warehouseId: string;
 	waveNumber: string;
+	type?: "SINGLE_ORDER" | "BATCH" | "ZONE" | "CLUSTER";
+	notes?: string;
 	salesOrderIds: string[];
 }) {
-	const wave = await db.pickWave.create({
-		data: {
+	const salesOrders = await db.salesOrder.findMany({
+		where: {
+			id: { in: params.salesOrderIds },
 			warehouseId: params.warehouseId,
-			waveNumber: params.waveNumber,
-			status: "CREATED",
+			warehouse: { organizationId: params.organizationId },
 		},
-		select: {
-			id: true,
-			waveNumber: true,
-			status: true,
+		include: {
+			items: true,
 		},
 	});
 
-	return { wave };
+	if (salesOrders.length !== params.salesOrderIds.length) {
+		throw new Error(
+			"One or more sales orders were not found for this warehouse.",
+		);
+	}
+
+	const wave = await db.$transaction(async (tx) => {
+		const created = await tx.pickWave.create({
+			data: {
+				warehouseId: params.warehouseId,
+				waveNumber: params.waveNumber,
+				type: params.type ?? "BATCH",
+				notes: params.notes,
+				status: "CREATED",
+				salesOrders: {
+					create: params.salesOrderIds.map((salesOrderId) => ({
+						salesOrderId,
+					})),
+				},
+			},
+		});
+
+		const lineData = salesOrders.flatMap((order) =>
+			order.items.map((item) => {
+				const ordered = Number(item.orderedQty);
+				const picked = Number(item.pickedQty);
+				const qtyToPick = Math.max(0, ordered - picked);
+				return {
+					pickWaveId: created.id,
+					salesOrderItemId: item.id,
+					qtyToPick,
+				};
+			}),
+		);
+
+		if (lineData.length > 0) {
+			await tx.pickWaveLine.createMany({ data: lineData });
+		}
+
+		return created;
+	});
+
+	return {
+		wave: {
+			id: wave.id,
+			waveNumber: wave.waveNumber,
+			status: wave.status,
+			type: wave.type,
+		},
+	};
 }

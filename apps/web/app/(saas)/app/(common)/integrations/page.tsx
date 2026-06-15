@@ -10,46 +10,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@repo/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import {
-	ArrowUpRightIcon,
-	CircleAlertIcon,
 	Link2Icon,
-	RefreshCcwIcon,
 	SearchIcon,
 	ShieldCheckIcon,
 	WorkflowIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-type ConnectorStatus = "connected" | "attention" | "planned";
+type ConnectorStatus = "planned";
 
 type Connector = {
 	id: string;
 	name: string;
 	category: string;
 	status: ConnectorStatus;
-	lastSync: string;
-	owner: string;
 	coverage: string;
 	notes: string;
-};
-
-type SyncRun = {
-	id: string;
-	connector: string;
-	status: "healthy" | "warning" | "queued";
-	window: string;
-	records: string;
-	owner: string;
 };
 
 const CONNECTORS: Connector[] = [
@@ -57,88 +35,34 @@ const CONNECTORS: Connector[] = [
 		id: "sap-business-one",
 		name: "SAP Business One",
 		category: "ERP",
-		status: "connected",
-		lastSync: "8 min ago",
-		owner: "Ops Systems",
+		status: "planned",
 		coverage: "POs, receipts, stock adjustments",
-		notes: "Daily volume stable. Last full sync completed without drift.",
+		notes: "Available Phase 2 — request integration to join early access.",
 	},
 	{
-		id: "shopify-b2b",
-		name: "Azure AD",
-		category: "Auth",
-		status: "connected",
-		lastSync: "43 min ago",
-		owner: "Ops Systems",
-		coverage: "User Access and Role updates",
-		notes: "Sync roles in the ERP system from org sso.",
+		id: "tally",
+		name: "Tally",
+		category: "ERP",
+		status: "planned",
+		coverage: "GL sync, inventory vouchers",
+		notes: "Available Phase 2 — India SMB accounting bridge.",
 	},
 	{
-		id: "carrier-cloud",
-		name: "Email Sync",
-		category: "Carrier",
-		status: "attention",
-		lastSync: "2 min ago",
-		owner: "Sales Desk",
-		coverage: "Rates, labels, shipment events",
-		notes: "Convert all the emails relavent to the ERP system into tasks or data feed.",
+		id: "shopify",
+		name: "Shopify",
+		category: "Commerce",
+		status: "planned",
+		coverage: "Orders, fulfillments, returns",
+		notes: "Available Phase 2 — B2B and D2C channel connector.",
 	},
 ];
 
-const SYNC_RUNS: SyncRun[] = [
-	{
-		id: "RUN-3021",
-		connector: "SAP Business One",
-		status: "healthy",
-		window: "09:00-09:15",
-		records: "1,248 records",
-		owner: "Ops Systems",
-	},
-	{
-		id: "RUN-3018",
-		connector: "Azure AD",
-		status: "warning",
-		window: "08:30-08:45",
-		records: "82 records",
-		owner: "Ops Systems",
-	},
-	{
-		id: "RUN-3014",
-		connector: "Email Sync",
-		status: "queued",
-		window: "Pending approval",
-		records: "0 records",
-		owner: "Carrier",
-	},
-];
-
-function statusClasses(status: ConnectorStatus | SyncRun["status"]) {
-	switch (status) {
-		case "connected":
-		case "healthy":
-			return "border-emerald-200 bg-emerald-50 text-emerald-700";
-		case "attention":
-		case "warning":
-			return "border-amber-200 bg-amber-50 text-amber-700";
-		default:
-			return "border-slate-200 bg-slate-100 text-slate-700";
-	}
+function statusClasses(status: ConnectorStatus) {
+	return "border-slate-200 bg-slate-100 text-slate-700";
 }
 
-function statusLabel(status: ConnectorStatus | SyncRun["status"]) {
-	if (status === "healthy") {
-		return "Healthy";
-	}
-
-	if (status === "warning") {
-		return "Needs attention";
-	}
-
-	if (status === "queued") {
-		return "Queued";
-	}
-
-	return status.charAt(0).toUpperCase() + status.slice(1);
+function statusLabel(status: ConnectorStatus) {
+	return "Available Phase 2";
 }
 
 export default function IntegrationsPage() {
@@ -166,12 +90,7 @@ export default function IntegrationsPage() {
 		});
 	}, [query, statusFilter]);
 
-	const connectedCount = CONNECTORS.filter(
-		(connector) => connector.status === "connected",
-	).length;
-	const attentionCount = CONNECTORS.filter(
-		(connector) => connector.status === "attention",
-	).length;
+	const phase2Count = CONNECTORS.length;
 
 	return (
 		<div className="container mx-auto max-w-7xl space-y-6 py-8">
@@ -181,10 +100,9 @@ export default function IntegrationsPage() {
 						Integrations
 					</h1>
 					<p className="max-w-3xl text-muted-foreground">
-						Track connector health, review sync coverage, and stage
-						new integration requests. This frontend surface is ready
-						for operations review while backend provisioning
-						endpoints are still pending.
+						ERP and commerce connectors are on the Phase 2 roadmap.
+						Request integration access for SAP Business One, Tally,
+						and Shopify.
 					</p>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
@@ -203,16 +121,16 @@ export default function IntegrationsPage() {
 				<Card>
 					<CardHeader className="pb-3">
 						<CardTitle className="text-sm font-medium text-muted-foreground">
-							Connected
+							Phase 2 catalog
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="flex items-end justify-between gap-3">
 						<div>
 							<p className="text-3xl font-semibold tracking-tight">
-								{connectedCount}
+								{phase2Count}
 							</p>
 							<p className="text-sm text-muted-foreground">
-								Active data exchanges in the current workspace.
+								SAP, Tally, Shopify — available on request.
 							</p>
 						</div>
 						<ShieldCheckIcon className="size-5 text-emerald-600" />
@@ -221,39 +139,35 @@ export default function IntegrationsPage() {
 				<Card>
 					<CardHeader className="pb-3">
 						<CardTitle className="text-sm font-medium text-muted-foreground">
-							Needs Attention
+							Connected
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="flex items-end justify-between gap-3">
 						<div>
-							<p className="text-3xl font-semibold tracking-tight">
-								{attentionCount}
-							</p>
+							<p className="text-3xl font-semibold tracking-tight">0</p>
 							<p className="text-sm text-muted-foreground">
-								Connectors with retries, drift, or credential
-								follow-up.
+								Live connectors ship in Phase 2.
 							</p>
 						</div>
-						<CircleAlertIcon className="size-5 text-amber-600" />
+						<ShieldCheckIcon className="size-5 text-muted-foreground" />
 					</CardContent>
 				</Card>
 				<Card>
 					<CardHeader className="pb-3">
 						<CardTitle className="text-sm font-medium text-muted-foreground">
-							Next Review
+							Request integration
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="flex items-end justify-between gap-3">
 						<div>
-							<p className="text-3xl font-semibold tracking-tight">
-								14:30
+							<p className="text-lg font-semibold tracking-tight">
+								Early access
 							</p>
 							<p className="text-sm text-muted-foreground">
-								Connector governance review for pending
-								approvals.
+								Contact sales for India ERP bridge onboarding.
 							</p>
 						</div>
-						<ArrowUpRightIcon className="size-5 text-sky-600" />
+						<Link2Icon className="size-5 text-sky-600" />
 					</CardContent>
 				</Card>
 			</div>
@@ -304,26 +218,15 @@ export default function IntegrationsPage() {
 										<SelectValue placeholder="Filter by status">
 											{statusFilter === "all"
 												? "All statuses"
-												: statusFilter === "connected"
-													? "Connected"
-													: statusFilter ===
-															"attention"
-														? "Needs attention"
-														: "Planned"}
+												: "Phase 2"}
 										</SelectValue>
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="all">
 											All statuses
 										</SelectItem>
-										<SelectItem value="connected">
-											Connected
-										</SelectItem>
-										<SelectItem value="attention">
-											Needs attention
-										</SelectItem>
 										<SelectItem value="planned">
-											Planned
+											Phase 2
 										</SelectItem>
 									</SelectContent>
 								</Select>
@@ -355,52 +258,14 @@ export default function IntegrationsPage() {
 												</span>
 											</div>
 
-											<div className="grid gap-3 sm:grid-cols-3">
-												<div>
-													<p className="text-xs uppercase tracking-wide text-muted-foreground">
-														Last sync
-													</p>
-													<p className="mt-1 text-sm font-medium">
-														{connector.lastSync}
-													</p>
-												</div>
-												<div>
-													<p className="text-xs uppercase tracking-wide text-muted-foreground">
-														Owner
-													</p>
-													<p className="mt-1 text-sm font-medium">
-														{connector.owner}
-													</p>
-												</div>
-												<div>
-													<p className="text-xs uppercase tracking-wide text-muted-foreground">
-														Coverage
-													</p>
-													<p className="mt-1 text-sm font-medium">
-														{connector.coverage}
-													</p>
-												</div>
-											</div>
-
 											<div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
 												{connector.notes}
 											</div>
 
-											<div className="flex flex-wrap gap-2">
-												<Button
-													variant="outline"
-													size="sm"
-												>
-													Review Mapping
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-												>
-													<RefreshCcwIcon className="mr-2 size-4" />
-													Run Sync Check
-												</Button>
-											</div>
+											<Button size="sm">
+												<Link2Icon className="mr-2 size-4" />
+												Request integration
+											</Button>
 										</CardContent>
 									</Card>
 								))}
@@ -423,43 +288,11 @@ export default function IntegrationsPage() {
 				) : (
 					<Card>
 						<CardHeader>
-							<CardTitle>Recent Sync Activity</CardTitle>
+							<CardTitle>Sync activity</CardTitle>
 						</CardHeader>
-						<CardContent>
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Run</TableHead>
-										<TableHead>Connector</TableHead>
-										<TableHead>Status</TableHead>
-										<TableHead>Window</TableHead>
-										<TableHead>Records</TableHead>
-										<TableHead>Owner</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{SYNC_RUNS.map((run) => (
-										<TableRow key={run.id}>
-											<TableCell className="font-medium">
-												{run.id}
-											</TableCell>
-											<TableCell>
-												{run.connector}
-											</TableCell>
-											<TableCell>
-												<span
-													className={`inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusClasses(run.status)}`}
-												>
-													{statusLabel(run.status)}
-												</span>
-											</TableCell>
-											<TableCell>{run.window}</TableCell>
-											<TableCell>{run.records}</TableCell>
-											<TableCell>{run.owner}</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
+						<CardContent className="py-10 text-center text-sm text-muted-foreground">
+							No live sync runs — connectors are Phase 2. Request
+							integration to join the early access program.
 						</CardContent>
 					</Card>
 				)}

@@ -1,6 +1,7 @@
 import type { RouterClient } from "@orpc/server";
 import { adminRouter } from "../modules/admin/router";
 import { analyticsRouter } from "../modules/analytics/router";
+import { autopilotRouter } from "../modules/autopilot/router";
 import { contactRouter } from "../modules/contact/router";
 import { customersRouter } from "../modules/customers/router";
 import { inboundRouter } from "../modules/inbound/router";
@@ -18,6 +19,7 @@ import { uploadsRouter } from "../modules/uploads/router";
 import { usersRouter } from "../modules/users/router";
 import { warehouseRouter } from "../modules/warehouse/router";
 import { workforceRouter } from "../modules/workforce/router";
+import { workflowsRouter } from "../modules/workflows/router";
 import { publicProcedure } from "./procedures";
 
 export const router = publicProcedure
@@ -44,6 +46,8 @@ export const router = publicProcedure
 		inbound: inboundRouter,
 		returns: returnsRouter,
 		tasks: tasksRouter,
+		autopilot: autopilotRouter,
+		workflows: workflowsRouter,
 	});
 
 export type ApiRouterClient = RouterClient<typeof router>;

@@ -1,4 +1,11 @@
 import { TabsContent } from "@repo/ui/tabs";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@repo/ui/select";
 import { CollapsibleGroup, InputRow, SectionCard, SwitchRow } from "./shared";
 
 export function FulfillmentTabContent({
@@ -10,6 +17,12 @@ export function FulfillmentTabContent({
 	setFulfillmentLabelHeader,
 	fulfillmentLabelFooter,
 	setFulfillmentLabelFooter,
+	printerName,
+	setPrinterName,
+	printerIp,
+	setPrinterIp,
+	printerType,
+	setPrinterType,
 }: {
 	toggles: Record<string, boolean>;
 	updateToggle: (key: string, checked: boolean) => void;
@@ -19,6 +32,12 @@ export function FulfillmentTabContent({
 	setFulfillmentLabelHeader: (value: string) => void;
 	fulfillmentLabelFooter: string;
 	setFulfillmentLabelFooter: (value: string) => void;
+	printerName: string;
+	setPrinterName: (value: string) => void;
+	printerIp: string;
+	setPrinterIp: (value: string) => void;
+	printerType: string;
+	setPrinterType: (value: string) => void;
 }) {
 	return (
 		<TabsContent value="fulfillment" className="space-y-4">
@@ -116,6 +135,40 @@ export function FulfillmentTabContent({
 						/>
 					</div>
 				</CollapsibleGroup>
+			</SectionCard>
+
+			<SectionCard id="connected-devices" title="Connected devices">
+				<p className="text-sm text-muted-foreground mb-3">
+					Placeholder printer config for pick lists and shipping labels
+					(no live socket in POC).
+				</p>
+				<div className="grid gap-3 md:grid-cols-2">
+					<InputRow
+						label="Printer name"
+						value={printerName}
+						onChange={setPrinterName}
+						placeholder="Dock 3 Zebra"
+					/>
+					<InputRow
+						label="Printer IP"
+						value={printerIp}
+						onChange={setPrinterIp}
+						placeholder="192.168.1.50"
+					/>
+				</div>
+				<div className="mt-3 max-w-xs">
+					<p className="text-sm font-medium mb-1.5">Printer type</p>
+					<Select value={printerType} onValueChange={setPrinterType}>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="ZEBRA">Zebra</SelectItem>
+							<SelectItem value="BROTHER">Brother</SelectItem>
+							<SelectItem value="GENERIC">Generic</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
 			</SectionCard>
 		</TabsContent>
 	);

@@ -128,6 +128,9 @@ export default function OrganizationPage() {
 		useState("30");
 	const [fulfillmentLabelHeader, setFulfillmentLabelHeader] = useState("");
 	const [fulfillmentLabelFooter, setFulfillmentLabelFooter] = useState("");
+	const [printerName, setPrinterName] = useState("");
+	const [printerIp, setPrinterIp] = useState("");
+	const [printerType, setPrinterType] = useState("GENERIC");
 	const [itemsDefaultLengthUnit, setItemsDefaultLengthUnit] = useState("in");
 	const [itemsDefaultWeightUnit, setItemsDefaultWeightUnit] = useState("lb");
 	const [displayCurrency, setDisplayCurrency] = useState("usd");
@@ -408,6 +411,9 @@ export default function OrganizationPage() {
 		setFulfillmentLabelFooter(
 			readString(fulfillment, "fulfillmentLabelFooter", ""),
 		);
+		setPrinterName(readString(fulfillment, "printerName", ""));
+		setPrinterIp(readString(fulfillment, "printerIp", ""));
+		setPrinterType(readString(fulfillment, "printerType", "GENERIC"));
 		setInventoryAdjustmentReasons(
 			readString(inventory, "inventoryAdjustmentReasons", ""),
 		);
@@ -606,6 +612,9 @@ export default function OrganizationPage() {
 					ignoreLineItemProperties,
 					fulfillmentLabelHeader,
 					fulfillmentLabelFooter,
+					printerName,
+					printerIp,
+					printerType,
 				},
 				inventory: {
 					inventoryAdjustmentReasons,
@@ -716,7 +725,16 @@ export default function OrganizationPage() {
 				</div>
 				<p className="mt-2 text-muted-foreground">
 					Configure operational settings for fulfillment, inventory,
-					scanning, and data policies.
+					scanning, and data policies.{" "}
+					<a
+						href="/legal/privacy-policy"
+						className="text-primary underline"
+					>
+						Privacy policy
+					</a>
+					{" — "}
+					Venti processes warehouse data per India DPDP principles;
+					data export and erasure requests are handled per org policy.
 				</p>
 
 				<Tabs
@@ -761,6 +779,12 @@ export default function OrganizationPage() {
 						setFulfillmentLabelHeader={setFulfillmentLabelHeader}
 						fulfillmentLabelFooter={fulfillmentLabelFooter}
 						setFulfillmentLabelFooter={setFulfillmentLabelFooter}
+						printerName={printerName}
+						setPrinterName={setPrinterName}
+						printerIp={printerIp}
+						setPrinterIp={setPrinterIp}
+						printerType={printerType}
+						setPrinterType={setPrinterType}
 					/>
 					<InventoryTabContent
 						toggles={toggles}

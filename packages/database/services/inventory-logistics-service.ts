@@ -10,6 +10,7 @@ export async function receiveInventory(input: {
     purchaseUnitPrice: number; // Unit price from vendor
     apportionedFreightCost: number; // Freight cost allocated to these units
     userId: string;
+    purchaseOrderItemId?: string;
 }) {
     return await prisma.$transaction(async (tx) => {
         // 1. Calculate Landed Cost per unit
@@ -71,6 +72,37 @@ export async function receiveInventory(input: {
                 }
             ]
         });
+
+        if (input.purchaseOrderItemId) {
+            const poItem = await tx.purchaseOrderItem.update({
+                where: { id: input.purchaseOrderItemId },
+                data: { receivedQty: { increment: input.quantity } },
+                select: { purchaseOrderId: true },
+            });
+
+            const items = await tx.purchaseOrderItem.findMany({
+                where: { purchaseOrderId: poItem.purchaseOrderId },
+                select: { orderedQty: true, receivedQty: true },
+            });
+
+            const allReceived = items.every(
+                (line) => Number(line.receivedQty) >= Number(line.orderedQty),
+            );
+            const anyReceived = items.some(
+                (line) => Number(line.receivedQty) > 0,
+            );
+
+            await tx.purchaseOrder.update({
+                where: { id: poItem.purchaseOrderId },
+                data: {
+                    status: allReceived
+                        ? "RECEIVED"
+                        : anyReceived
+                            ? "PARTIAL"
+                            : "APPROVED",
+                },
+            });
+        }
 
         return { newMAC, landedCostPerUnit };
     });

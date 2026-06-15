@@ -27,6 +27,8 @@ import {
 	Wrench,
 	Zap,
 } from "lucide-react";
+import { DemoRunner } from "@saas/demo/DemoRunner";
+import { AiInsightTeaser } from "./components/ai-insight-teaser";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1354,6 +1356,12 @@ export default function HomeClient({
 
 	return (
 		<div className="space-y-6">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<p className="text-sm text-muted-foreground">
+					Control tower — persona dashboards
+				</p>
+				<DemoRunner compact />
+			</div>
 			{error && (
 				<div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3">
 					<AlertCircle className="w-4 h-4 shrink-0" />
@@ -1397,7 +1405,10 @@ export default function HomeClient({
 							<WarehouseAssociatePanel data={data.persona1} />
 						</TabsContent>
 						<TabsContent value="lead">
-							<WarehouseControlLeadPanel data={data.persona2} />
+							<div className="space-y-4">
+								<AiInsightTeaser organizationId={organizationId} />
+								<WarehouseControlLeadPanel data={data.persona2} />
+							</div>
 						</TabsContent>
 						<TabsContent value="quality">
 							<InventoryQualityPanel data={data.persona3} />
@@ -1406,7 +1417,10 @@ export default function HomeClient({
 							<RegionalSupplyPanel data={data.persona4} />
 						</TabsContent>
 						<TabsContent value="executive">
-							<ExecutivePanel data={data.persona5} />
+							<div className="space-y-4">
+								<AiInsightTeaser organizationId={organizationId} />
+								<ExecutivePanel data={data.persona5} />
+							</div>
 						</TabsContent>
 					</>
 				) : null}

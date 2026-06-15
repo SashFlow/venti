@@ -37,13 +37,19 @@ export async function loadWarehouseLayout(input: {
 	warehouseId: string;
 }) {
 	const { warehouseId } = input;
-	const locations = await prisma.location.findMany({
-		where: { warehouseId },
-		orderBy: [
-			{ parentLocationId: "asc" },
-			{ sequence: "asc" },
-			{ code: "asc" },
-		],
-	});
-	return locations;
+	const [locations, assets] = await Promise.all([
+		prisma.location.findMany({
+			where: { warehouseId },
+			orderBy: [
+				{ parentLocationId: "asc" },
+				{ sequence: "asc" },
+				{ code: "asc" },
+			],
+		}),
+		prisma.asset.findMany({
+			where: { warehouseId },
+			orderBy: { name: "asc" },
+		}),
+	]);
+	return { locations, assets };
 }

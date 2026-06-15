@@ -51,7 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 			<SidebarContent>
 				<NavMain items={[routes.default, ...routes.modules]} />
-				{/* <NavMain label="Management" items={routes.management} /> */}
+				<NavMain label="Management" items={routes.management} />
 				{/* <NavMain label="Admin" items={routes.admin} /> */}
 			</SidebarContent>
 			<SidebarFooter className="border-t border-foreground/20">

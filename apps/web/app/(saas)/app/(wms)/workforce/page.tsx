@@ -46,6 +46,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
+import Link from "next/link";
 import {
 	ChevronDownIcon,
 	ChevronUpIcon,
@@ -1002,7 +1003,10 @@ export default function WorkforcePage() {
 			<h1 className="text-2xl font-semibold tracking-tight">Workforce</h1>
 			<p className="mt-2 text-muted-foreground">
 				Manage workforce users and role groups for the active
-				organization.
+				organization.{" "}
+				<Link href="/operator" className="text-primary underline">
+					Open Operator Mode (PWA)
+				</Link>
 			</p>
 
 			{!organizationId ? (

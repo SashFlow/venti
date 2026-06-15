@@ -8,9 +8,7 @@ async function main() {
 	console.log("🌱 Starting database seed...");
 
 	// Clean up existing products to prevent unique constraint violations on re-run
-	await db.product.deleteMany({
-		where: { organizationId: "cmpqv3f240000uxt8nf5qfctu" },
-	});
+	const currentOrganization = await db.organization.findFirst();
 
 	// 2. Define the 25 Product templates and their 5 SKU variations
 	const productsToSeed = [
@@ -430,7 +428,7 @@ async function main() {
 
 		await db.product.create({
 			data: {
-				organizationId: "cmpqs4n050003uxmsx78netnk",
+				organizationId: currentOrganization?.id || "",
 				name: template.name,
 				description: template.description,
 				isPerishable: template.isPerishable ?? false,

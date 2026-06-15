@@ -60,6 +60,7 @@ model User {
   scanEvents            ScanEvent[]
   uploadedFiles         UploadFile[]           @relation("UploadedFilesByUser")
   ReturnInspection      ReturnInspection[]
+  releasedPickWaves     PickWave[]             @relation("PickWaveReleasedBy")
 
   @@unique([email])
   @@unique([username])
@@ -178,6 +179,8 @@ model Organization {
   Product              Product[]
   transportationRoutes TransportationRoute[]
   CostLedger           CostLedger[]
+  autopilotRules       AutopilotRule[]
+  insightDismissals    InsightDismissal[]
 
   @@unique([slug])
   @@index([logoUploadFileId])
@@ -537,6 +540,7 @@ model Location {
   InventorySerial InventorySerial[]
   CycleCountItem  CycleCountItem[]
   assets          Asset[]
+  pickWaveLines   PickWaveLine[]
 
   @@unique([warehouseId, code])
   @@index([warehouseId, type])
@@ -1113,6 +1117,7 @@ model SalesOrder {
 
   shipment    Shipment?
   ReturnOrder ReturnOrder[]
+  pickWaves   PickWaveSalesOrder[]
 
   @@unique([warehouseId, orderNumber])
 }
@@ -1140,6 +1145,7 @@ model SalesOrderItem {
   pickedQty    Decimal @default(0) @db.Decimal(18, 4)
 
   reservations InventoryReservation[]
+  pickWaveLines PickWaveLine[]
 }
 
 // ============================================================================
@@ -1277,13 +1283,71 @@ model PickWave {
 
   waveNumber String
 
+  type WaveType @default(BATCH)
+
   status WaveStatus
 
-  tasks WarehouseTask[]
+  notes String?
+
+  releasedAt DateTime?
+  completedAt DateTime?
+
+  releasedByUserId String?
+  releasedBy       User?   @relation("PickWaveReleasedBy", fields: [releasedByUserId], references: [id])
+
+  tasks        WarehouseTask[]
+  salesOrders  PickWaveSalesOrder[]
+  lines        PickWaveLine[]
+
+  routePlan          Json?
+  naiveDistanceM     Decimal? @db.Decimal(12, 2)
+  optimizedDistanceM Decimal? @db.Decimal(12, 2)
+  savingsPercent     Decimal? @db.Decimal(5, 2)
+  pickerCount        Int?
 
   createdAt DateTime @default(now())
 
   @@unique([warehouseId, waveNumber])
+}
+
+enum WaveType {
+  SINGLE_ORDER
+  BATCH
+  ZONE
+  CLUSTER
+}
+
+model PickWaveSalesOrder {
+  pickWaveId   String
+  pickWave     PickWave   @relation(fields: [pickWaveId], references: [id], onDelete: Cascade)
+  salesOrderId String
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+
+  @@id([pickWaveId, salesOrderId])
+}
+
+model PickWaveLine {
+  id String @id @default(cuid())
+
+  pickWaveId String
+  pickWave   PickWave @relation(fields: [pickWaveId], references: [id], onDelete: Cascade)
+
+  salesOrderItemId String
+  salesOrderItem   SalesOrderItem @relation(fields: [salesOrderItemId], references: [id], onDelete: Cascade)
+
+  qtyToPick Decimal @db.Decimal(18, 4)
+  qtyPicked Decimal @default(0) @db.Decimal(18, 4)
+
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+  pickSequence Int?
+  pickerLabel  String?
+  cartId       String?
+  zoneCode     String?
+
+  @@index([pickWaveId])
+  @@index([salesOrderItemId])
+  @@index([locationId])
 }
 
 enum WaveStatus {
@@ -1359,6 +1423,44 @@ enum TaskPriority {
   NORMAL
   HIGH
   URGENT
+}
+
+// ============================================================================
+// AI INSIGHTS + AUTOPILOT (POC)
+// ============================================================================
+
+model AutopilotRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  key      String
+  name     String
+  enabled  Boolean @default(true)
+  config   Json?
+
+  lastRunAt  DateTime?
+  lastAction String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, key])
+  @@index([organizationId, enabled])
+  @@map("autopilot_rule")
+}
+
+model InsightDismissal {
+  id                  String   @id @default(cuid())
+  organizationId      String
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  insightKey          String
+  dismissedAt         DateTime @default(now())
+  dismissedByUserId   String?
+
+  @@unique([organizationId, insightKey])
+  @@index([organizationId])
+  @@map("insight_dismissal")
 }
 
 // ============================================================================

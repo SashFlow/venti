@@ -2,12 +2,22 @@ import {
 	Edges,
 	Environment,
 	Grid,
+	Html,
 	OrbitControls,
 	Text,
 } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo } from "react";
+import type { RouteVizPlan } from "../lib/route-viz-types";
+import type { AgvUnit } from "../lib/agv-sim-types";
+import { Suspense, useMemo, useState } from "react";
 import { computeBoundingBox } from "../lib/warehouse-store";
+import type { LocationInventorySummary } from "../lib/inventory-heatmap";
+import {
+	computeHeatmapRatio,
+	heatmapColor,
+} from "../lib/inventory-heatmap";
+import { AgvPathOverlay } from "./AgvPathOverlay";
+import { RoutePathOverlay } from "./RoutePathOverlay";
 import type {
 	Asset,
 	HandlingUnit,
@@ -69,10 +79,24 @@ function StorageMesh({
 	u,
 	floor,
 	c,
+	operationsMode = false,
+	inventorySummary,
+	maxInventoryQty = 1,
+	isHovered = false,
+	isSelected = false,
+	onHover,
+	onSelect,
 }: {
 	u: StorageUnit | Asset;
 	floor: WarehouseFloor;
 	c: Centering;
+	operationsMode?: boolean;
+	inventorySummary?: LocationInventorySummary;
+	maxInventoryQty?: number;
+	isHovered?: boolean;
+	isSelected?: boolean;
+	onHover?: (id: string | null) => void;
+	onSelect?: (id: string) => void;
 }) {
 	const w = mmToM(u.widthMm);
 	const d = mmToM(u.lengthMm);
@@ -80,11 +104,31 @@ function StorageMesh({
 	const cx = mmToM(floor.originXMm + u.startXMm) + w / 2 - c.cx;
 	const cz = mmToM(floor.originYMm + u.startYMm) + d / 2 - c.cz;
 	const baseY = mmToM(floor.elevationMm + u.startZMm);
-	const color = unitColor(u);
+	const uType = u.type as string;
+	let color = unitColor(u);
+	if (operationsMode && (uType === "BIN" || uType === "PALLET")) {
+		const qty = inventorySummary?.totalQty ?? 0;
+		const ratio = computeHeatmapRatio(qty, maxInventoryQty);
+		color = heatmapColor(ratio);
+	}
 	const rotY = (u.rotationZDeg * Math.PI) / 180;
 	const label =
 		"name" in u && u.name ? u.name : "code" in u ? u.code : u.type;
-	const uType = u.type as string;
+	const interactive =
+		operationsMode && (uType === "BIN" || uType === "PALLET");
+	const pointerProps = interactive
+		? {
+				onPointerOver: (e: { stopPropagation: () => void }) => {
+					e.stopPropagation();
+					onHover?.(u.id);
+				},
+				onPointerOut: () => onHover?.(null),
+				onClick: (e: { stopPropagation: () => void }) => {
+					e.stopPropagation();
+					onSelect?.(u.id);
+				},
+			}
+		: {};
 
 	const labelEl = (
 		<UnitLabel
@@ -177,17 +221,58 @@ function StorageMesh({
 		);
 	}
 
-	if (uType === "BIN") {
-		return (
-			<mesh
-				position={[cx, baseY + h / 2, cz]}
-				rotation={[0, rotY, 0]}
-				castShadow
+	if (uType === "BIN" || uType === "PALLET") {
+		const tooltipContent = isHovered ? (
+			<Html
+				position={[cx, baseY + h + 0.8, cz]}
+				center
+				distanceFactor={12}
+				style={{ pointerEvents: "none" }}
 			>
-				<boxGeometry args={[w, h, d]} />
-				<meshStandardMaterial color={color} roughness={0.6} />
-				<Edges color="#92400e" />
-			</mesh>
+				<div className="rounded-md border border-border bg-surface-elevated px-2 py-1.5 text-[11px] shadow-lg min-w-[140px]">
+					<p className="font-semibold">{label}</p>
+					{inventorySummary && inventorySummary.totalQty > 0 ? (
+						<>
+							<p className="text-muted-foreground mt-0.5">
+								Qty: {inventorySummary.totalQty}
+							</p>
+							{inventorySummary.items.slice(0, 2).map((item) => (
+								<p
+									key={`${item.skuCode}-${item.qty}`}
+									className="font-mono text-[10px] truncate"
+								>
+									{item.skuCode} × {item.qty}
+								</p>
+							))}
+						</>
+					) : (
+						<p className="text-muted-foreground mt-0.5">
+							Available capacity
+						</p>
+					)}
+				</div>
+			</Html>
+		) : null;
+
+		return (
+			<group>
+				<mesh
+					position={[cx, baseY + h / 2, cz]}
+					rotation={[0, rotY, 0]}
+					castShadow
+					{...pointerProps}
+				>
+					<boxGeometry args={[w, h, d]} />
+					<meshStandardMaterial
+						color={color}
+						roughness={0.6}
+						emissive={isSelected ? "#5b5bf0" : "#000000"}
+						emissiveIntensity={isSelected ? 0.25 : 0}
+					/>
+					<Edges color={isSelected ? "#5b5bf0" : "#92400e"} />
+				</mesh>
+				{tooltipContent}
+			</group>
 		);
 	}
 
@@ -375,7 +460,33 @@ function BoundingBox({
 	);
 }
 
-export default function ThreeView({ warehouse }: { warehouse: Warehouse }) {
+export default function ThreeView({
+	warehouse,
+	operationsMode = false,
+	inventoryByLocationId,
+	maxInventoryQty = 1,
+	selectedId,
+	onHover,
+	onSelect,
+	routePlan,
+	highlightPicker,
+	agvFleet,
+}: {
+	warehouse: Warehouse;
+	operationsMode?: boolean;
+	inventoryByLocationId?: Map<
+		string,
+		import("../lib/inventory-heatmap").LocationInventorySummary
+	>;
+	maxInventoryQty?: number;
+	selectedId?: string | null;
+	onHover?: (id: string | null) => void;
+	onSelect?: (id: string) => void;
+	routePlan?: RouteVizPlan | null;
+	highlightPicker?: string | null;
+	agvFleet?: AgvUnit[];
+}) {
+	const [hoveredId, setHoveredId] = useState<string | null>(null);
 	const bbox = useMemo(() => computeBoundingBox(warehouse), [warehouse]);
 	const c: Centering = useMemo(
 		() => ({
@@ -394,7 +505,43 @@ export default function ThreeView({ warehouse }: { warehouse: Warehouse }) {
 	const gridSize = span + 20;
 
 	return (
-		<div className="h-full w-full bg-canvas">
+		<div className="relative h-full w-full bg-canvas">
+			{operationsMode && (
+				<div className="absolute top-3 right-3 z-10 rounded-md border border-border bg-surface-elevated/95 px-3 py-2 text-[10px] shadow-sm pointer-events-none">
+					<p className="font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+						Inventory density
+					</p>
+					<div className="flex items-center gap-2">
+						<span>Low</span>
+						<div
+							className="h-2 w-24 rounded-full"
+							style={{
+								background:
+									"linear-gradient(to right, #22c55e, #f59e0b, #ef4444)",
+							}}
+						/>
+						<span>High</span>
+					</div>
+				</div>
+			)}
+			{routePlan && (
+				<div className="absolute top-3 left-3 z-10 rounded-md border border-border bg-surface-elevated/95 px-3 py-2 text-[10px] shadow-sm pointer-events-none max-w-[200px]">
+					<p className="font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+						Pick routes
+					</p>
+					{routePlan.pickers.map((p) => (
+						<div key={p.label} className="flex items-center gap-1.5">
+							<span
+								className="size-2 rounded-full"
+								style={{ backgroundColor: p.color }}
+							/>
+							<span>
+								{p.label} · {p.distanceM}m
+							</span>
+						</div>
+					))}
+				</div>
+			)}
 			<Canvas
 				shadows
 				camera={{
@@ -443,7 +590,22 @@ export default function ThreeView({ warehouse }: { warehouse: Warehouse }) {
 					<group key={f.id}>
 						<FloorSlab floor={f} c={c} />
 						{f.storageUnits.map((u: StorageUnit) => (
-							<StorageMesh key={u.id} u={u} floor={f} c={c} />
+							<StorageMesh
+								key={u.id}
+								u={u}
+								floor={f}
+								c={c}
+								operationsMode={operationsMode}
+								inventorySummary={inventoryByLocationId?.get(u.id)}
+								maxInventoryQty={maxInventoryQty}
+								isHovered={hoveredId === u.id}
+								isSelected={selectedId === u.id}
+								onHover={(id) => {
+									setHoveredId(id);
+									onHover?.(id);
+								}}
+								onSelect={onSelect}
+							/>
 						))}
 						{f.assets.map((a: Asset) => (
 							<StorageMesh key={a.id} u={a} floor={f} c={c} />
@@ -459,6 +621,18 @@ export default function ThreeView({ warehouse }: { warehouse: Warehouse }) {
 						c={c}
 					/>
 				))}
+
+				{routePlan && (
+					<RoutePathOverlay
+						routePlan={routePlan}
+						c={c}
+						highlightPicker={highlightPicker}
+					/>
+				)}
+
+				{agvFleet && agvFleet.length > 0 && (
+					<AgvPathOverlay fleet={agvFleet} c={c} />
+				)}
 
 				<BoundingBox bbox={bbox} c={c} />
 

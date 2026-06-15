@@ -3,6 +3,11 @@ import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
 
+const asnLineInput = z.object({
+	skuId: z.string(),
+	expectedQty: z.number().positive(),
+});
+
 const createAsnInput = z.object({
 	organizationId: z.string(),
 	warehouseId: z.string(),
@@ -12,6 +17,7 @@ const createAsnInput = z.object({
 	expectedArrival: z.date().optional(),
 	pallets: z.number().optional(),
 	cartons: z.number().optional(),
+	lines: z.array(asnLineInput).optional(),
 });
 
 export const createAsnProcedure = protectedProcedure
@@ -39,6 +45,21 @@ export const createAsnProcedure = protectedProcedure
 				pallets: input.pallets,
 				cartons: input.cartons,
 				status: "CREATED",
+				items: input.lines?.length
+					? {
+							create: input.lines.map((line) => ({
+								skuId: line.skuId,
+								expectedQty: line.expectedQty,
+							})),
+						}
+					: undefined,
+			},
+			include: {
+				items: {
+					include: {
+						sku: { select: { sku: true, name: true } },
+					},
+				},
 			},
 		});
 

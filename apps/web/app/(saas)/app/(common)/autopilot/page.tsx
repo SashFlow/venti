@@ -3,6 +3,7 @@
 import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
 import { Progress } from "@repo/ui/progress";
+import { Switch } from "@repo/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -12,115 +13,32 @@ import {
 	TableRow,
 } from "@repo/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
+import { useSession } from "@saas/auth/hooks/use-session";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	BotIcon,
 	CircleAlertIcon,
 	Clock3Icon,
-	PauseCircleIcon,
+	PlayIcon,
 	ShieldCheckIcon,
 } from "lucide-react";
-import { useState } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
-type RuleStatus = "running" | "review" | "paused";
+type QueueItemState = "queued" | "blocked" | "executed";
 
-type AutomationRule = {
-	id: string;
-	name: string;
-	scope: string;
-	status: RuleStatus;
-	coverage: string;
-	updatedAt: string;
-};
-
-type QueueItem = {
-	id: string;
-	task: string;
-	owner: string;
-	state: "queued" | "blocked" | "executed";
-	eta: string;
-};
-
-const RULES: AutomationRule[] = [
-	{
-		id: "auto-replenishment",
-		name: "Low stock replenishment",
-		scope: "Warehouse . Aisles A-D",
-		status: "running",
-		coverage: "184 SKUs monitored",
-		updatedAt: "Updated 12 min ago",
-	},
-	{
-		id: "priority-wave",
-		name: "Priority wave release",
-		scope: "Outbound . B2B priority orders",
-		status: "review",
-		coverage: "7 pending approvals",
-		updatedAt: "Updated 38 min ago",
-	},
-	{
-		id: "returns-routing",
-		name: "Returns triage routing",
-		scope: "Returns . QC and restock",
-		status: "paused",
-		coverage: "Paused after label mismatch",
-		updatedAt: "Updated 2 hrs ago",
-	},
-];
-
-const QUEUE: QueueItem[] = [
-	{
-		id: "APL-9021",
-		task: "Release replenishment task batch",
-		owner: "Inventory Control",
-		state: "queued",
-		eta: "3 min",
-	},
-	{
-		id: "APL-9017",
-		task: "Approve exception-driven carrier override",
-		owner: "Transport Desk",
-		state: "blocked",
-		eta: "Waiting for review",
-	},
-	{
-		id: "APL-9012",
-		task: "Close completed cycle count variance batch",
-		owner: "Warehouse Ops",
-		state: "executed",
-		eta: "Completed",
-	},
-];
-
-function labelForStatus(status: RuleStatus | QueueItem["state"]) {
-	if (status === "running") {
-		return "Running";
-	}
-
-	if (status === "review") {
-		return "Needs review";
-	}
-
-	if (status === "paused") {
-		return "Paused";
-	}
-
-	if (status === "queued") {
-		return "Queued";
-	}
-
-	if (status === "blocked") {
-		return "Blocked";
-	}
-
+function labelForQueueState(state: QueueItemState) {
+	if (state === "queued") return "Queued";
+	if (state === "blocked") return "Blocked";
 	return "Executed";
 }
 
-function toneForStatus(status: RuleStatus | QueueItem["state"]) {
-	switch (status) {
-		case "running":
+function toneForQueueState(state: QueueItemState) {
+	switch (state) {
 		case "executed":
 			return "border-emerald-200 bg-emerald-50 text-emerald-700";
-		case "review":
 		case "blocked":
 			return "border-amber-200 bg-amber-50 text-amber-700";
 		default:
@@ -128,8 +46,93 @@ function toneForStatus(status: RuleStatus | QueueItem["state"]) {
 	}
 }
 
+function formatRelative(date: Date | string | null | undefined) {
+	if (!date) return "Never run";
+	const d = typeof date === "string" ? new Date(date) : date;
+	const mins = Math.round((Date.now() - d.getTime()) / 60000);
+	if (mins < 1) return "Just now";
+	if (mins < 60) return `${mins} min ago`;
+	return `${Math.round(mins / 60)} hr ago`;
+}
+
 export default function AutopilotPage() {
 	const [activeTab, setActiveTab] = useState<"rules" | "queue">("rules");
+	const { organization } = useSession();
+	const organizationId = organization?.id ?? "";
+	const queryClient = useQueryClient();
+
+	const { data: rules = [], isLoading: rulesLoading } = useQuery({
+		...orpc.autopilot.listRules.queryOptions({
+			input: { organizationId },
+		}),
+		enabled: Boolean(organizationId),
+	});
+
+	const { data: queueData } = useQuery({
+		...orpc.autopilot.listRecentActions.queryOptions({
+			input: { organizationId, limit: 20 },
+		}),
+		enabled: Boolean(organizationId),
+		refetchInterval: 30_000,
+	});
+
+	const updateRuleMutation = useMutation(
+		orpc.autopilot.updateRule.mutationOptions(),
+	);
+	const runNowMutation = useMutation(
+		orpc.autopilot.runRulesNow.mutationOptions(),
+	);
+
+	const enabledCount = rules.filter((r) => r.enabled).length;
+	const coverage =
+		rules.length > 0
+			? Math.round((enabledCount / rules.length) * 100)
+			: 0;
+
+	const queue = queueData?.items ?? [];
+	const pendingCount = queue.filter((q) => q.state === "queued").length;
+
+	const lastRun = useMemo(() => {
+		const dates = rules
+			.map((r) => r.lastRunAt)
+			.filter(Boolean) as string[];
+		if (dates.length === 0) return null;
+		return dates.sort().reverse()[0];
+	}, [rules]);
+
+	const handleToggle = async (ruleId: string, enabled: boolean) => {
+		try {
+			await updateRuleMutation.mutateAsync({
+				organizationId,
+				ruleId,
+				enabled,
+			});
+			await queryClient.invalidateQueries({
+				queryKey: orpc.autopilot.listRules.key(),
+			});
+		} catch {
+			toast.error("Failed to update rule.");
+		}
+	};
+
+	const handleRunNow = async () => {
+		try {
+			const result = await runNowMutation.mutateAsync({ organizationId });
+			await queryClient.invalidateQueries({
+				queryKey: orpc.autopilot.listRules.key(),
+			});
+			await queryClient.invalidateQueries({
+				queryKey: orpc.autopilot.listRecentActions.key(),
+			});
+			if (result.actions.length > 0) {
+				toast.success(result.actions.join(" · "));
+			} else {
+				toast.message("Rules ran — no new actions required.");
+			}
+		} catch {
+			toast.error("Failed to run autopilot rules.");
+		}
+	};
 
 	return (
 		<div className="container mx-auto max-w-7xl space-y-6 py-8">
@@ -139,15 +142,23 @@ export default function AutopilotPage() {
 						Autopilot
 					</h1>
 					<p className="max-w-3xl text-muted-foreground">
-						Review warehouse automation coverage, inspect queued
-						decisions, and keep human approvals in the loop. This
-						page is frontend complete while rule execution endpoints
-						are still being formalized.
+						Automated replenishment, wave release, and dead-stock
+						rebalance rules run on a schedule or on demand. Last
+						scheduler tick: {formatRelative(lastRun)}.
 					</p>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
-					<Button variant="outline">Pause All</Button>
-					<Button>Create Rule</Button>
+					<Button variant="outline" asChild>
+						<Link href="/app/analytics">Control Tower</Link>
+					</Button>
+					<Button
+						onClick={handleRunNow}
+						disabled={runNowMutation.isPending}
+						className="gap-2"
+					>
+						<PlayIcon className="size-4" />
+						Run now
+					</Button>
 				</div>
 			</div>
 
@@ -159,7 +170,7 @@ export default function AutopilotPage() {
 								Coverage
 							</p>
 							<p className="text-3xl font-semibold tracking-tight">
-								78%
+								{coverage}%
 							</p>
 						</div>
 						<BotIcon className="size-5 text-sky-600" />
@@ -169,10 +180,10 @@ export default function AutopilotPage() {
 					<CardContent className="flex items-center justify-between gap-3 p-5">
 						<div>
 							<p className="text-sm text-muted-foreground">
-								Running
+								Enabled rules
 							</p>
 							<p className="text-3xl font-semibold tracking-tight">
-								12
+								{enabledCount}
 							</p>
 						</div>
 						<ShieldCheckIcon className="size-5 text-emerald-600" />
@@ -182,10 +193,10 @@ export default function AutopilotPage() {
 					<CardContent className="flex items-center justify-between gap-3 p-5">
 						<div>
 							<p className="text-sm text-muted-foreground">
-								Needs review
+								Open tasks
 							</p>
 							<p className="text-3xl font-semibold tracking-tight">
-								3
+								{pendingCount}
 							</p>
 						</div>
 						<CircleAlertIcon className="size-5 text-amber-600" />
@@ -195,10 +206,10 @@ export default function AutopilotPage() {
 					<CardContent className="flex items-center justify-between gap-3 p-5">
 						<div>
 							<p className="text-sm text-muted-foreground">
-								Median ETA
+								Last run
 							</p>
-							<p className="text-3xl font-semibold tracking-tight">
-								4m
+							<p className="text-lg font-semibold tracking-tight">
+								{formatRelative(lastRun)}
 							</p>
 						</div>
 						<Clock3Icon className="size-5 text-violet-600" />
@@ -206,82 +217,22 @@ export default function AutopilotPage() {
 				</Card>
 			</div>
 
-			<div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">
-							Automation posture
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-5">
-						<div className="space-y-2">
-							<div className="flex items-center justify-between text-sm">
-								<span className="text-muted-foreground">
-									Decision coverage across replenishment,
-									outbound, and returns
-								</span>
-								<span className="font-medium">78%</span>
-							</div>
-							<Progress value={78} />
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Automation posture</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="space-y-2">
+						<div className="flex items-center justify-between text-sm">
+							<span className="text-muted-foreground">
+								Rules enabled
+							</span>
+							<span className="font-medium">{coverage}%</span>
 						</div>
-
-						<div className="grid gap-3 md:grid-cols-3">
-							<div className="rounded-xl border p-4">
-								<p className="text-sm font-medium">Inbound</p>
-								<p className="mt-1 text-sm text-muted-foreground">
-									Dock assignment and ASN variance checks are
-									active.
-								</p>
-							</div>
-							<div className="rounded-xl border p-4">
-								<p className="text-sm font-medium">Outbound</p>
-								<p className="mt-1 text-sm text-muted-foreground">
-									Wave prioritization is active, carrier
-									override stays manual.
-								</p>
-							</div>
-							<div className="rounded-xl border p-4">
-								<p className="text-sm font-medium">Returns</p>
-								<p className="mt-1 text-sm text-muted-foreground">
-									QC routing is paused until the label
-									template mismatch is cleared.
-								</p>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">Guardrails</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<div className="rounded-xl border p-4">
-							<p className="font-medium">
-								Human approval required
-							</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Carrier changes, inventory write-offs, and bulk
-								order releases stay behind approval gates.
-							</p>
-						</div>
-						<div className="rounded-xl border p-4">
-							<p className="font-medium">Replay window</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Failed automations can be replayed within the
-								last 24 hours after operator review.
-							</p>
-						</div>
-						<div className="rounded-xl border p-4">
-							<p className="font-medium">Escalation target</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Warehouse control tower receives blocked task
-								alerts every 15 minutes.
-							</p>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
+						<Progress value={coverage} />
+					</div>
+				</CardContent>
+			</Card>
 
 			<Tabs
 				value={activeTab}
@@ -304,48 +255,51 @@ export default function AutopilotPage() {
 
 				{activeTab === "rules" ? (
 					<div className="grid gap-4 xl:grid-cols-3">
-						{RULES.map((rule) => (
-							<Card key={rule.id}>
-								<CardContent className="space-y-4 p-5">
-									<div className="flex items-start justify-between gap-3">
-										<div>
-											<p className="text-lg font-semibold tracking-tight">
-												{rule.name}
-											</p>
-											<p className="text-sm text-muted-foreground">
-												{rule.scope}
-											</p>
+						{rulesLoading ? (
+							<p className="text-sm text-muted-foreground col-span-3">
+								Loading rules…
+							</p>
+						) : (
+							rules.map((rule) => (
+								<Card key={rule.id}>
+									<CardContent className="space-y-4 p-5">
+										<div className="flex items-start justify-between gap-3">
+											<div>
+												<p className="text-lg font-semibold tracking-tight">
+													{rule.name}
+												</p>
+												<p className="text-sm text-muted-foreground font-mono">
+													{rule.key}
+												</p>
+											</div>
+											<Switch
+												checked={rule.enabled}
+												onCheckedChange={(checked) =>
+													handleToggle(
+														rule.id,
+														checked,
+													)
+												}
+											/>
 										</div>
-										<span
-											className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${toneForStatus(rule.status)}`}
-										>
-											{labelForStatus(rule.status)}
-										</span>
-									</div>
-
-									<div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-										{rule.coverage}
-									</div>
-									<p className="text-sm text-muted-foreground">
-										{rule.updatedAt}
-									</p>
-									<div className="flex flex-wrap gap-2">
-										<Button variant="outline" size="sm">
-											Edit Rule
-										</Button>
-										<Button variant="outline" size="sm">
-											View Runs
-										</Button>
-									</div>
-								</CardContent>
-							</Card>
-						))}
+										<div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground min-h-[3rem]">
+											{rule.lastAction ??
+												"No actions recorded yet."}
+										</div>
+										<p className="text-sm text-muted-foreground">
+											Last run:{" "}
+											{formatRelative(rule.lastRunAt)}
+										</p>
+									</CardContent>
+								</Card>
+							))
+						)}
 					</div>
 				) : (
 					<Card>
 						<CardHeader>
 							<CardTitle className="text-base">
-								Decision Queue
+								Recent warehouse tasks
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
@@ -356,50 +310,51 @@ export default function AutopilotPage() {
 										<TableHead>Task</TableHead>
 										<TableHead>Status</TableHead>
 										<TableHead>Owner</TableHead>
-										<TableHead>ETA</TableHead>
+										<TableHead>Created</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{QUEUE.map((item) => (
-										<TableRow key={item.id}>
-											<TableCell className="font-medium">
-												{item.id}
+									{queue.length === 0 ? (
+										<TableRow>
+											<TableCell
+												colSpan={5}
+												className="text-muted-foreground text-center"
+											>
+												No tasks yet. Approve an insight
+												or run autopilot.
 											</TableCell>
-											<TableCell>{item.task}</TableCell>
-											<TableCell>
-												<span
-													className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${toneForStatus(item.state)}`}
-												>
-													{labelForStatus(item.state)}
-												</span>
-											</TableCell>
-											<TableCell>{item.owner}</TableCell>
-											<TableCell>{item.eta}</TableCell>
 										</TableRow>
-									))}
+									) : (
+										queue.map((item) => (
+											<TableRow key={item.id}>
+												<TableCell className="font-mono text-xs">
+													{item.id.slice(0, 8)}
+												</TableCell>
+												<TableCell>{item.task}</TableCell>
+												<TableCell>
+													<span
+														className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${toneForQueueState(item.state)}`}
+													>
+														{labelForQueueState(
+															item.state,
+														)}
+													</span>
+												</TableCell>
+												<TableCell>{item.owner}</TableCell>
+												<TableCell className="text-xs text-muted-foreground">
+													{new Date(
+														item.eta,
+													).toLocaleString()}
+												</TableCell>
+											</TableRow>
+										))
+									)}
 								</TableBody>
 							</Table>
 						</CardContent>
 					</Card>
 				)}
 			</Tabs>
-
-			<Card className="border-dashed">
-				<CardContent className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
-					<div>
-						<p className="font-medium">Execution API status</p>
-						<p className="text-sm text-muted-foreground">
-							Rule create, pause, and replay actions are staged in
-							the UI, but the backend execution contract is still
-							pending.
-						</p>
-					</div>
-					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<PauseCircleIcon className="size-4" />
-						Awaiting workflow service wiring
-					</div>
-				</CardContent>
-			</Card>
 		</div>
 	);
 }

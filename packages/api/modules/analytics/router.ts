@@ -1,3 +1,5 @@
+import { approveInsightProcedure } from "./procedures/approve-insight";
+import { dismissInsightProcedure } from "./procedures/dismiss-insight";
 import { getGeospatialRiskProcedure } from "./procedures/get-geospatial-risk";
 import { getTruckStockRecommendationProcedure } from "./procedures/get-truck-stock-recommendation";
 import { getPredictiveMaintenanceProcedure } from "./procedures/get-predictive-maintenance";
@@ -16,4 +18,6 @@ export const analyticsRouter = {
         predictiveDemand: getPredictiveDemandProcedure,
         getCostLedger: getCostLedgerProcedure,
 	dashboard: getDashboardAnalyticsProcedure,
+	approveInsight: approveInsightProcedure,
+	dismissInsight: dismissInsightProcedure,
 };

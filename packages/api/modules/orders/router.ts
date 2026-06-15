@@ -1,3 +1,5 @@
+import { confirmPickLineProcedure } from "./procedures/confirm-pick-line";
+import { releaseWaveProcedure } from "./procedures/release-wave";
 import { shipSalesOrderProcedure } from "./procedures/ship-sales-order";
 import { bulkUpdateOutboundStatusProcedure } from "./procedures/bulk-update-outbound-status";
 import { bulkUpdateShipmentStatusesProcedure } from "./procedures/bulk-update-shipment-statuses";
@@ -42,6 +44,8 @@ export const ordersRouter = {
 	createTransfer: createTransferProcedure,
 	createShipment: createShipmentProcedure,
 	createWave: createWaveProcedure,
+	releaseWave: releaseWaveProcedure,
+	confirmPickLine: confirmPickLineProcedure,
 	// Status updates
 	bulkUpdateOutboundStatus: bulkUpdateOutboundStatusProcedure,
 	bulkUpdateShipmentStatuses: bulkUpdateShipmentStatusesProcedure,

@@ -10,6 +10,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { mergeOpenApiSchemas } from "./lib/openapi-schema";
+import { startAutopilotScheduler } from "./lib/autopilot-scheduler";
 import { openApiHandler, rpcHandler } from "./orpc/handler";
 import { router } from "./orpc/router";
 
@@ -111,3 +112,5 @@ export const app = new Hono()
 
 		await next();
 	});
+
+startAutopilotScheduler();

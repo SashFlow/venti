@@ -4,6 +4,7 @@
 		"@prisma/client": "6.16.2",
 		"@repo/config": "workspace:*",
 		"@repo/logs": "workspace:*",
+		"@repo/utils": "workspace:*",
 		"better-auth": "^1.6.11",
 		"pg": "^8.16.0",
 		"zod": "^4.1.11"

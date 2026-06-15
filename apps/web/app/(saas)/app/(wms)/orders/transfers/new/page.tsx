@@ -27,11 +27,11 @@ export default function CreateTransferPage() {
 	const organizationId = organization?.id ?? "";
 
 	const [warehouseId, setWarehouseId] = useState("");
-	const [inventoryItemId, setInventoryItemId] = useState("");
-	const [fromStorageUnitId, setFromStorageUnitId] = useState("");
-	const [toStorageUnitId, setToStorageUnitId] = useState("");
+	const [skuId, setSkuId] = useState("");
+	const [fromLocationId, setFromLocationId] = useState("");
+	const [toLocationId, setToLocationId] = useState("");
 	const [quantity, setQuantity] = useState("");
-	const [referenceNumber, setReferenceNumber] = useState("");
+	const [referenceId, setReferenceId] = useState("");
 	const [notes, setNotes] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,11 +42,32 @@ export default function CreateTransferPage() {
 		enabled: Boolean(organizationId),
 	});
 
+	const skusQuery = useQuery({
+		...orpc.skus.list.queryOptions({
+			input: { organizationId, limit: 100, offset: 0 },
+		}),
+		enabled: Boolean(organizationId),
+	});
+
+	const locationsQuery = useQuery({
+		...orpc.warehouse.locations.list.queryOptions({
+			input: { organizationId, warehouseId },
+		}),
+		enabled: Boolean(organizationId && warehouseId),
+	});
+
 	const createMutation = useMutation(
 		orpc.orders.createTransfer.mutationOptions(),
 	);
 
 	const warehouses = warehousesQuery.data?.warehouses ?? [];
+	const skus = skusQuery.data?.skus ?? [];
+	const locations = (locationsQuery.data ?? []).filter(
+		(loc) =>
+			loc.type === "BIN" ||
+			loc.type === "PALLET" ||
+			loc.type === "BLOCK",
+	);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -55,8 +76,8 @@ export default function CreateTransferPage() {
 			toast.error("Warehouse is required.");
 			return;
 		}
-		if (!inventoryItemId.trim()) {
-			toast.error("Inventory Item ID is required.");
+		if (!skuId) {
+			toast.error("SKU is required.");
 			return;
 		}
 		if (!quantity || Number(quantity) <= 0) {
@@ -69,11 +90,11 @@ export default function CreateTransferPage() {
 			const result = await createMutation.mutateAsync({
 				organizationId,
 				warehouseId,
-				inventoryItemId: inventoryItemId.trim(),
-				fromStorageUnitId: fromStorageUnitId.trim() || undefined,
-				toStorageUnitId: toStorageUnitId.trim() || undefined,
+				skuId,
+				fromLocationId: fromLocationId || undefined,
+				toLocationId: toLocationId || undefined,
 				quantity: Number(quantity),
-				referenceNumber: referenceNumber.trim() || undefined,
+				referenceId: referenceId.trim() || undefined,
 				notes: notes.trim() || undefined,
 			});
 
@@ -81,7 +102,7 @@ export default function CreateTransferPage() {
 				queryKey: orpc.orders.listTransfers.key(),
 			});
 			toast.success(
-				`Transfer ${result.transfer.referenceNumber ?? result.transfer.id.slice(0, 10)} created.`,
+				`Transfer ${result.transfer.referenceId ?? result.transfer.id.slice(0, 10)} created.`,
 			);
 			router.push(`/app/orders/transfers/${result.transfer.id}`);
 		} catch {
@@ -124,7 +145,11 @@ export default function CreateTransferPage() {
 							</Label>
 							<Select
 								value={warehouseId}
-								onValueChange={setWarehouseId}
+								onValueChange={(value) => {
+									setWarehouseId(value);
+									setFromLocationId("");
+									setToLocationId("");
+								}}
 							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse">
@@ -144,60 +169,73 @@ export default function CreateTransferPage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="referenceNumber">
-								Reference Number
-							</Label>
+							<Label htmlFor="referenceId">Reference ID</Label>
 							<Input
-								id="referenceNumber"
-								value={referenceNumber}
-								onChange={(e) =>
-									setReferenceNumber(e.target.value)
-								}
+								id="referenceId"
+								value={referenceId}
+								onChange={(e) => setReferenceId(e.target.value)}
 								placeholder="e.g. TRF-2026-001"
 							/>
 						</div>
 
 						<div className="space-y-2 md:col-span-2">
-							<Label htmlFor="inventoryItemId">
-								Inventory Item ID{" "}
-								<span className="text-destructive">*</span>
+							<Label htmlFor="skuId">
+								SKU <span className="text-destructive">*</span>
 							</Label>
-							<Input
-								id="inventoryItemId"
-								value={inventoryItemId}
-								onChange={(e) =>
-									setInventoryItemId(e.target.value)
-								}
-								placeholder="Paste inventory item ID"
-							/>
+							<Select value={skuId} onValueChange={setSkuId}>
+								<SelectTrigger id="skuId">
+									<SelectValue placeholder="Select SKU" />
+								</SelectTrigger>
+								<SelectContent>
+									{skus.map((sku) => (
+										<SelectItem key={sku.id} value={sku.id}>
+											{sku.code}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="fromStorageUnitId">
-								From Storage Unit ID
-							</Label>
-							<Input
-								id="fromStorageUnitId"
-								value={fromStorageUnitId}
-								onChange={(e) =>
-									setFromStorageUnitId(e.target.value)
-								}
-								placeholder="Origin storage unit ID"
-							/>
+							<Label htmlFor="fromLocationId">From Location</Label>
+							<Select
+								value={fromLocationId}
+								onValueChange={setFromLocationId}
+								disabled={!warehouseId}
+							>
+								<SelectTrigger id="fromLocationId">
+									<SelectValue placeholder="Origin bin" />
+								</SelectTrigger>
+								<SelectContent>
+									{locations.map((loc) => (
+										<SelectItem key={loc.id} value={loc.id}>
+											{loc.code}
+											{loc.name ? ` — ${loc.name}` : ""}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="toStorageUnitId">
-								To Storage Unit ID
-							</Label>
-							<Input
-								id="toStorageUnitId"
-								value={toStorageUnitId}
-								onChange={(e) =>
-									setToStorageUnitId(e.target.value)
-								}
-								placeholder="Destination storage unit ID"
-							/>
+							<Label htmlFor="toLocationId">To Location</Label>
+							<Select
+								value={toLocationId}
+								onValueChange={setToLocationId}
+								disabled={!warehouseId}
+							>
+								<SelectTrigger id="toLocationId">
+									<SelectValue placeholder="Destination bin" />
+								</SelectTrigger>
+								<SelectContent>
+									{locations.map((loc) => (
+										<SelectItem key={loc.id} value={loc.id}>
+											{loc.code}
+											{loc.name ? ` — ${loc.name}` : ""}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 
 						<div className="space-y-2">

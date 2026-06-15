@@ -11,6 +11,7 @@ const receiveInventoryInput = z.object({
 	quantity: z.number().positive(),
 	purchaseUnitPrice: z.number().nonnegative(),
 	apportionedFreightCost: z.number().nonnegative(),
+	purchaseOrderItemId: z.string().optional(),
 });
 
 export const receiveInventoryProcedure = protectedProcedure
