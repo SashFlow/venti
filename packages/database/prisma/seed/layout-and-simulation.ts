@@ -2,6 +2,8 @@ import { faker } from "@faker-js/faker";
 import { createId } from "@paralleldrive/cuid2";
 import { ensureAutopilotRules } from "../../services/autopilot-service";
 import { db } from "../client";
+import { CONFIG, getHistoricalSimulationDates } from "./config";
+import { seedDemoSnapshot } from "./demo-snapshot";
 
 /** Prisma interactive-transaction client (subset of the full client). */
 type DbTx = Omit<
@@ -9,16 +11,54 @@ type DbTx = Omit<
 	"$connect" | "$disconnect" | "$on" | "$transaction" | "$extends"
 >;
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
+const NUM_CUSTOMERS = CONFIG.NUM_CUSTOMERS;
+const NUM_SUPPLIERS = CONFIG.NUM_SUPPLIERS;
+const FLUSH_TX_THRESHOLD = CONFIG.FLUSH_TX_THRESHOLD;
+const ORG_NAME = CONFIG.ORG_NAME;
 
-const NUM_YEARS = 2;
-const START_DATE = new Date("2021-01-01T00:00:00Z");
-const NUM_CUSTOMERS = 100;
-const NUM_SUPPLIERS = 20;
-const FLUSH_TX_THRESHOLD = 500;
-const ORG_NAME = "Daikin";
+type InboundScenario = "RECEIVED" | "PARTIAL" | "OPEN";
+type OutboundScenario = "SHIPPED" | "ALLOCATED" | "PICKING" | "SKIP";
+type ReturnLifecycle = "COMPLETED" | "INSPECTING" | "RECEIVED";
+type TaskRunStatus = "COMPLETED" | "PENDING" | "ASSIGNED";
+
+function pickInboundScenario(): InboundScenario {
+	const roll = faker.number.int({ min: 1, max: 100 });
+	if (roll <= 70) return "RECEIVED";
+	if (roll <= 90) return "PARTIAL";
+	return "OPEN";
+}
+
+function pickOutboundScenario(): OutboundScenario {
+	const roll = faker.number.int({ min: 1, max: 100 });
+	if (roll <= 60) return "SHIPPED";
+	if (roll <= 85) return "ALLOCATED";
+	if (roll <= 95) return "PICKING";
+	return "SKIP";
+}
+
+function pickReturnLifecycle(): ReturnLifecycle {
+	const roll = faker.number.int({ min: 1, max: 100 });
+	if (roll <= 50) return "COMPLETED";
+	if (roll <= 80) return "INSPECTING";
+	return "RECEIVED";
+}
+
+function pickTaskStatus(): TaskRunStatus {
+	const roll = faker.number.int({ min: 1, max: 100 });
+	if (roll <= 70) return "COMPLETED";
+	if (roll <= 90) return "PENDING";
+	return "ASSIGNED";
+}
+
+function pickStorageBin(
+	layout: WarehouseLayout,
+	preferred?: string,
+): string {
+	if (preferred && layout.bins.includes(preferred)) {
+		return preferred;
+	}
+	return faker.helpers.arrayElement([...layout.bins, ...layout.pallets]);
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -834,49 +874,100 @@ async function simulateInboundReceipt(
 	buffers: SimulationBuffers,
 	current: Date,
 ): Promise<void> {
+	const scenario = pickInboundScenario();
 	const supplierId = faker.helpers.arrayElement(supplierIds);
 	const poId = createId();
 	const asnId = createId();
 	const recId = createId();
+	const inboundLoc = layout.inbound[0];
+
+	const poStatus =
+		scenario === "OPEN"
+			? faker.helpers.arrayElement(["APPROVED", "IN_TRANSIT"] as const)
+			: scenario === "PARTIAL"
+				? "PARTIAL"
+				: "RECEIVED";
 
 	buffers.po.push({
 		id: poId,
 		warehouseId: whId,
 		supplierId,
 		poNumber: `PO-${faker.string.alphanumeric(8).toUpperCase()}`,
-		status: "RECEIVED",
+		status: poStatus,
 		expectedAt: faker.date.soon({ refDate: current, days: 5 }),
 		createdAt: current,
 	});
-	buffers.asn.push({
-		id: asnId,
-		warehouseId: whId,
-		supplierId,
-		purchaseOrderId: poId,
-		asnNumber: `ASN-${faker.string.alphanumeric(8).toUpperCase()}`,
-		status: "COMPLETED",
-		expectedArrival: current,
-		pallets: faker.number.int({ min: 1, max: 5 }),
-		cartons: faker.number.int({ min: 10, max: 50 }),
-		createdAt: current,
-	});
-	buffers.receiving.push({
-		id: recId,
-		warehouseId: whId,
-		purchaseOrderId: poId,
-		asnId,
-		status: "COMPLETED",
-		receivedAt: current,
-		createdAt: current,
-	});
+
+	if (scenario !== "OPEN") {
+		buffers.asn.push({
+			id: asnId,
+			warehouseId: whId,
+			supplierId,
+			purchaseOrderId: poId,
+			asnNumber: `ASN-${faker.string.alphanumeric(8).toUpperCase()}`,
+			status: scenario === "RECEIVED" ? "COMPLETED" : "RECEIVING",
+			expectedArrival: current,
+			pallets: faker.number.int({ min: 1, max: 5 }),
+			cartons: faker.number.int({ min: 10, max: 50 }),
+			createdAt: current,
+		});
+		buffers.receiving.push({
+			id: recId,
+			warehouseId: whId,
+			purchaseOrderId: poId,
+			asnId,
+			status: scenario === "RECEIVED" ? "COMPLETED" : "RECEIVING",
+			receivedAt: scenario === "RECEIVED" ? current : null,
+			createdAt: current,
+		});
+	} else {
+		buffers.asn.push({
+			id: asnId,
+			warehouseId: whId,
+			supplierId,
+			purchaseOrderId: poId,
+			asnNumber: `ASN-${faker.string.alphanumeric(8).toUpperCase()}`,
+			status: "IN_TRANSIT",
+			expectedArrival: faker.date.soon({ refDate: current, days: 3 }),
+			pallets: faker.number.int({ min: 1, max: 3 }),
+			cartons: faker.number.int({ min: 5, max: 20 }),
+			createdAt: current,
+		});
+	}
 
 	const numLines = faker.number.int({ min: 2, max: 5 });
 	for (let l = 0; l < numLines; l++) {
 		const sku = faker.helpers.arrayElement(skus);
 		const qty = receiveQuantity(sku);
-		const storageLoc = pickStorageLocation(layout, sku);
-		const inboundLoc = layout.inbound[0];
+		const receiveRatio =
+			scenario === "OPEN"
+				? 0
+				: scenario === "PARTIAL"
+					? faker.number.float({ min: 0.3, max: 0.7 })
+					: 1;
+		const receivedQty =
+			receiveRatio === 0 ? 0 : Math.max(1, Math.floor(qty * receiveRatio));
 
+		if (receivedQty <= 0) {
+			buffers.poItems.push({
+				id: createId(),
+				purchaseOrderId: poId,
+				skuId: sku.id,
+				orderedQty: qty,
+				receivedQty: 0,
+				unitPrice: sku.unitPrice,
+			});
+			buffers.asnItems.push({
+				id: createId(),
+				asnId,
+				skuId: sku.id,
+				expectedQty: qty,
+				receivedQty: 0,
+			});
+			continue;
+		}
+
+		const storageLoc = pickStorageLocation(layout, sku);
 		let lotId: string | null = null;
 		let lotNumber: string | undefined;
 
@@ -898,7 +989,7 @@ async function simulateInboundReceipt(
 			purchaseOrderId: poId,
 			skuId: sku.id,
 			orderedQty: qty,
-			receivedQty: qty,
+			receivedQty: receivedQty,
 			unitPrice: sku.unitPrice,
 		});
 		buffers.asnItems.push({
@@ -906,12 +997,12 @@ async function simulateInboundReceipt(
 			asnId,
 			skuId: sku.id,
 			expectedQty: qty,
-			receivedQty: qty,
+			receivedQty: receivedQty,
 			lotNumber,
 		});
 
 		if (sku.product.isSerialTracked) {
-			for (let u = 0; u < qty; u++) {
+			for (let u = 0; u < receivedQty; u++) {
 				const serialId = createId();
 				const serialNumber = `SN-${faker.string.alphanumeric(10).toUpperCase()}`;
 				buffers.serials.push({
@@ -936,7 +1027,6 @@ async function simulateInboundReceipt(
 					1,
 					current,
 				);
-
 				buffers.tx.push(
 					{
 						id: createId(),
@@ -963,13 +1053,13 @@ async function simulateInboundReceipt(
 				);
 			}
 		} else {
-			inventory.addQuantity(storageLoc, sku.id, lotId, qty);
+			inventory.addQuantity(storageLoc, sku.id, lotId, receivedQty);
 			buffers.trackBalanceDelta(
 				whId,
 				storageLoc,
 				sku.id,
 				lotId,
-				qty,
+				receivedQty,
 				current,
 			);
 			buffers.tx.push(
@@ -980,7 +1070,7 @@ async function simulateInboundReceipt(
 					lotId,
 					fromLocationId: null,
 					toLocationId: inboundLoc,
-					quantity: qty,
+					quantity: receivedQty,
 					transactionType: "RECEIVE",
 					createdAt: current,
 				},
@@ -991,7 +1081,7 @@ async function simulateInboundReceipt(
 					lotId,
 					fromLocationId: inboundLoc,
 					toLocationId: storageLoc,
-					quantity: qty,
+					quantity: receivedQty,
 					transactionType: "PUTAWAY",
 					createdAt: current,
 				},
@@ -1018,6 +1108,9 @@ async function simulateOutboundOrder(
 	current: Date,
 	simulationEnd: Date,
 ): Promise<void> {
+	const scenario = pickOutboundScenario();
+	if (scenario === "SKIP") return;
+
 	const skuTotals = inventory.getSkuTotals();
 	const availableSkus = Object.keys(skuTotals).filter((id) => {
 		const sku = skuMap.get(id);
@@ -1033,34 +1126,45 @@ async function simulateOutboundOrder(
 			? faker.helpers.arrayElement(layout.dockDoors)
 			: null;
 
+	const soStatus =
+		scenario === "ALLOCATED"
+			? "ALLOCATED"
+			: scenario === "PICKING"
+				? "PICKING"
+				: "SHIPPED";
+
 	buffers.so.push({
 		id: soId,
 		warehouseId: whId,
 		customerId,
 		orderNumber: `SO-${faker.string.alphanumeric(8).toUpperCase()}`,
-		status: "SHIPPED",
+		status: soStatus,
 		orderedAt: current,
 	});
-	buffers.shipments.push({
-		id: createId(),
-		warehouseId: whId,
-		salesOrderId: soId,
-		shipmentNumber: `SHIP-${faker.string.alphanumeric(8).toUpperCase()}`,
-		trackingNumber: faker.string.alphanumeric(12).toUpperCase(),
-		carrier: faker.helpers.arrayElement([
-			"FedEx",
-			"UPS",
-			"DHL",
-			"BlueDart",
-		]),
-		dockDoorId,
-		scheduledAt: current,
-		shippedAt: current,
-		status: "SHIPPED",
-	});
+
+	if (scenario === "SHIPPED") {
+		buffers.shipments.push({
+			id: createId(),
+			warehouseId: whId,
+			salesOrderId: soId,
+			shipmentNumber: `SHIP-${faker.string.alphanumeric(8).toUpperCase()}`,
+			trackingNumber: faker.string.alphanumeric(12).toUpperCase(),
+			carrier: faker.helpers.arrayElement([
+				"FedEx",
+				"UPS",
+				"DHL",
+				"BlueDart",
+			]),
+			dockDoorId,
+			scheduledAt: current,
+			shippedAt: current,
+			status: "SHIPPED",
+		});
+	}
 
 	const numLines = faker.number.int({ min: 1, max: 3 });
 	const shippedLines: ShippedLine[] = [];
+	let linesAdded = 0;
 
 	for (let l = 0; l < numLines; l++) {
 		const skuId = faker.helpers.arrayElement(availableSkus);
@@ -1069,10 +1173,21 @@ async function simulateOutboundOrder(
 		if (!liveTotals[skuId] || liveTotals[skuId] < 1) continue;
 
 		const isSerial = sku.product.isSerialTracked;
-		const maxPick = isSerial
-			? 1
-			: Math.min(10, liveTotals[skuId]);
+		const maxPick = isSerial ? 1 : Math.min(10, liveTotals[skuId]);
 		const qty = isSerial ? 1 : faker.number.int({ min: 1, max: maxPick });
+
+		if (scenario === "ALLOCATED") {
+			buffers.soItems.push({
+				id: createId(),
+				salesOrderId: soId,
+				skuId,
+				orderedQty: qty,
+				allocatedQty: qty,
+				pickedQty: 0,
+			});
+			linesAdded++;
+			continue;
+		}
 
 		const validLocs = inventory
 			.getSkuLocations(skuId)
@@ -1083,21 +1198,26 @@ async function simulateOutboundOrder(
 		const pickLoc = selected.locId;
 		const lotId = selected.lotId;
 
-		if (!inventory.removeQuantity(pickLoc, skuId, lotId, qty)) continue;
+		const pickedQty =
+			scenario === "PICKING"
+				? Math.max(1, Math.floor(qty * faker.number.float({ min: 0.3, max: 0.7 })))
+				: qty;
 
-		buffers.trackBalanceDelta(whId, pickLoc, skuId, lotId, -qty, current);
+		if (!inventory.removeQuantity(pickLoc, skuId, lotId, pickedQty)) continue;
+
+		buffers.trackBalanceDelta(whId, pickLoc, skuId, lotId, -pickedQty, current);
 
 		let serialIds: string[] = [];
 		if (isSerial) {
-			serialIds = inventory.consumeSerials(skuId, pickLoc, qty);
-			if (serialIds.length < qty) {
-				inventory.addQuantity(pickLoc, skuId, lotId, qty);
+			serialIds = inventory.consumeSerials(skuId, pickLoc, pickedQty);
+			if (serialIds.length < pickedQty) {
+				inventory.addQuantity(pickLoc, skuId, lotId, pickedQty);
 				buffers.trackBalanceDelta(
 					whId,
 					pickLoc,
 					skuId,
 					lotId,
-					qty,
+					pickedQty,
 					current,
 				);
 				continue;
@@ -1105,88 +1225,92 @@ async function simulateOutboundOrder(
 			buffers.markSerialsDirty(serialIds);
 		}
 
-		const soItemId = createId();
 		buffers.soItems.push({
-			id: soItemId,
+			id: createId(),
 			salesOrderId: soId,
 			skuId,
 			orderedQty: qty,
 			allocatedQty: qty,
-			pickedQty: qty,
+			pickedQty: scenario === "SHIPPED" ? qty : pickedQty,
 		});
+		linesAdded++;
 
+		const taskStatus = pickTaskStatus();
 		buffers.tasks.push({
 			id: createId(),
 			warehouseId: whId,
 			type: "PICK",
-			status: "COMPLETED",
+			status: taskStatus,
 			priority: "NORMAL",
 			fromLocationId: pickLoc,
 			toLocationId: layout.outbound[0],
 			skuId,
-			quantity: qty,
+			quantity: pickedQty,
 			createdAt: current,
-			startedAt: current,
-			completedAt: current,
+			startedAt:
+				taskStatus === "COMPLETED" || taskStatus === "ASSIGNED"
+					? current
+					: null,
+			completedAt: taskStatus === "COMPLETED" ? current : null,
 		});
 
-		buffers.tx.push(
-			{
-				id: createId(),
-				warehouseId: whId,
-				skuId,
-				lotId,
-				fromLocationId: pickLoc,
-				toLocationId: layout.outbound[0],
-				quantity: qty,
-				transactionType: "PICK",
-				createdAt: current,
-				referenceType: "SO",
-				referenceId: soId,
-			},
-			{
+		buffers.tx.push({
+			id: createId(),
+			warehouseId: whId,
+			skuId,
+			lotId,
+			fromLocationId: pickLoc,
+			toLocationId: layout.outbound[0],
+			quantity: pickedQty,
+			transactionType: "PICK",
+			createdAt: current,
+			referenceType: "SO",
+			referenceId: soId,
+		});
+
+		if (scenario === "SHIPPED") {
+			buffers.tx.push({
 				id: createId(),
 				warehouseId: whId,
 				skuId,
 				lotId,
 				fromLocationId: layout.outbound[0],
 				toLocationId: null,
-				quantity: qty,
+				quantity: pickedQty,
 				transactionType: "SHIP",
 				createdAt: current,
-			},
-		);
+			});
+			shippedLines.push({ skuId, quantity: pickedQty, lotId, serialIds });
 
-		shippedLines.push({ skuId, quantity: qty, lotId, serialIds });
-
-		if (faker.number.int({ min: 1, max: 100 }) <= 5) {
-			const returnDate = new Date(
-				current.getTime() + 5 * 24 * 60 * 60 * 1000,
-			);
-			if (returnDate < simulationEnd) {
-				pendingReturns.push({
-					executeAt: returnDate,
-					warehouseId: whId,
-					customerId,
-					salesOrderId: soId,
-					skuId,
-					quantity: qty,
-					lotId,
-					disposition: faker.helpers.arrayElement([
-						"RESTOCK",
-						"SCRAP",
-						"REFURBISH",
-						"RETURN_TO_VENDOR",
-					]),
-					serialIds: [...serialIds],
-				});
+			if (faker.number.int({ min: 1, max: 100 }) <= 5) {
+				const returnDate = new Date(
+					current.getTime() + 5 * 24 * 60 * 60 * 1000,
+				);
+				if (returnDate < simulationEnd) {
+					pendingReturns.push({
+						executeAt: returnDate,
+						warehouseId: whId,
+						customerId,
+						salesOrderId: soId,
+						skuId,
+						quantity: pickedQty,
+						lotId,
+						disposition: faker.helpers.arrayElement([
+							"RESTOCK",
+							"SCRAP",
+							"REFURBISH",
+							"RETURN_TO_VENDOR",
+						]),
+						serialIds: [...serialIds],
+					});
+				}
 			}
 		}
 	}
 
-	if (shippedLines.length === 0) {
+	if (linesAdded === 0) {
 		buffers.so.pop();
-		buffers.shipments.pop();
+		if (scenario === "SHIPPED") buffers.shipments.pop();
 	}
 }
 
@@ -1270,19 +1394,23 @@ async function simulateTransfer(
 		buffers.markSerialsDirty(movedSerials);
 	}
 
+	const transferTaskStatus = pickTaskStatus();
 	buffers.tasks.push({
 		id: createId(),
 		warehouseId: whId,
-		type: "REPLENISHMENT",
-		status: "COMPLETED",
+		type: faker.number.int({ min: 1, max: 10 }) > 7 ? "MOVE" : "REPLENISHMENT",
+		status: transferTaskStatus,
 		priority: "HIGH",
 		fromLocationId: fromLoc,
 		toLocationId: toLoc,
 		skuId,
 		quantity: moveQty,
 		createdAt: current,
-		startedAt: current,
-		completedAt: current,
+		startedAt:
+			transferTaskStatus === "COMPLETED" || transferTaskStatus === "ASSIGNED"
+				? current
+				: null,
+		completedAt: transferTaskStatus === "COMPLETED" ? current : null,
 	});
 
 	buffers.tx.push({
@@ -1316,8 +1444,17 @@ function processPendingReturns(
 		const inventory = inventories.get(ret.warehouseId);
 		if (!inventory || !layout) continue;
 
+		const lifecycle = pickReturnLifecycle();
 		const inboundLoc = layout.inbound[0];
+		const restockLoc = pickStorageBin(layout);
 		const retOrderId = createId();
+
+		const returnStatus =
+			lifecycle === "COMPLETED"
+				? "COMPLETED"
+				: lifecycle === "INSPECTING"
+					? "INSPECTING"
+					: "RECEIVED";
 
 		buffers.returnOrders.push({
 			id: retOrderId,
@@ -1330,7 +1467,7 @@ function processPendingReturns(
 				"Wrong Item",
 				"Changed Mind",
 			]),
-			status: "COMPLETED",
+			status: returnStatus,
 			createdAt: ret.executeAt,
 		});
 
@@ -1339,15 +1476,17 @@ function processPendingReturns(
 			returnOrderId: retOrderId,
 			skuId: ret.skuId,
 			quantity: ret.quantity,
-			disposition: ret.disposition,
+			disposition: lifecycle === "COMPLETED" ? ret.disposition : null,
 		});
 
-		buffers.returnInspections.push({
-			id: createId(),
-			returnOrderId: retOrderId,
-			result: faker.helpers.arrayElement(["PASSED", "FAILED"]),
-			createdAt: ret.executeAt,
-		});
+		if (lifecycle !== "RECEIVED") {
+			buffers.returnInspections.push({
+				id: createId(),
+				returnOrderId: retOrderId,
+				result: faker.helpers.arrayElement(["PASSED", "FAILED"]),
+				createdAt: ret.executeAt,
+			});
+		}
 
 		buffers.tx.push({
 			id: createId(),
@@ -1363,9 +1502,11 @@ function processPendingReturns(
 			referenceId: retOrderId,
 		});
 
-		if (ret.disposition === "RESTOCK") {
+		if (
+			lifecycle === "COMPLETED" &&
+			ret.disposition === "RESTOCK"
+		) {
 			const sku = skuMap.get(ret.skuId);
-			const restockLoc = inboundLoc;
 
 			inventory.addQuantity(
 				restockLoc,
@@ -1463,6 +1604,11 @@ export async function layoutAndSimulation() {
 	const skuMap = new Map(skus.map((s) => [s.id, s]));
 
 	console.log("Cleaning up existing locations and transactions...");
+	await db.pickWaveLine.deleteMany();
+	await db.pickWaveSalesOrder.deleteMany();
+	await db.pickWave.deleteMany();
+	await db.transferOrderItem.deleteMany();
+	await db.transferOrder.deleteMany();
 	await db.inventoryTransaction.deleteMany();
 	await db.inventoryBalance.deleteMany();
 	await db.inventorySerial.deleteMany();
@@ -1563,96 +1709,105 @@ export async function layoutAndSimulation() {
 	const buffers = new SimulationBuffers();
 	const pendingReturns: PendingReturn[] = [];
 
-	const current = new Date(START_DATE);
-	const simulationEnd = new Date(
-		START_DATE.getTime() + NUM_YEARS * 365 * 24 * 60 * 60 * 1000,
-	);
+	const { start: historicalStart, end: historicalEnd } =
+		getHistoricalSimulationDates();
+	const current = new Date(historicalStart);
 
-	console.log(`Simulating ${NUM_YEARS} years of transactions...`);
-	let simulatedDays = 0;
+	if (CONFIG.SKIP_HISTORICAL) {
+		console.log("SKIP_HISTORICAL=true — skipping historical loop.");
+	} else {
+		console.log(
+			`Simulating ${CONFIG.HISTORICAL_YEARS} years (${historicalStart.toISOString().slice(0, 10)} → ${historicalEnd.toISOString().slice(0, 10)})...`,
+		);
+		let simulatedDays = 0;
 
-	while (current < simulationEnd) {
-		if (simulatedDays % 10 === 0) {
-			console.log(
-				`Day ${simulatedDays} — ${current.toISOString().split("T")[0]}`,
+		while (current < historicalEnd) {
+			if (simulatedDays % 10 === 0) {
+				console.log(
+					`Day ${simulatedDays} — ${current.toISOString().split("T")[0]}`,
+				);
+			}
+
+			await db.$transaction(
+				async (prisma) => {
+					processPendingReturns(
+						locationCache,
+						skuMap,
+						inventories,
+						buffers,
+						pendingReturns,
+						current,
+					);
+
+					for (const wh of warehouses) {
+						const layout = locationCache.get(wh.id)!;
+						const inventory = inventories.get(wh.id)!;
+
+						const numReceipts = faker.number.int({ min: 1, max: 3 });
+						for (let r = 0; r < numReceipts; r++) {
+							await simulateInboundReceipt(
+								wh.id,
+								layout,
+								supplierIds,
+								skus,
+								inventory,
+								buffers,
+								current,
+							);
+							await buffers.maybeFlush(prisma);
+						}
+
+						const numOrders = faker.number.int({ min: 1, max: 4 });
+						for (let o = 0; o < numOrders; o++) {
+							await simulateOutboundOrder(
+								wh.id,
+								layout,
+								customerIds,
+								skuMap,
+								inventory,
+								buffers,
+								pendingReturns,
+								current,
+								historicalEnd,
+							);
+							await buffers.maybeFlush(prisma);
+						}
+
+						if (faker.number.int({ min: 1, max: 10 }) > 7) {
+							await simulateTransfer(
+								wh.id,
+								layout,
+								skuMap,
+								inventory,
+								buffers,
+								current,
+							);
+							await buffers.maybeFlush(prisma);
+						}
+
+						inventory.assertNonNegative();
+					}
+
+					current.setDate(current.getDate() + 1);
+					simulatedDays++;
+
+					await buffers.flush(prisma);
+					await buffers.flushSerialUpdates(prisma, inventories);
+
+					if (simulatedDays % 10 === 0) {
+						await verifyInventoryIntegrity(prisma, inventories);
+					}
+				},
+				{ timeout: 120_000 },
 			);
 		}
 
-		await db.$transaction(
-			async (prisma) => {
-				processPendingReturns(
-					locationCache,
-					skuMap,
-					inventories,
-					buffers,
-					pendingReturns,
-					current,
-				);
-
-				for (const wh of warehouses) {
-					const layout = locationCache.get(wh.id)!;
-					const inventory = inventories.get(wh.id)!;
-
-					const numReceipts = faker.number.int({ min: 1, max: 3 });
-					for (let r = 0; r < numReceipts; r++) {
-						await simulateInboundReceipt(
-							wh.id,
-							layout,
-							supplierIds,
-							skus,
-							inventory,
-							buffers,
-							current,
-						);
-						await buffers.maybeFlush(prisma);
-					}
-
-					const numOrders = faker.number.int({ min: 1, max: 4 });
-					for (let o = 0; o < numOrders; o++) {
-						await simulateOutboundOrder(
-							wh.id,
-							layout,
-							customerIds,
-							skuMap,
-							inventory,
-							buffers,
-							pendingReturns,
-							current,
-							simulationEnd,
-						);
-						await buffers.maybeFlush(prisma);
-					}
-
-					if (faker.number.int({ min: 1, max: 10 }) > 7) {
-						await simulateTransfer(
-							wh.id,
-							layout,
-							skuMap,
-							inventory,
-							buffers,
-							current,
-						);
-						await buffers.maybeFlush(prisma);
-					}
-
-					inventory.assertNonNegative();
-				}
-
-				current.setDate(current.getDate() + 1);
-				simulatedDays++;
-
-				await buffers.flush(prisma);
-				await buffers.flushSerialUpdates(prisma, inventories);
-
-				if (simulatedDays % 10 === 0) {
-					await verifyInventoryIntegrity(prisma, inventories);
-				}
-			},
-			{ timeout: 120_000 },
-		);
+		console.log(`${CONFIG.HISTORICAL_YEARS}-year simulation complete.`);
 	}
 
-	console.log(`${NUM_YEARS}-year simulation complete.`);
+	console.log("Seeding demo snapshot for golden-path POC...");
+	await seedDemoSnapshot({ organizationId: org.id });
+	console.log("Layout and simulation complete.");
 }
 
 layoutAndSimulation().catch((err) => {

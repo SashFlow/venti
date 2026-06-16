@@ -1,17 +1,64 @@
 import { db } from "../client";
+import { CONFIG } from "./config";
 
 // Helper to generate a mock EAN-13 barcode
 const generateBarcode = () =>
 	Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
 
+type ProductTemplate = {
+	name: string;
+	description: string;
+	isSerialTracked?: boolean;
+	isBatchTracked?: boolean;
+	isPerishable?: boolean;
+	life?: number;
+	returnEnabled?: boolean;
+	defaultReturnWindowDays?: number;
+	onReturn?: string;
+	deadStockValue?: number;
+	deadStockAction?: string;
+	fixedSkuCode?: string;
+	variants: Array<{ label: string; price: number; weight: number }>;
+};
+
 async function main() {
 	console.log("🌱 Starting database seed...");
 
-	// Clean up existing products to prevent unique constraint violations on re-run
-	const currentOrganization = await db.organization.findFirst();
+	const currentOrganization = await db.organization.findFirst({
+		where: { name: CONFIG.ORG_NAME },
+	});
 
-	// 2. Define the 25 Product templates and their 5 SKU variations
-	const productsToSeed = [
+	if (currentOrganization) {
+		console.log("Cleaning existing products and SKUs for org...");
+		const products = await db.product.findMany({
+			where: { organizationId: currentOrganization.id },
+			select: { id: true },
+		});
+		const productIds = products.map((p) => p.id);
+		if (productIds.length > 0) {
+			await db.sKU.deleteMany({
+				where: { productId: { in: productIds } },
+			});
+			await db.product.deleteMany({
+				where: { id: { in: productIds } },
+			});
+		}
+	}
+
+	const productsToSeed: ProductTemplate[] = [
+		{
+			name: "COMP-400A Scroll Compressor",
+			description:
+				"High-efficiency scroll compressor for residential AC — demo stockout insight SKU.",
+			isSerialTracked: true,
+			life: 7300,
+			returnEnabled: true,
+			onReturn: "REFURBISH",
+			deadStockValue: 890,
+			deadStockAction: "REFURBISH",
+			fixedSkuCode: CONFIG.DEMO_SKU_COMPRESSOR,
+			variants: [{ label: "Standard", price: 890.0, weight: 45 }],
+		},
 		{
 			name: "Daikin Fit Heat Pump System",
 			description: "Variable-speed inverter residential heat pump unit.",
@@ -453,7 +500,10 @@ async function main() {
 				// Nested create for the 5 SKUs
 				skus: {
 					create: template.variants.map((variant, vIdx) => ({
-						code: `${productBaseCode}-V${vIdx + 1}`,
+						code:
+							template.fixedSkuCode && vIdx === 0
+								? template.fixedSkuCode
+								: `${productBaseCode}-V${vIdx + 1}`,
 						barcode: generateBarcode(),
 						unitPrice: variant.price,
 						weight: variant.weight,
@@ -475,7 +525,7 @@ async function main() {
 		console.log(`✅ Inserted: ${template.name} (with 5 SKUs)`);
 	}
 
-	console.log("🎉 Seed complete! Inserted 25 Products and 125 SKUs.");
+	console.log("🎉 Seed complete! Inserted products and SKUs.");
 }
 
 main().catch((e) => {

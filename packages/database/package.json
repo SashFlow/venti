@@ -26,6 +26,7 @@
 		"create:setup": "dotenv -c -e ../../.env -- tsx ./prisma/seed/create-setup.ts",
 		"create:products": "dotenv -c -e ../../.env -- tsx ./prisma/seed/products.ts",
 		"create:layout-and-simulation": "dotenv -c -e ../../.env -- tsx ./prisma/seed/layout-and-simulation.ts",
+		"create:verify-demo": "dotenv -c -e ../../.env -- tsx ./prisma/seed/verify-demo-snapshot.ts",
 		"generate": "prisma generate --no-hints --schema=./prisma/schema.prisma",
 		"push": "dotenv -c -e ../../.env -- prisma db push --skip-generate --schema=./prisma/schema.prisma",
 		"migrate": "dotenv -c -e ../../.env -- prisma migrate dev --schema=./prisma/schema.prisma",

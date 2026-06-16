@@ -394,17 +394,21 @@ Use this script for dry-runs and prospect meetings.
 
 ### Act 3 — Outbound + Route Optimization (5 min)
 
-1. **Orders → Outbound** — open summer spike SO
-2. **Fulfill → Create wave** — type ZONE, 12 lines
-3. **Release wave** — route optimizer runs
+**Seeded entities (Hyderabad `HYD-01`):** `SO-SUMMER-SPIKE-2026`, optional QA shortcut `WAVE-DEMO-PICK`.
+
+1. **Orders → Outbound** — open **`SO-SUMMER-SPIKE-2026`** (14 ALLOCATED lines, unpicked)
+2. **Fulfill → Create wave** — type ZONE (or use pre-seeded **`WAVE-DEMO-DRAFT`** for Autopilot auto-release demo)
+3. **Release wave** — route optimizer runs (skip if using pre-released **`WAVE-DEMO-PICK`** → `/operator/pick/{waveId}?picker=1`)
 4. Show metrics: **−31% travel**, 3 pickers, 3 carts
 5. 3D route animation per picker
 6. Open **PWA pick** on tablet — confirm 2 lines with scan
 
 ### Act 4 — Inbound + Returns (2 min)
 
-1. **PWA receive** — PO line, enter qty, putaway suggestion
-2. **Returns wizard** — inspection → RESTOCK → 3D bin turns green
+**Seeded entities:** `PO-DEMO-RCV-001` (open receive), `PO-DEMO-RCV-002` (partial), `RMA-DEMO-001` / `RMA-DEMO-002`.
+
+1. **PWA receive** — open **`PO-DEMO-RCV-001`** at `/operator/receive/{poId}` — enter qty, putaway suggestion
+2. **Returns wizard** — open **`RMA-DEMO-001`** — inspection → RESTOCK → 3D bin turns green
 
 ### Act 5 — Close (1 min)
 

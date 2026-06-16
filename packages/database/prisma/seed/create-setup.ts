@@ -153,7 +153,7 @@ const warehouses = [
 ];
 
 export async function generate_warehouses(id: string) {
-	warehouses.forEach(async (warehouse) => {
+	for (const warehouse of warehouses) {
 		const address = await db.address.create({
 			data: {
 				addressLine1: warehouse.address.line1,
@@ -175,7 +175,7 @@ export async function generate_warehouses(id: string) {
 				sameReturn: true,
 			},
 		});
-	});
+	}
 }
 
 export async function main() {
