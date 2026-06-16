@@ -135,11 +135,27 @@ function findFloorId(
 	return null;
 }
 
-function locationToStorageUnit(loc: DbLocation): StorageUnit {
+function locationToStorageUnit(
+	loc: DbLocation,
+	byId: Map<string, DbLocation>,
+): StorageUnit {
 	const status: StorageUnitStatus = "ACTIVE";
+	const parent = loc.parentLocationId
+		? byId.get(loc.parentLocationId)
+		: undefined;
+	let zoneId: string | undefined;
+	let parentStorageUnitId: string | undefined;
+	if (parent) {
+		if (parent.type === "ZONE") {
+			zoneId = parent.id;
+		} else if (parent.type !== "FLOOR") {
+			parentStorageUnitId = parent.id;
+		}
+	}
 	return {
 		id: loc.id,
-		parentStorageUnitId: loc.parentLocationId ?? undefined,
+		parentStorageUnitId,
+		zoneId,
 		code: loc.code,
 		name: loc.name ?? undefined,
 		barcode: loc.barcode ?? undefined,
@@ -190,41 +206,136 @@ function assetToDesignerAsset(asset: DbAsset): Asset {
 }
 
 // Flattens a Warehouse object into an array of Location create inputs
-export function warehouseToLocationInputs(warehouse: Warehouse) {
-	const locations: any[] = [];
-	// Floors
+export type LayoutLocationInput = {
+	code: string;
+	name?: string | null;
+	type: string;
+	barcode?: string | null;
+	sequence?: number | null;
+	x?: number | null;
+	y?: number | null;
+	z?: number | null;
+	width?: number | null;
+	height?: number | null;
+	depth?: number | null;
+	rotationX?: number | null;
+	rotationY?: number | null;
+	rotationZ?: number | null;
+	meshType?: string | null;
+	colorHex?: string | null;
+	parentCode?: string | null;
+};
+
+export type LayoutAssetInput = {
+	name?: string | null;
+	type: string;
+	x?: number | null;
+	y?: number | null;
+	z?: number | null;
+	width?: number | null;
+	height?: number | null;
+	depth?: number | null;
+	rotationX?: number | null;
+	rotationY?: number | null;
+	rotationZ?: number | null;
+	meshType?: string | null;
+	colorHex?: string | null;
+	anchorLocationCode?: string | null;
+};
+
+const ASSET_TYPES = new Set(["WALL", "AISLE", "DOCK_DOOR", "STAIRS"]);
+
+function storageUnitToAssetInput(
+	su: StorageUnit,
+	floorCode: string,
+): LayoutAssetInput {
+	return {
+		name: su.name ?? su.code ?? null,
+		type: su.type,
+		x: su.startXMm,
+		y: su.startYMm,
+		z: su.startZMm,
+		width: su.widthMm,
+		depth: su.lengthMm,
+		height: su.heightMm,
+		rotationX: su.rotationXDeg,
+		rotationY: su.rotationYDeg,
+		rotationZ: su.rotationZDeg,
+		colorHex: su.colorHex ?? null,
+		meshType: su.type,
+		anchorLocationCode: floorCode,
+	};
+}
+
+export function warehouseToLayoutPayload(warehouse: Warehouse): {
+	locations: LayoutLocationInput[];
+	assets: LayoutAssetInput[];
+} {
+	const locations: LayoutLocationInput[] = [];
+	const assets: LayoutAssetInput[] = [];
+
+	const storageById = new Map<string, StorageUnit>();
+	for (const floor of warehouse.floors) {
+		for (const su of floor.storageUnits) {
+			storageById.set(su.id, su);
+		}
+	}
+
+	const zoneById = new Map(warehouse.zones.map((z) => [z.id, z]));
+	const primaryFloorCode = warehouse.floors[0]?.code ?? "F1";
+
+	// Floors (top-level, no parent)
 	for (const floor of warehouse.floors) {
 		locations.push({
 			type: "FLOOR",
 			code: floor.code,
-			name: floor.name,
+			name: floor.name ?? null,
 			x: floor.originXMm,
 			y: floor.originYMm,
 			z: floor.elevationMm,
-			width: floor.widthMm,
-			depth: floor.lengthMm,
-			height: floor.heightMm,
+			width: floor.widthMm ?? null,
+			depth: floor.lengthMm ?? null,
+			height: floor.heightMm ?? null,
 			meshType: "FLOOR",
 			sequence: floor.floorNumber,
+			parentCode: null,
 		});
 	}
-	// Zones
+
+	// Zones (anchored to primary floor for hierarchy)
 	for (const zone of warehouse.zones) {
 		locations.push({
 			type: "ZONE",
 			code: zone.code,
-			name: zone.name,
-			colorHex: zone.colorHex,
+			name: zone.name ?? null,
+			colorHex: zone.colorHex ?? null,
 			meshType: zone.type,
+			parentCode: primaryFloorCode,
 		});
 	}
-	// StorageUnits
+
+	// StorageUnits (parentCode is zone, rack parent, or floor)
 	for (const floor of warehouse.floors) {
 		for (const su of floor.storageUnits) {
+			if (ASSET_TYPES.has(su.type)) {
+				assets.push(storageUnitToAssetInput(su, floor.code));
+				continue;
+			}
+			const parentCode = (() => {
+				if (su.parentStorageUnitId) {
+					return storageById.get(su.parentStorageUnitId)?.code ?? floor.code;
+				}
+				if (su.zoneId) {
+					return zoneById.get(su.zoneId)?.code ?? floor.code;
+				}
+				return floor.code;
+			})();
 			locations.push({
 				type: su.type,
 				code: su.code,
-				name: su.name,
+				name: su.name ?? null,
+				barcode: su.barcode ?? null,
+				sequence: su.sequence ?? null,
 				x: su.startXMm,
 				y: su.startYMm,
 				z: su.startZMm,
@@ -234,15 +345,18 @@ export function warehouseToLocationInputs(warehouse: Warehouse) {
 				rotationX: su.rotationXDeg,
 				rotationY: su.rotationYDeg,
 				rotationZ: su.rotationZDeg,
-				colorHex: su.colorHex,
+				colorHex: su.colorHex ?? null,
 				meshType: su.type,
+				parentCode,
 			});
 		}
 	}
-	// Assets
+
+	// Assets (store in Asset table; anchor to floor by default)
 	for (const floor of warehouse.floors) {
 		for (const asset of floor.assets) {
-			locations.push({
+			assets.push({
+				name: null,
 				type: asset.type,
 				x: asset.startXMm,
 				y: asset.startYMm,
@@ -253,12 +367,14 @@ export function warehouseToLocationInputs(warehouse: Warehouse) {
 				rotationX: asset.rotationXDeg,
 				rotationY: asset.rotationYDeg,
 				rotationZ: asset.rotationZDeg,
-				colorHex: asset.colorHex,
+				colorHex: asset.colorHex ?? null,
 				meshType: asset.type,
+				anchorLocationCode: floor.code,
 			});
 		}
 	}
-	return locations;
+
+	return { locations, assets };
 }
 
 // Rebuilds a Warehouse object from a flat array of Locations (+ optional Assets)
@@ -305,7 +421,7 @@ export function locationsToWarehouse(
 		}
 		const floor = floorById.get(floorId);
 		if (floor) {
-			floor.storageUnits.push(locationToStorageUnit(loc));
+			floor.storageUnits.push(locationToStorageUnit(loc, byId));
 		}
 	}
 

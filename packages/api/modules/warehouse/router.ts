@@ -14,6 +14,9 @@ import { restoreWarehouseProcedure } from "./procedures/restore-warehouse";
 import { updateWarehouseProcedure } from "./procedures/update-warehouse";
 import { saveLayoutProcedure } from "./procedures/layout/save-layout";
 import { loadLayoutProcedure } from "./procedures/layout/load-layout";
+import { getLayoutDraftProcedure } from "./procedures/layout/get-draft";
+import { saveLayoutDraftProcedure } from "./procedures/layout/save-draft";
+import { publishLayoutProcedure } from "./procedures/layout/publish";
 
 export const warehouseRouter = {
 	list: listWarehousesProcedure,
@@ -32,5 +35,8 @@ export const warehouseRouter = {
 	layout: {
 		save: saveLayoutProcedure,
 		load: loadLayoutProcedure,
+		getDraft: getLayoutDraftProcedure,
+		saveDraft: saveLayoutDraftProcedure,
+		publish: publishLayoutProcedure,
 	},
 };

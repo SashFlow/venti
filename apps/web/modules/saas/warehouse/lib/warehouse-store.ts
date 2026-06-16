@@ -561,6 +561,78 @@ export function useWarehouse(warehouseId: string) {
 		setSelection((s) => (s?.id === id ? null : s));
 	}, []);
 
+	const addAsset = useCallback((asset: Asset) => {
+		setWarehouse((w) => ({
+			...w,
+			updatedAt: Date.now(),
+			floors: w.floors.map((f) =>
+				f.id === w.activeFloorId
+					? { ...f, assets: [...f.assets, asset] }
+					: f,
+			),
+		}));
+	}, []);
+
+	const updateAsset = useCallback((id: string, patch: Partial<Asset>) => {
+		setWarehouse((w) => ({
+			...w,
+			updatedAt: Date.now(),
+			floors: w.floors.map((f) => ({
+				...f,
+				assets: f.assets.map((a) =>
+					a.id === id ? { ...a, ...patch } : a,
+				),
+			})),
+		}));
+	}, []);
+
+	const removeAsset = useCallback((id: string) => {
+		setWarehouse((w) => ({
+			...w,
+			updatedAt: Date.now(),
+			floors: w.floors.map((f) => ({
+				...f,
+				assets: f.assets.filter((a) => a.id !== id),
+			})),
+		}));
+		setSelection((s) => (s?.id === id ? null : s));
+	}, []);
+
+	const updatePlacement = useCallback(
+		(id: string, patch: Partial<StorageUnit> | Partial<Asset>) => {
+			setWarehouse((w) => {
+				let found = false;
+				const floors = w.floors.map((f) => {
+					const hasStorage = f.storageUnits.some((u) => u.id === id);
+					const hasAsset = f.assets.some((a) => a.id === id);
+					if (!hasStorage && !hasAsset) {
+						return f;
+					}
+					found = true;
+					return {
+						...f,
+						storageUnits: hasStorage
+							? f.storageUnits.map((u) =>
+									u.id === id
+										? { ...u, ...patch }
+										: u,
+								)
+							: f.storageUnits,
+						assets: hasAsset
+							? f.assets.map((a) =>
+									a.id === id ? { ...a, ...patch } : a,
+								)
+							: f.assets,
+					};
+				});
+				return found
+					? { ...w, floors, updatedAt: Date.now() }
+					: w;
+			});
+		},
+		[],
+	);
+
 	// --- zones ---
 	const addZone = useCallback((partial: Partial<Zone> = {}) => {
 		const z = makeZone(partial);
@@ -710,6 +782,10 @@ export function useWarehouse(warehouseId: string) {
 		addStorageUnitsTo,
 		updateStorageUnit,
 		removeStorageUnit,
+		addAsset,
+		updateAsset,
+		removeAsset,
+		updatePlacement,
 		addZone,
 		updateZone,
 		removeZone,

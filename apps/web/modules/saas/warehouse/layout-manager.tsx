@@ -31,10 +31,11 @@ import { useWarehouseInventory } from "./hooks/use-warehouse-inventory";
 import { parseRoutePlan } from "./lib/route-viz-types";
 import {
 	locationsToWarehouse,
-	warehouseToLocationInputs,
+	warehouseToLayoutPayload,
 } from "./lib/warehouse-layout-serializer";
 import type {
 	Asset,
+	AssetType,
 	HandlingUnit,
 	StorageUnit,
 	StorageUnitType,
@@ -46,6 +47,7 @@ import type {
 } from "./lib/warehouse-types";
 import { ZONE_DEFAULT_COLORS } from "./lib/warehouse-types";
 import { useWarehouse } from "./lib/warehouse-store";
+import { makeAsset, makeStorageUnit } from "./lib/warehouse-store";
 import { useAgvFleet } from "./hooks/use-agv-fleet";
 
 const TOOLS: { id: Tool; icon: LucideIcon; label: string }[] = [
@@ -88,7 +90,7 @@ const Tabs = [
 
 import { useSidebar } from "@repo/ui/shadcn-sidebar";
 import { orpc } from "@shared/lib/orpc-query-utils";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -105,7 +107,7 @@ const Index = ({
 	warehouseName,
 	warehouseCode,
 }: LayoutManagerProps) => {
-	const { open } = useSidebar();
+	useSidebar();
 	const searchParams = useSearchParams();
 	const waveIdParam = searchParams.get("waveId");
 	const viewParam = searchParams.get("view");
@@ -121,6 +123,8 @@ const Index = ({
 		addStorageUnit,
 		updateStorageUnit,
 		removeStorageUnit,
+		addAsset,
+		updatePlacement,
 		addZone,
 		updateZone,
 		removeZone,
@@ -134,38 +138,7 @@ const Index = ({
 	} = useWarehouse(warehouseId);
 	const { fleet: agvFleet } = useAgvFleet();
 
-	// Load from backend on mount
-	useEffect(() => {
-		async function load() {
-			try {
-				const result = await orpc.warehouse.layout.load.query({
-					organizationId,
-					warehouseId,
-				});
-				const locations = Array.isArray(result)
-					? result
-					: (result?.locations ?? []);
-				const assets = Array.isArray(result) ? [] : (result?.assets ?? []);
-				if (locations.length > 0) {
-					const w = locationsToWarehouse(
-						locations,
-						{
-							name: warehouseName,
-							code: warehouseCode,
-							timezone: "UTC",
-						},
-						assets,
-					);
-					initFromWarehouse(w);
-				}
-			} catch (e) {
-				// fallback: do nothing, keep local state
-			}
-		}
-		load();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [warehouseId, organizationId]);
-
+	const queryClient = useQueryClient();
 	const [tool, setTool] = useState<Tool>("select");
 	const [operationsMode, setOperationsMode] = useState(false);
 	const [highlightPicker, setHighlightPicker] = useState<string | null>(
@@ -175,6 +148,67 @@ const Index = ({
 		warehouse.zones[0]?.id,
 	);
 	const [view, setView] = useState<ViewMode>("2d");
+
+	// Some layout procedures are new; keep client resilient to typegen lag.
+	const layoutApi = orpc.warehouse.layout as any;
+
+	const { data: publishedLayout, error: publishedLayoutError } = useQuery({
+		...layoutApi.load.queryOptions({
+			input: { organizationId, warehouseId },
+		}),
+		enabled: Boolean(organizationId && warehouseId),
+	});
+
+	const { data: draftLayout, error: draftLayoutError } = useQuery({
+		...layoutApi.getDraft.queryOptions({
+			input: { organizationId, warehouseId },
+		}),
+		enabled: Boolean(organizationId && warehouseId && !operationsMode),
+	});
+
+	useEffect(() => {
+		if (publishedLayoutError || draftLayoutError) {
+			toast.error("Failed to load layout from backend");
+		}
+	}, [publishedLayoutError, draftLayoutError]);
+
+	useEffect(() => {
+		let locations: unknown[] = [];
+		let assets: unknown[] = [];
+		if (operationsMode) {
+			locations = (publishedLayout as any)?.locations ?? [];
+			assets = (publishedLayout as any)?.assets ?? [];
+		} else {
+			const draftScene = (draftLayout as any)?.scene;
+			if (Array.isArray(draftScene?.locations) && draftScene.locations.length > 0) {
+				locations = draftScene.locations;
+				assets = draftScene.assets ?? [];
+			} else {
+				locations = (publishedLayout as any)?.locations ?? [];
+				assets = (publishedLayout as any)?.assets ?? [];
+			}
+		}
+		if (!Array.isArray(locations) || locations.length === 0) {
+			return;
+		}
+		const w = locationsToWarehouse(
+			locations as any,
+			{
+				name: warehouseName,
+				code: warehouseCode,
+				timezone: "UTC",
+			},
+			Array.isArray(assets) ? (assets as any) : [],
+		);
+		initFromWarehouse(w);
+	}, [
+		operationsMode,
+		draftLayout,
+		publishedLayout,
+		initFromWarehouse,
+		warehouseName,
+		warehouseCode,
+	]);
 
 	const { data: waveData } = useQuery({
 		...orpc.orders.getWave.queryOptions({
@@ -187,8 +221,8 @@ const Index = ({
 	});
 
 	const routePlan = useMemo(
-		() => parseRoutePlan(waveData?.wave?.routePlan),
-		[waveData?.wave?.routePlan],
+		() => parseRoutePlan((waveData as any)?.wave?.routePlan),
+		[(waveData as any)?.wave?.routePlan],
 	);
 
 	useEffect(() => {
@@ -270,17 +304,51 @@ const Index = ({
 		toast.success("Warehouse exported");
 	};
 
-	const handleSave = async () => {
+	const saveDraftMutation = useMutation<any, any, any>(
+		layoutApi.saveDraft.mutationOptions() as any,
+	);
+	const publishMutation = useMutation<any, any, any>(
+		layoutApi.publish.mutationOptions() as any,
+	);
+
+	const handleSaveDraft = async () => {
 		try {
-			const locations = warehouseToLocationInputs(warehouse);
-			await orpc.warehouse.layout.save.mutate({
+			const scene = warehouseToLayoutPayload(warehouse);
+			await saveDraftMutation.mutateAsync({
 				organizationId,
 				warehouseId,
-				locations,
+				scene,
 			});
-			toast.success("Layout saved to backend");
-		} catch (e) {
-			toast.error("Failed to save layout");
+			await queryClient.invalidateQueries({
+				queryKey: layoutApi.getDraft.key(),
+			});
+			toast.success("Draft saved");
+		} catch {
+			toast.error("Failed to save draft");
+		}
+	};
+
+	const handlePublish = async () => {
+		try {
+			const scene = warehouseToLayoutPayload(warehouse);
+			await saveDraftMutation.mutateAsync({
+				organizationId,
+				warehouseId,
+				scene,
+			});
+			await publishMutation.mutateAsync({
+				organizationId,
+				warehouseId,
+			});
+			await queryClient.invalidateQueries({
+				queryKey: layoutApi.load.key(),
+			});
+			await queryClient.invalidateQueries({
+				queryKey: layoutApi.getDraft.key(),
+			});
+			toast.success("Layout published");
+		} catch {
+			toast.error("Failed to publish layout");
 		}
 	};
 
@@ -396,10 +464,28 @@ const Index = ({
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={handleSave}
+							onClick={handleSaveDraft}
 							className="gap-1.5"
 						>
-							💾 Save
+							💾 Save draft
+						</Button>
+					</Tip>
+					<Tip label="Publish draft to operational layout">
+						<Button
+							variant="default"
+							size="sm"
+							onClick={() => {
+								if (
+									confirm(
+										"Publish this draft? This will overwrite operational warehouse locations/assets.",
+									)
+								) {
+									void handlePublish();
+								}
+							}}
+							className="gap-1.5"
+						>
+							📤 Publish
 						</Button>
 					</Tip>
 					<Tip label="Download warehouse as JSON">
@@ -751,13 +837,32 @@ const Index = ({
 										id ? { kind: "storage", id } : null,
 									)
 								}
-								onAdd={(type, partial) =>
+								onAdd={(type, partial) => {
+									const toolType = type as string;
+									const assetTools = new Set([
+										"WALL",
+										"AISLE",
+										"DOCK_DOOR",
+										"STAIRS",
+									]);
+									if (assetTools.has(toolType)) {
+										addAsset(
+											makeAsset(
+												toolType as AssetType,
+												partial as Partial<Asset>,
+											),
+										);
+										return;
+									}
+									const storageType =
+										toolType === "AREA"
+											? "FLOOR"
+											: (toolType as StorageUnitType);
 									addStorageUnit(
-										type as StorageUnitType,
-										partial,
-									)
-								}
-								onUpdate={updateStorageUnit}
+										makeStorageUnit(storageType, partial),
+									);
+								}}
+								onUpdate={updatePlacement}
 								routePlan={routePlan}
 								highlightPicker={highlightPicker}
 							/>

@@ -319,7 +319,7 @@ export const getDashboardAnalyticsProcedure = protectedProcedure
 				LIMIT 8
 			`,
 
-			// AMC Return Compliance – return rate by customer (AMC proxy = isWholesaler)
+			// AMC Return Compliance – return rate by wholesale customers
 			db.$queryRaw<AmcComplianceRow[]>`
 				SELECT
 					c.name AS customer_name,
@@ -330,7 +330,7 @@ export const getDashboardAnalyticsProcedure = protectedProcedure
 				INNER JOIN "Warehouse" w ON w.id = so."warehouseId"
 				LEFT JOIN "ReturnOrder" ro ON ro."customerId" = c.id AND ro."salesOrderId" = so.id
 				WHERE c."organizationId" = ${organizationId}
-				  AND c."isWholesaler" = true
+				  AND c.type = 'WHOLESALE'
 				  AND so."orderedAt" >= NOW() - INTERVAL '90 days'
 				GROUP BY c.name, c.id
 				ORDER BY (COUNT(DISTINCT ro.id)::float / NULLIF(COUNT(DISTINCT so.id),0)) ASC

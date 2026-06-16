@@ -2,11 +2,13 @@ import { z } from "zod";
 import { requireOrganizationMembership } from "../../../../lib/organization-access";
 import { protectedProcedure } from "../../../../orpc/procedures";
 import { saveWarehouseLayout } from "@repo/database";
+import { layoutAssetInputSchema, layoutLocationInputSchema } from "./layout-schemas";
 
 const saveLayoutInput = z.object({
 	organizationId: z.string(),
 	warehouseId: z.string(),
-	locations: z.array(z.any()), // TODO: tighten schema
+	locations: z.array(layoutLocationInputSchema),
+	assets: z.array(layoutAssetInputSchema).optional(),
 });
 
 export const saveLayoutProcedure = protectedProcedure
