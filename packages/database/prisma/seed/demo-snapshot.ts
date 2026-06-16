@@ -269,6 +269,12 @@ export async function seedDemoSnapshot(params: {
 		});
 	}
 
+	// Ensure the demo "stockout" SKU stays low on-hand by wiping any
+	// pre-existing balances that might have been created by other seed phases.
+	await db.inventoryBalance.deleteMany({
+		where: { warehouseId: warehouse.id, skuId: compSku.id },
+	});
+
 	await ensureInventoryAtLocation({
 		warehouseId: warehouse.id,
 		locationId: compBin,

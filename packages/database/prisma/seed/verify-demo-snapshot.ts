@@ -11,6 +11,16 @@ async function verifyDemoSnapshot() {
 
 	const errors: string[] = [];
 
+	const demoWarehouse = await db.warehouse.findFirst({
+		where: { organizationId: org.id, code: CONFIG.DEMO_WAREHOUSE_CODE },
+		select: { id: true },
+	});
+	if (!demoWarehouse) {
+		throw new Error(
+			`Demo warehouse ${CONFIG.DEMO_WAREHOUSE_CODE} not found for organization.`,
+		);
+	}
+
 	const openPoCount = await db.purchaseOrder.count({
 		where: {
 			poNumber: CONFIG.DEMO_PO_OPEN,
@@ -90,8 +100,7 @@ async function verifyDemoSnapshot() {
 			WITH velocity AS (
 				SELECT COALESCE(SUM(ABS(it.quantity::float)), 0) AS ship_qty_30d
 				FROM "InventoryTransaction" it
-				INNER JOIN "Warehouse" w ON w.id = it."warehouseId"
-				WHERE w."organizationId" = ${org.id}
+				WHERE it."warehouseId" = ${demoWarehouse.id}
 				  AND it."skuId" = ${compSku.id}
 				  AND it."transactionType" = 'SHIP'
 				  AND it."createdAt" >= NOW() - INTERVAL '30 days'
@@ -99,8 +108,7 @@ async function verifyDemoSnapshot() {
 			on_hand AS (
 				SELECT COALESCE(SUM(ib."quantityAvailable"::float), 0) AS on_hand
 				FROM "InventoryBalance" ib
-				INNER JOIN "Warehouse" w ON w.id = ib."warehouseId"
-				WHERE w."organizationId" = ${org.id}
+				WHERE ib."warehouseId" = ${demoWarehouse.id}
 				  AND ib."skuId" = ${compSku.id}
 				  AND ib.state = 'AVAILABLE'
 			)
