@@ -4,28 +4,47 @@ import { Label } from "@repo/ui/label";
 import { Switch } from "@repo/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { Layers, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import type {
+	Asset,
 	HandlingUnit,
 	StorageUnit,
 	StorageUnitStatus,
 	StorageUnitType,
 	Warehouse,
 } from "../lib/warehouse-types";
-import { STORAGE_UNIT_COLORS } from "../lib/warehouse-types";
+import {
+	ASSET_COLORS,
+	getRackLayoutMetadata,
+	STORAGE_UNIT_COLORS,
+} from "../lib/warehouse-types";
 import { Tip } from "./Tip";
 
 interface Props {
 	warehouse: Warehouse;
 	storage?: StorageUnit;
+	asset?: Asset;
 	handling?: HandlingUnit;
 	onUpdateStorage: (id: string, patch: Partial<StorageUnit>) => void;
 	onRemoveStorage: (id: string) => void;
+	onUpdateAsset?: (id: string, patch: Partial<Asset>) => void;
+	onRemoveAsset?: (id: string) => void;
 	onUpdateHandling: (id: string, patch: Partial<HandlingUnit>) => void;
 	onRemoveHandling: (id: string) => void;
 	onGenerateShelves: (
 		rackId: string,
 		levels: number,
 		shelfHeightMm: number,
+	) => void;
+	onGenerateBinsForRack?: (
+		rackId: string,
+		cols: number,
+		rows: number,
+	) => void;
+	onGeneratePalletGridForArea?: (
+		areaId: string,
+		cols: number,
+		rows: number,
 	) => void;
 }
 
@@ -84,12 +103,17 @@ const flagRow = (
 export default function Inspector({
 	warehouse,
 	storage,
+	asset,
 	handling,
 	onUpdateStorage,
 	onRemoveStorage,
+	onUpdateAsset,
+	onRemoveAsset,
 	onUpdateHandling,
 	onRemoveHandling,
 	onGenerateShelves,
+	onGenerateBinsForRack,
+	onGeneratePalletGridForArea,
 }: Props) {
 	if (handling)
 		return (
@@ -100,6 +124,14 @@ export default function Inspector({
 				onRemove={onRemoveHandling}
 			/>
 		);
+	if (asset)
+		return (
+			<AssetInspector
+				asset={asset}
+				onUpdate={onUpdateAsset}
+				onRemove={onRemoveAsset}
+			/>
+		);
 	if (storage)
 		return (
 			<StorageInspector
@@ -108,6 +140,8 @@ export default function Inspector({
 				onUpdate={onUpdateStorage}
 				onRemove={onRemoveStorage}
 				onGenerateShelves={onGenerateShelves}
+				onGenerateBinsForRack={onGenerateBinsForRack}
+				onGeneratePalletGridForArea={onGeneratePalletGridForArea}
 			/>
 		);
 	return (
@@ -122,12 +156,111 @@ export default function Inspector({
 	);
 }
 
+function AssetInspector({
+	asset,
+	onUpdate,
+	onRemove,
+}: {
+	asset: Asset;
+	onUpdate?: (id: string, patch: Partial<Asset>) => void;
+	onRemove?: (id: string) => void;
+}) {
+	const update = (patch: Partial<Asset>) => onUpdate?.(asset.id, patch);
+
+	return (
+		<div className="p-4 space-y-4 text-sm">
+			<div className="flex items-center justify-between">
+				<div>
+					<div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+						Building asset
+					</div>
+					<div className="font-semibold flex items-center gap-2">
+						<span
+							className="inline-block w-2.5 h-2.5 rounded-sm"
+							style={{
+								background:
+									asset.colorHex ?? ASSET_COLORS[asset.type],
+							}}
+						/>
+						{asset.type.replace("_", " ")}
+					</div>
+				</div>
+				{onRemove && (
+					<Tip label="Delete this building asset">
+						<Button
+							size="icon"
+							variant="ghost"
+							onClick={() => onRemove(asset.id)}
+							aria-label="Delete"
+						>
+							<Trash2 className="h-4 w-4 text-destructive" />
+						</Button>
+					</Tip>
+				)}
+			</div>
+
+			{onUpdate && (
+				<div className="space-y-3">
+					<div className="grid grid-cols-3 gap-2">
+						{numField(
+							"Start X",
+							asset.startXMm,
+							(v) => update({ startXMm: v }),
+							{ step: 100, suffix: "mm" },
+						)}
+						{numField(
+							"Start Y",
+							asset.startYMm,
+							(v) => update({ startYMm: v }),
+							{ step: 100, suffix: "mm" },
+						)}
+						{numField(
+							"Start Z",
+							asset.startZMm,
+							(v) => update({ startZMm: v }),
+							{ step: 100, suffix: "mm" },
+						)}
+					</div>
+					<div className="grid grid-cols-3 gap-2">
+						{numField(
+							"Width",
+							asset.widthMm,
+							(v) => update({ widthMm: Math.max(50, v) }),
+							{ min: 50, step: 100, suffix: "mm" },
+						)}
+						{numField(
+							"Length",
+							asset.lengthMm,
+							(v) => update({ lengthMm: Math.max(50, v) }),
+							{ min: 50, step: 100, suffix: "mm" },
+						)}
+						{numField(
+							"Height",
+							asset.heightMm,
+							(v) => update({ heightMm: Math.max(50, v) }),
+							{ min: 50, step: 100, suffix: "mm" },
+						)}
+					</div>
+					{numField(
+						"Rotation Z",
+						asset.rotationZDeg,
+						(v) => update({ rotationZDeg: v }),
+						{ step: 5, suffix: "°" },
+					)}
+				</div>
+			)}
+		</div>
+	);
+}
+
 function StorageInspector({
 	u,
 	warehouse,
 	onUpdate,
 	onRemove,
 	onGenerateShelves,
+	onGenerateBinsForRack,
+	onGeneratePalletGridForArea,
 }: {
 	u: StorageUnit;
 	warehouse: Warehouse;
@@ -138,9 +271,84 @@ function StorageInspector({
 		levels: number,
 		shelfHeightMm: number,
 	) => void;
+	onGenerateBinsForRack?: (
+		rackId: string,
+		cols: number,
+		rows: number,
+	) => void;
+	onGeneratePalletGridForArea?: (
+		areaId: string,
+		cols: number,
+		rows: number,
+	) => void;
 }) {
 	const update = (p: Partial<StorageUnit>) => onUpdate(u.id, p);
 	const zones = warehouse.zones;
+	const allUnits = useMemo(
+		() => warehouse.floors.flatMap((f) => f.storageUnits),
+		[warehouse.floors],
+	);
+	const rackLayout = getRackLayoutMetadata(u);
+	const areaLayout =
+		u.metadata?.layout &&
+		typeof u.metadata.layout === "object" &&
+		!Array.isArray(u.metadata.layout)
+			? (u.metadata.layout as {
+					palletGrid?: { cols?: number; rows?: number };
+				})
+			: {};
+	const shelfCount = allUnits.filter(
+		(unit) => unit.parentStorageUnitId === u.id && unit.type === "SHELF",
+	).length;
+	const palletCount = allUnits.filter(
+		(unit) => unit.parentStorageUnitId === u.id && unit.type === "PALLET",
+	).length;
+	const binCount = allUnits.filter((unit) => {
+		if (unit.type !== "BIN" || !unit.parentStorageUnitId) {
+			return false;
+		}
+		const shelf = allUnits.find((s) => s.id === unit.parentStorageUnitId);
+		return shelf?.parentStorageUnitId === u.id;
+	}).length;
+
+	const [levels, setLevels] = useState(rackLayout.levelCount ?? 4);
+	const [shelfHeightMm, setShelfHeightMm] = useState(
+		rackLayout.shelfHeightMm ?? 500,
+	);
+	const [binCols, setBinCols] = useState(
+		rackLayout.binsPerShelf?.cols ?? 5,
+	);
+	const [binRows, setBinRows] = useState(
+		rackLayout.binsPerShelf?.rows ?? 2,
+	);
+	const [palletCols, setPalletCols] = useState(
+		areaLayout.palletGrid?.cols ?? 3,
+	);
+	const [palletRows, setPalletRows] = useState(
+		areaLayout.palletGrid?.rows ?? 4,
+	);
+
+	useEffect(() => {
+		const layout = getRackLayoutMetadata(u);
+		const shelves = allUnits.filter(
+			(unit) =>
+				unit.parentStorageUnitId === u.id && unit.type === "SHELF",
+		).length;
+		setLevels(layout.levelCount ?? (shelves || 4));
+		setShelfHeightMm(layout.shelfHeightMm ?? 500);
+		setBinCols(layout.binsPerShelf?.cols ?? 5);
+		setBinRows(layout.binsPerShelf?.rows ?? 2);
+		const areaMeta =
+			u.metadata?.layout &&
+			typeof u.metadata.layout === "object" &&
+			!Array.isArray(u.metadata.layout)
+				? (u.metadata.layout as {
+						palletGrid?: { cols?: number; rows?: number };
+					})
+				: {};
+		setPalletCols(areaMeta.palletGrid?.cols ?? 3);
+		setPalletRows(areaMeta.palletGrid?.rows ?? 4);
+	}, [u.id, u.metadata, allUnits, u]);
 
 	return (
 		<div className="p-4 space-y-4 text-sm">
@@ -348,56 +556,207 @@ function StorageInspector({
 					</div>
 
 					{u.type === "RACK" && (
-						<div className="border-t border-border pt-3 space-y-2">
+						<div className="space-y-3 border-t border-border pt-3">
 							<div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-								Generate shelves
+								Rack levels
 							</div>
+							{shelfCount > 0 && (
+								<p className="text-[11px] text-muted-foreground">
+									{shelfCount} shelf
+									{shelfCount === 1 ? "" : "ves"}
+									{binCount > 0
+										? ` · ${binCount} bins (${binCols}×${binRows} per shelf)`
+										: ""}
+								</p>
+							)}
 							<div className="grid grid-cols-2 gap-2">
-								<Input
-									id="levels"
-									type="number"
-									defaultValue={u.levelIndex ?? 4}
-									min={1}
-									max={12}
-									className="h-8"
-								/>
-								<Input
-									id="sh"
-									type="number"
-									defaultValue={500}
-									step={50}
-									min={100}
-									className="h-8"
-								/>
+								<div className="space-y-1">
+									<Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+										Levels
+									</Label>
+									<Input
+										type="number"
+										min={1}
+										max={12}
+										value={levels}
+										onChange={(e) =>
+											setLevels(
+												Math.max(
+													1,
+													Math.min(
+														12,
+														Number(e.target.value),
+													),
+												),
+											)
+										}
+										className="h-8"
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+										Shelf height (mm)
+									</Label>
+									<Input
+										type="number"
+										min={100}
+										step={50}
+										value={shelfHeightMm}
+										onChange={(e) =>
+											setShelfHeightMm(
+												Math.max(
+													100,
+													Number(e.target.value),
+												),
+											)
+										}
+										className="h-8"
+									/>
+								</div>
 							</div>
 							<Button
 								size="sm"
 								variant="secondary"
 								className="w-full gap-1.5"
-								onClick={() => {
-									const lvl = Number(
-										(
-											document.getElementById(
-												"levels",
-											) as HTMLInputElement
-										).value,
-									);
-									const sh = Number(
-										(
-											document.getElementById(
-												"sh",
-											) as HTMLInputElement
-										).value,
-									);
+								onClick={() =>
 									onGenerateShelves(
 										u.id,
-										Math.max(1, lvl),
-										Math.max(100, sh),
-									);
-								}}
+										levels,
+										shelfHeightMm,
+									)
+								}
 							>
-								<Layers className="h-3.5 w-3.5" /> Build child
-								shelves
+								<Layers className="h-3.5 w-3.5" />
+								Build shelves
+							</Button>
+							<div className="grid grid-cols-2 gap-2">
+								<div className="space-y-1">
+									<Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+										Bin cols
+									</Label>
+									<Input
+										type="number"
+										min={1}
+										max={24}
+										value={binCols}
+										onChange={(e) =>
+											setBinCols(
+												Math.max(
+													1,
+													Number(e.target.value),
+												),
+											)
+										}
+										className="h-8"
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+										Bin rows
+									</Label>
+									<Input
+										type="number"
+										min={1}
+										max={24}
+										value={binRows}
+										onChange={(e) =>
+											setBinRows(
+												Math.max(
+													1,
+													Number(e.target.value),
+												),
+											)
+										}
+										className="h-8"
+									/>
+								</div>
+							</div>
+							<Button
+								size="sm"
+								variant="outline"
+								className="w-full"
+								disabled={!onGenerateBinsForRack || shelfCount === 0}
+								onClick={() =>
+									onGenerateBinsForRack?.(
+										u.id,
+										binCols,
+										binRows,
+									)
+								}
+							>
+								Fill all shelves with bins
+							</Button>
+						</div>
+					)}
+
+					{u.type === "FLOOR" && (
+						<div className="space-y-3 border-t border-border pt-3">
+							<div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+								Pallet grid
+							</div>
+							{palletCount > 0 && (
+								<p className="text-[11px] text-muted-foreground">
+									{palletCount} pallet slot
+									{palletCount === 1 ? "" : "s"} ({palletCols}
+									×{palletRows})
+								</p>
+							)}
+							<div className="grid grid-cols-2 gap-2">
+								<div className="space-y-1">
+									<Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+										Cols
+									</Label>
+									<Input
+										type="number"
+										min={1}
+										max={24}
+										value={palletCols}
+										onChange={(e) =>
+											setPalletCols(
+												Math.max(
+													1,
+													Number(e.target.value),
+												),
+											)
+										}
+										className="h-8"
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+										Rows
+									</Label>
+									<Input
+										type="number"
+										min={1}
+										max={24}
+										value={palletRows}
+										onChange={(e) =>
+											setPalletRows(
+												Math.max(
+													1,
+													Number(e.target.value),
+												),
+											)
+										}
+										className="h-8"
+									/>
+								</div>
+							</div>
+							<Button
+								size="sm"
+								variant="outline"
+								className="w-full"
+								disabled={!onGeneratePalletGridForArea}
+								onClick={() =>
+									onGeneratePalletGridForArea?.(
+										u.id,
+										palletCols,
+										palletRows,
+									)
+								}
+							>
+								Generate pallet slots
 							</Button>
 						</div>
 					)}

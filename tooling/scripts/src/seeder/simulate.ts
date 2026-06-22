@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { CONFIG } from "./config";
 import { CsvExporter } from "./export";
 import { generateMasterData, type State } from "./master-data";
+import { SEED_TABLES } from "./tables";
 import { generateId } from "./utils";
 
 // Inventory state: warehouseId -> skuId -> qty
@@ -14,31 +15,7 @@ async function main() {
 	console.log("Initializing CSV Exporter...");
 	const exporter = new CsvExporter();
 
-	const tables = [
-		"organization",
-		"user",
-		"UnitOfMeasure",
-		"Product",
-		"SKU",
-		"Supplier",
-		"Customer",
-		"Warehouse",
-		"Location",
-		"InventoryLot",
-		"InventorySerial",
-		"InventoryBalance",
-		"InventoryTransaction",
-		"PurchaseOrder",
-		"PurchaseOrderItem",
-		"AdvancedShippingNotice",
-		"ASNItem",
-		"ReceivingOrder",
-		"SalesOrder",
-		"SalesOrderItem",
-		"Shipment",
-	];
-
-	tables.forEach((t) => exporter.initTable(t));
+	SEED_TABLES.forEach((t) => exporter.initTable(t));
 
 	console.log("Generating Master Data...");
 	const state = generateMasterData(exporter);

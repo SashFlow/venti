@@ -4,31 +4,8 @@ import { Client } from "pg";
 import { from as copyFrom } from "pg-copy-streams";
 import { pipeline } from "stream/promises";
 import { CONFIG } from "./config";
-
-// Must match the exact order of files generated
-const TABLES_IN_ORDER = [
-	"organization",
-	"user",
-	"UnitOfMeasure",
-	"Product",
-	"SKU",
-	"Supplier",
-	"Customer",
-	"Warehouse",
-	"Location",
-	"InventoryLot",
-	"InventorySerial",
-	"InventoryBalance",
-	"InventoryTransaction",
-	"PurchaseOrder",
-	"PurchaseOrderItem",
-	"AdvancedShippingNotice",
-	"ASNItem",
-	"ReceivingOrder",
-	"SalesOrder",
-	"SalesOrderItem",
-	"Shipment",
-];
+import { seedAdminUser } from "./seed-admin-user";
+import { SEED_TABLES } from "./tables";
 
 async function main() {
 	const dbUrl = process.env.DATABASE_URL;
@@ -42,18 +19,17 @@ async function main() {
 
 	try {
 		console.log("Disabling constraints & wiping existing data...");
-		// Wipe everything (truncate in reverse order or just CASCADE)
 		await client.query(`
       TRUNCATE TABLE 
-        ${TABLES_IN_ORDER.slice()
-			.reverse()
-			.map((t) => `"${t}"`)
-			.join(", ")} 
+        ${SEED_TABLES.slice()
+					.reverse()
+					.map((t) => `"${t}"`)
+					.join(", ")} 
       CASCADE;
     `);
 
 		console.log("Loading CSV dumps...");
-		for (const table of TABLES_IN_ORDER) {
+		for (const table of SEED_TABLES) {
 			const filePath = path.join(CONFIG.OUTPUT_DIR, `${table}.csv`);
 
 			if (!fs.existsSync(filePath)) {
@@ -61,10 +37,11 @@ async function main() {
 				continue;
 			}
 
-			// Read header to specify columns in COPY command
 			const fileContent = fs.readFileSync(filePath, "utf8");
 			const firstLine = fileContent.split("\n")[0];
-			if (!firstLine) continue;
+			if (!firstLine) {
+				continue;
+			}
 
 			const columns = firstLine
 				.split(",")
@@ -87,11 +64,18 @@ async function main() {
 		}
 
 		console.log("Data loading complete!");
+
+		console.log("Creating admin login user...");
+		await seedAdminUser();
 	} catch (error) {
 		console.error("Error loading data:", error);
+		process.exitCode = 1;
 	} finally {
 		await client.end();
 	}
 }
 
-main().catch(console.error);
+main().catch((error) => {
+	console.error(error);
+	process.exit(1);
+});

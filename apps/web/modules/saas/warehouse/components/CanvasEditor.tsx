@@ -1,19 +1,19 @@
 import { cn } from "@repo/ui/utils";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
 	Asset,
 	AssetType,
 	StorageUnit,
 	StorageUnitType,
 	Tool,
-	Warehouse,
 	WarehouseFloor,
 	Zone,
 } from "../lib/warehouse-types";
 import {
 	ASSET_COLORS,
-	DEFAULT_DIMENSIONS_MM,
+	getDefaultDimensionsForTool,
 	PX_PER_M,
+	resolveToolTarget,
 	STORAGE_UNIT_COLORS,
 } from "../lib/warehouse-types";
 import {
@@ -24,7 +24,6 @@ import type { RouteVizPlan } from "../lib/route-viz-types";
 import { routeCoordToMm } from "../lib/route-viz-types";
 
 interface Props {
-	warehouse: Warehouse;
 	floor: WarehouseFloor;
 	tool: Tool;
 	selectedId: string | null;
@@ -40,17 +39,37 @@ interface Props {
 	routePlan?: RouteVizPlan | null;
 	highlightPicker?: string | null;
 	onSelect: (id: string | null) => void;
-	onAdd: (type: StorageUnitType, partial: Partial<StorageUnit>) => void;
+	onAdd: (
+		type: StorageUnitType | AssetType,
+		partial: Partial<StorageUnit> | Partial<Asset>,
+	) => void;
 	onUpdate: (id: string, patch: Partial<StorageUnit>) => void;
+	onDelete?: (id: string) => void;
 }
 
 type ResizeHandle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
-const CELL = PX_PER_M; // 24 px per metre
-const CANVAS_M = 200; // 200 m × 200 m editable area
-const SNAP_MM = 250; // 0.25 m snapping
+const BASE_CELL = PX_PER_M;
+const CANVAS_M = 200;
+const SNAP_MM = 250;
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 4;
+const ZOOM_STEP = 0.15;
 
 const snap = (mm: number) => Math.round(mm / SNAP_MM) * SNAP_MM;
+
+function isEditableTarget(target: EventTarget | null) {
+	if (!(target instanceof HTMLElement)) {
+		return false;
+	}
+	const tag = target.tagName;
+	return (
+		target.isContentEditable ||
+		tag === "INPUT" ||
+		tag === "TEXTAREA" ||
+		tag === "SELECT"
+	);
+}
 
 // Painter order: AREA under, then WALL, AISLE, DOCK_DOOR, RACK, SHELF, BIN, STAIRS
 const ORDER: Record<StorageUnitType | AssetType, number> = {
@@ -60,8 +79,9 @@ const ORDER: Record<StorageUnitType | AssetType, number> = {
 	WALL: 3,
 	RACK: 4,
 	SHELF: 5,
-	BIN: 6,
-	STAIRS: 7,
+	PALLET: 6,
+	BIN: 7,
+	STAIRS: 8,
 };
 
 export default function CanvasEditor({
@@ -77,10 +97,13 @@ export default function CanvasEditor({
 	onSelect,
 	onAdd,
 	onUpdate,
+	onDelete,
 	routePlan,
 	highlightPicker,
 }: Props) {
+	const scrollRef = useRef<HTMLDivElement>(null);
 	const ref = useRef<HTMLDivElement>(null);
+	const [zoom, setZoom] = useState(1);
 	const [drag, setDrag] = useState<null | {
 		sx: number;
 		sy: number;
@@ -103,21 +126,147 @@ export default function CanvasEditor({
 		cy: number;
 	}>(null);
 
-	const W = CANVAS_M * CELL;
-	const H = CANVAS_M * CELL;
+	const cellPx = BASE_CELL * zoom;
+	const W = CANVAS_M * cellPx;
+	const H = CANVAS_M * cellPx;
 
-	const toMm = (clientX: number, clientY: number) => {
-		const rect = ref.current?.getBoundingClientRect();
-		if (!rect) return { xMm: 0, yMm: 0 };
-		const xPx = clientX - rect.left;
-		const yPx = clientY - rect.top;
-		return {
-			xMm: Math.max(0, (xPx / CELL) * 1000),
-			yMm: Math.max(0, (yPx / CELL) * 1000),
-		};
-	};
+	const toMm = useCallback(
+		(clientX: number, clientY: number) => {
+			const rect = ref.current?.getBoundingClientRect();
+			if (!rect) {
+				return { xMm: 0, yMm: 0 };
+			}
+			const xPx = clientX - rect.left;
+			const yPx = clientY - rect.top;
+			return {
+				xMm: Math.max(0, (xPx / cellPx) * 1000),
+				yMm: Math.max(0, (yPx / cellPx) * 1000),
+			};
+		},
+		[cellPx],
+	);
+
+	const applyZoom = useCallback(
+		(nextZoom: number, anchorX?: number, anchorY?: number) => {
+			const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, nextZoom));
+			const scroller = scrollRef.current;
+			if (!scroller) {
+				setZoom(clamped);
+				return;
+			}
+
+			const prevZoom = zoom;
+			if (prevZoom === clamped) {
+				return;
+			}
+
+			const ax = anchorX ?? scroller.clientWidth / 2;
+			const ay = anchorY ?? scroller.clientHeight / 2;
+			const ratio = clamped / prevZoom;
+			const scrollLeft =
+				(scroller.scrollLeft + ax) * ratio - ax;
+			const scrollTop = (scroller.scrollTop + ay) * ratio - ay;
+
+			setZoom(clamped);
+			requestAnimationFrame(() => {
+				scroller.scrollLeft = scrollLeft;
+				scroller.scrollTop = scrollTop;
+			});
+		},
+		[zoom],
+	);
+
+	const handleDeleteSelected = useCallback(() => {
+		if (!selectedId || readOnly || !onDelete) {
+			return;
+		}
+		onDelete(selectedId);
+	}, [selectedId, readOnly, onDelete]);
+
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLDivElement>) => {
+			if (isEditableTarget(e.target)) {
+				return;
+			}
+
+			const mod = e.ctrlKey || e.metaKey;
+
+			if (
+				(e.key === "Delete" || e.key === "Backspace") &&
+				!mod &&
+				!readOnly
+			) {
+				e.preventDefault();
+				handleDeleteSelected();
+				return;
+			}
+
+			if (e.key === "Escape") {
+				e.preventDefault();
+				onSelect(null);
+				return;
+			}
+
+			if (mod && (e.key === "=" || e.key === "+")) {
+				e.preventDefault();
+				applyZoom(zoom + ZOOM_STEP);
+				return;
+			}
+
+			if (mod && e.key === "-") {
+				e.preventDefault();
+				applyZoom(zoom - ZOOM_STEP);
+				return;
+			}
+
+			if (mod && e.key === "0") {
+				e.preventDefault();
+				applyZoom(1);
+				return;
+			}
+
+			if (!mod && e.key === "+") {
+				e.preventDefault();
+				applyZoom(zoom + ZOOM_STEP);
+				return;
+			}
+
+			if (!mod && e.key === "-") {
+				e.preventDefault();
+				applyZoom(zoom - ZOOM_STEP);
+				return;
+			}
+		},
+		[
+			readOnly,
+			handleDeleteSelected,
+			onSelect,
+			applyZoom,
+			zoom,
+		],
+	);
+
+	const handleWheel = useCallback(
+		(e: React.WheelEvent<HTMLDivElement>) => {
+			if (!e.ctrlKey && !e.metaKey) {
+				return;
+			}
+			e.preventDefault();
+			const scroller = scrollRef.current;
+			if (!scroller) {
+				return;
+			}
+			const rect = scroller.getBoundingClientRect();
+			const anchorX = e.clientX - rect.left;
+			const anchorY = e.clientY - rect.top;
+			const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+			applyZoom(zoom + delta, anchorX, anchorY);
+		},
+		[applyZoom, zoom],
+	);
 
 	const handleDown = (e: React.MouseEvent) => {
+		scrollRef.current?.focus();
 		if (readOnly || e.button !== 0) {
 			return;
 		}
@@ -187,8 +336,12 @@ export default function CanvasEditor({
 			const wMm = Math.max(SNAP_MM, snap(Math.abs(drag.cx - drag.sx)));
 			const lMm = Math.max(SNAP_MM, snap(Math.abs(drag.cy - drag.sy)));
 			if (tool !== "select") {
-				const type = tool as StorageUnitType;
-				const d = DEFAULT_DIMENSIONS_MM[type];
+				const target = resolveToolTarget(tool);
+				if (target.kind === "none") {
+					setDrag(null);
+					return;
+				}
+				const d = getDefaultDimensionsForTool(tool);
 				const partial: Partial<StorageUnit> = {
 					startXMm: xMm,
 					startYMm: yMm,
@@ -196,7 +349,11 @@ export default function CanvasEditor({
 					lengthMm: lMm,
 					heightMm: d.heightMm,
 				};
-				if (type === "FLOOR" && activeZoneId) {
+				if (
+					target.kind === "storage" &&
+					target.storageType === "FLOOR" &&
+					activeZoneId
+				) {
 					const z = zones.find((zz) => zz.id === activeZoneId);
 					partial.zoneId = activeZoneId;
 					if (z) {
@@ -204,7 +361,11 @@ export default function CanvasEditor({
 						partial.name = z.name;
 					}
 				}
-				onAdd(type, partial);
+				const addType =
+					target.kind === "storage"
+						? target.storageType
+						: target.assetType;
+				onAdd(addType, partial);
 			}
 			setDrag(null);
 		}
@@ -226,7 +387,7 @@ export default function CanvasEditor({
 
 	// center on first mount
 	useEffect(() => {
-		const el = ref.current?.parentElement;
+		const el = scrollRef.current;
 		if (el) {
 			el.scrollLeft = (W - el.clientWidth) / 2;
 			el.scrollTop = (H - el.clientHeight) / 2;
@@ -237,6 +398,24 @@ export default function CanvasEditor({
 	const ordered = [...floor.storageUnits, ...floor.assets].sort(
 		(a, b) => ORDER[a.type] - ORDER[b.type],
 	);
+
+	const isAncestorSelected = (
+		unit: StorageUnit,
+		ancestorId: string | null,
+	): boolean => {
+		if (!ancestorId) {
+			return false;
+		}
+		let parentId = unit.parentStorageUnitId;
+		while (parentId) {
+			if (parentId === ancestorId) {
+				return true;
+			}
+			const parent = floor.storageUnits.find((x) => x.id === parentId);
+			parentId = parent?.parentStorageUnitId;
+		}
+		return false;
+	};
 
 	const previewRect = drag
 		? {
@@ -358,10 +537,18 @@ export default function CanvasEditor({
 	};
 
 	return (
-		<div className="relative h-full w-full overflow-auto bg-canvas">
-			{/* Floor info */}
-			<div className="absolute top-3 left-3 z-30 bg-surface-elevated/90 backdrop-blur border border-border rounded px-2 py-1 text-[10px] font-mono text-muted-foreground shadow-sm pointer-events-none">
-				{floor.name ?? floor.code} · 1 cell = 1 m · snap 0.25 m
+		<div
+			ref={scrollRef}
+			tabIndex={0}
+			role="application"
+			aria-label="Warehouse layout canvas"
+			className="relative h-full w-full overflow-auto bg-canvas outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset"
+			onKeyDown={handleKeyDown}
+			onWheel={handleWheel}
+		>
+			<div className="pointer-events-none absolute top-3 left-3 z-30 rounded border border-border bg-surface-elevated/90 px-2 py-1 font-mono text-[10px] text-muted-foreground shadow-sm backdrop-blur">
+				{floor.name ?? floor.code} · 1 cell = 1 m · snap 0.25 m ·{" "}
+				{Math.round(zoom * 100)}%
 				{operationsMode ? " · Operations view" : ""}
 			</div>
 			{operationsMode && (
@@ -386,7 +573,7 @@ export default function CanvasEditor({
 					{
 						width: W,
 						height: H,
-						"--cell": `${CELL}px`,
+						"--cell": `${cellPx}px`,
 					} as React.CSSProperties
 				}
 				onMouseDown={handleDown}
@@ -395,10 +582,17 @@ export default function CanvasEditor({
 			>
 				{ordered.map((u: StorageUnit | Asset) => {
 					const isSelected = u.id === selectedId;
-					const x = (u.startXMm / 1000) * CELL;
-					const y = (u.startYMm / 1000) * CELL;
-					const w = (u.widthMm / 1000) * CELL;
-					const l = (u.lengthMm / 1000) * CELL;
+					const isStorageChild =
+						"parentStorageUnitId" in u &&
+						Boolean(u.parentStorageUnitId);
+					const dimChild =
+						isStorageChild &&
+						!isSelected &&
+						!isAncestorSelected(u as StorageUnit, selectedId);
+					const x = (u.startXMm / 1000) * cellPx;
+					const y = (u.startYMm / 1000) * cellPx;
+					const w = (u.widthMm / 1000) * cellPx;
+					const l = (u.lengthMm / 1000) * cellPx;
 					const color = (() => {
 						if (
 							operationsMode &&
@@ -424,6 +618,7 @@ export default function CanvasEditor({
 						top: y,
 						width: w,
 						height: l,
+						opacity: dimChild ? 0.45 : 1,
 						transform: u.rotationZDeg
 							? `rotate(${u.rotationZDeg}deg)`
 							: undefined,
@@ -495,7 +690,7 @@ export default function CanvasEditor({
 								key={u.id}
 								style={{
 									...common,
-									background: `repeating-linear-gradient(0deg, ${color} 0 ${CELL / 2}px, #cbd5e1 ${CELL / 2}px ${CELL}px)`,
+									background: `repeating-linear-gradient(0deg, ${color} 0 ${cellPx / 2}px, #cbd5e1 ${cellPx / 2}px ${cellPx}px)`,
 									borderRadius: 3,
 									border: "1px solid #64748b",
 								}}
@@ -564,6 +759,32 @@ export default function CanvasEditor({
 						);
 					}
 
+					if (uType === "PALLET") {
+						return (
+							<div
+								key={u.id}
+								style={{
+									...common,
+									backgroundColor: `${color}88`,
+									border: `2px solid ${color}`,
+									borderRadius: 2,
+								}}
+								className={cn(
+									"flex items-center justify-center text-[9px] font-mono text-foreground",
+									tool === "select" && "cursor-move",
+									isSelected &&
+										"ring-2 ring-primary ring-offset-1 ring-offset-canvas",
+								)}
+								onMouseDown={(e) => startMove(e, u)}
+							>
+								<span className="px-0.5 bg-black/30 rounded text-white">
+									{label}
+								</span>
+								{renderHandles(u)}
+							</div>
+						);
+					}
+
 					// RACK / SHELF / BIN — solid colored boxes
 					return (
 						<div
@@ -608,7 +829,7 @@ export default function CanvasEditor({
 								.map((stop) => {
 									const xMm = routeCoordToMm(stop.x);
 									const zMm = routeCoordToMm(stop.z);
-									return `${(xMm / 1000) * CELL},${(zMm / 1000) * CELL}`;
+									return `${(xMm / 1000) * cellPx},${(zMm / 1000) * cellPx}`;
 								})
 								.join(" ");
 							if (!points.includes(",")) {
@@ -639,10 +860,10 @@ export default function CanvasEditor({
 					<div
 						className="absolute border-2 border-primary bg-primary/10 pointer-events-none rounded-sm"
 						style={{
-							left: (previewRect.xMm / 1000) * CELL,
-							top: (previewRect.yMm / 1000) * CELL,
-							width: (previewRect.wMm / 1000) * CELL,
-							height: (previewRect.lMm / 1000) * CELL,
+							left: (previewRect.xMm / 1000) * cellPx,
+							top: (previewRect.yMm / 1000) * cellPx,
+							width: (previewRect.wMm / 1000) * cellPx,
+							height: (previewRect.lMm / 1000) * cellPx,
 						}}
 					/>
 				)}

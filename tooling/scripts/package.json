@@ -24,6 +24,7 @@
 		"create:user": "dotenv -c -e ../../.env -- tsx ./src/create-user.ts",
 		"generate-seed": "dotenv -c -e ../../.env -- tsx ./src/seeder/simulate.ts",
 		"load-seed": "dotenv -c -e ../../.env -- tsx ./src/seeder/load.ts",
+		"seed:admin": "dotenv -c -e ../../.env -- tsx ./src/seeder/seed-admin-user.ts",
 		"type-check": "tsc --noEmit"
 	},
 	"version": "0.0.0"

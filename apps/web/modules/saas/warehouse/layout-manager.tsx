@@ -4,7 +4,6 @@ import type { LucideIcon } from "lucide-react";
 import {
 	ArrowUpRight,
 	Box,
-	Boxes,
 	DoorOpen,
 	Download,
 	Layers as LayersIcon,
@@ -16,9 +15,12 @@ import {
 	Plus,
 	RotateCcw,
 	Rows3,
+	Save,
 	Square,
 	Trash2,
 	Truck,
+	Upload,
+	X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AgvFleetPanel } from "./components/AgvFleetPanel";
@@ -27,12 +29,18 @@ import Inspector from "./components/Inspector";
 import IsoView from "./components/IsoView";
 import ThreeView from "./components/ThreeView";
 import { Tip } from "./components/Tip";
+import { useAgvFleet } from "./hooks/use-agv-fleet";
 import { useWarehouseInventory } from "./hooks/use-warehouse-inventory";
 import { parseRoutePlan } from "./lib/route-viz-types";
 import {
 	locationsToWarehouse,
 	warehouseToLayoutPayload,
 } from "./lib/warehouse-layout-serializer";
+import {
+	makeAsset,
+	makeStorageUnit,
+	useWarehouse,
+} from "./lib/warehouse-store";
 import type {
 	Asset,
 	AssetType,
@@ -41,14 +49,7 @@ import type {
 	StorageUnitType,
 	Tool,
 	ViewMode,
-	WarehouseFloor,
-	Zone,
-	ZoneType,
 } from "./lib/warehouse-types";
-import { ZONE_DEFAULT_COLORS } from "./lib/warehouse-types";
-import { useWarehouse } from "./lib/warehouse-store";
-import { makeAsset, makeStorageUnit } from "./lib/warehouse-store";
-import { useAgvFleet } from "./hooks/use-agv-fleet";
 
 const TOOLS: { id: Tool; icon: LucideIcon; label: string }[] = [
 	{ id: "select", icon: MousePointer2, label: "Select" },
@@ -124,14 +125,15 @@ const Index = ({
 		updateStorageUnit,
 		removeStorageUnit,
 		addAsset,
+		updateAsset,
+		removeAsset,
 		updatePlacement,
-		addZone,
-		updateZone,
-		removeZone,
 		addHandlingUnit,
 		updateHandlingUnit,
 		removeHandlingUnit,
 		generateShelvesForRack,
+		generateBinsForRack,
+		generatePalletGridForArea,
 		reset,
 		clearActiveFloor,
 		initFromWarehouse,
@@ -145,8 +147,18 @@ const Index = ({
 		"all",
 	);
 	const [activeZoneId, setActiveZoneId] = useState<string | undefined>(
-		warehouse.zones[0]?.id,
+		undefined,
 	);
+
+	useEffect(() => {
+		if (
+			warehouse.zones.length > 0 &&
+			(!activeZoneId ||
+				!warehouse.zones.some((z) => z.id === activeZoneId))
+		) {
+			setActiveZoneId(warehouse.zones[0]?.id);
+		}
+	}, [warehouse.zones, activeZoneId]);
 	const [view, setView] = useState<ViewMode>("2d");
 
 	// Some layout procedures are new; keep client resilient to typegen lag.
@@ -180,7 +192,10 @@ const Index = ({
 			assets = (publishedLayout as any)?.assets ?? [];
 		} else {
 			const draftScene = (draftLayout as any)?.scene;
-			if (Array.isArray(draftScene?.locations) && draftScene.locations.length > 0) {
+			if (
+				Array.isArray(draftScene?.locations) &&
+				draftScene.locations.length > 0
+			) {
 				locations = draftScene.locations;
 				assets = draftScene.assets ?? [];
 			} else {
@@ -265,6 +280,19 @@ const Index = ({
 		return undefined;
 	}, [warehouse, selection]);
 
+	const selectedAsset = useMemo(() => {
+		if (!selection || selection.kind !== "asset") {
+			return undefined;
+		}
+		for (const f of warehouse.floors) {
+			const a = f.assets.find((asset: Asset) => asset.id === selection.id);
+			if (a) {
+				return a;
+			}
+		}
+		return undefined;
+	}, [warehouse, selection]);
+
 	const selectedHandling = useMemo(() => {
 		if (!selection || selection.kind !== "handling") {
 			return undefined;
@@ -274,22 +302,11 @@ const Index = ({
 		);
 	}, [warehouse, selection]);
 
-	const stats = useMemo(() => {
-		const units = warehouse.floors.flatMap(
-			(f: WarehouseFloor) => f.storageUnits,
-		);
-		const assets = warehouse.floors.flatMap(
-			(f: WarehouseFloor) => f.assets,
-		);
-		return {
-			floors: warehouse.floors.length,
-			zones: warehouse.zones.length,
-			racks: units.filter((u: StorageUnit) => u.type === "RACK").length,
-			walls: assets.filter((a: Asset) => a.type === "WALL").length,
-			bins: units.filter((u: StorageUnit) => u.type === "BIN").length,
-			hu: warehouse.handlingUnits.length,
-		};
-	}, [warehouse]);
+	const showInspectorPanel =
+		(view === "2d" || (view === "3d" && operationsMode)) &&
+		(operationsMode
+			? selection?.kind === "storage"
+			: Boolean(selectedStorage || selectedAsset || selectedHandling));
 
 	const handleExport = () => {
 		const blob = new Blob([JSON.stringify(warehouse, null, 2)], {
@@ -352,473 +369,334 @@ const Index = ({
 		}
 	};
 
+	const resolveSelectionKind = (id: string) => {
+		if (activeFloor?.assets.some((a) => a.id === id)) {
+			return "asset" as const;
+		}
+		return "storage" as const;
+	};
+
 	return (
-		<div className="flex flex-col bg-surface text-foreground overflow-hidden max-h-[800px] w-full max-w-screen md:max-w-[calc(100vw-20rem)]">
-			{/* Header */}
-			<header className="h-14 shrink-0 border-b border-border bg-surface-elevated flex items-center px-4 gap-4">
-				<div className="flex items-center gap-2">
-					<div className="w-7 h-7 rounded-md bg-linear-to-br from-primary to-primary-glow flex items-center justify-center shadow-sm">
-						<Boxes className="w-4 h-4 text-primary-foreground" />
-					</div>
-					<div>
-						<h1 className="text-sm font-semibold leading-none">
-							{warehouse.name}
-						</h1>
-						<p className="text-[11px] text-muted-foreground leading-none mt-0.5 font-mono">
-							{warehouse.code}
-						</p>
-					</div>
-				</div>
-
-				<div className="h-6 w-px bg-border mx-2" />
-
-				<div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
-					<span>{stats.floors} floors</span>
-					<span className="text-border-strong">·</span>
-					<span>{stats.zones} zones</span>
-					<span className="text-border-strong">·</span>
-					<span>{stats.racks} racks</span>
-					<span className="text-border-strong">·</span>
-					<span>{stats.walls} walls</span>
-					<span className="text-border-strong">·</span>
-					<span>{stats.hu} HU</span>
-				</div>
-
-				<div className="ml-auto flex items-center gap-2">
-					{routePlan && (
-						<div className="flex items-center bg-secondary rounded-md p-0.5">
-							<button
+		<div className="flex flex-col h-full min-h-0 flex-1 overflow-hidden bg-surface text-foreground">
+			{/* Unified toolbar */}
+			<header className="shrink-0 border-b border-border bg-surface-elevated">
+				<div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
+					<div className="flex items-center gap-2 min-w-0 flex-1">
+						<Tip label="Toggle layout design vs inventory operations view">
+							<Button
 								type="button"
-								onClick={() => setHighlightPicker("all")}
-								className={cn(
-									"px-2 h-7 text-xs font-medium rounded transition-all",
-									highlightPicker === "all"
-										? "bg-surface-elevated text-foreground shadow-sm"
-										: "text-muted-foreground hover:text-foreground",
-								)}
+								variant={operationsMode ? "default" : "outline"}
+								size="sm"
+								onClick={() => {
+									setOperationsMode((v) => !v);
+									setTool("select");
+								}}
 							>
-								All routes
-							</button>
-							{routePlan.pickers.map((picker) => (
-								<button
-									key={picker.label}
-									type="button"
-									onClick={() =>
-										setHighlightPicker(picker.label)
-									}
-									className={cn(
-										"px-2 h-7 text-xs font-medium rounded inline-flex items-center gap-1 transition-all",
-										highlightPicker === picker.label
-											? "bg-surface-elevated text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									<span
-										className="size-2 rounded-full"
-										style={{
-											backgroundColor: picker.color,
-										}}
-									/>
-									{picker.label}
-								</button>
-							))}
-						</div>
-					)}
-					<Tip label="Toggle layout design vs inventory operations view">
-						<button
-							type="button"
-							onClick={() => {
-								setOperationsMode((v) => !v);
-								setTool("select");
-							}}
-							className={cn(
-								"px-3 h-7 text-xs font-medium rounded border transition-all",
-								operationsMode
-									? "bg-primary text-primary-foreground border-primary"
-									: "bg-secondary text-muted-foreground border-border hover:text-foreground",
-							)}
-						>
-							{operationsMode ? "Operations" : "Layout"}
-						</button>
-					</Tip>
-					<div className="flex items-center bg-secondary rounded-md p-0.5">
-						{Tabs.map(({ id, label, icon: Icon, tip }) => (
-							<Tip key={id} label={tip}>
-								<button
-									type="button"
-									onClick={() => setView(id)}
-									className={cn(
-										"px-3 h-7 text-xs font-medium rounded inline-flex items-center gap-1.5 transition-all",
-										view === id
-											? "bg-surface-elevated text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									<Icon className="w-3.5 h-3.5" />
-									{label}
-								</button>
-							</Tip>
-						))}
-					</div>
-					<Tip label="Save layout to backend">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={handleSaveDraft}
-							className="gap-1.5"
-						>
-							💾 Save draft
-						</Button>
-					</Tip>
-					<Tip label="Publish draft to operational layout">
-						<Button
-							variant="default"
-							size="sm"
-							onClick={() => {
-								if (
-									confirm(
-										"Publish this draft? This will overwrite operational warehouse locations/assets.",
-									)
-								) {
-									void handlePublish();
-								}
-							}}
-							className="gap-1.5"
-						>
-							📤 Publish
-						</Button>
-					</Tip>
-					<Tip label="Download warehouse as JSON">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={handleExport}
-							className="gap-1.5"
-						>
-							<Download className="w-3.5 h-3.5" /> Export
-						</Button>
-					</Tip>
-				</div>
-			</header>
+								{operationsMode ? "Operations" : "Layout"}
+							</Button>
+						</Tip>
 
-			{/* Floor tab strip */}
-			<div className="h-9 shrink-0 border-b border-border bg-surface-elevated flex items-center px-3 gap-1 overflow-x-auto">
-				<span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-2">
-					Floor
-				</span>
-				{warehouse.floors
-					.slice()
-					.sort((a, b) => a.floorNumber - b.floorNumber)
-					.map((f) => {
-						const isActive = f.id === warehouse.activeFloorId;
-						return (
-							<div
-								key={f.id}
-								className={cn(
-									"h-7 rounded text-xs font-medium inline-flex items-center transition-colors group",
-									isActive
-										? "bg-primary text-primary-foreground"
-										: "text-muted-foreground hover:bg-accent hover:text-foreground",
-								)}
-							>
-								<button
-									type="button"
-									onClick={() => setActiveFloor(f.id)}
-									className="h-7 pl-3 pr-2 inline-flex items-center gap-1.5"
-								>
-									<span className="font-mono opacity-70">
-										{f.code}
-									</span>
-									<span>{f.name}</span>
-									{f.elevationMm > 0 && (
-										<span className="font-mono text-[10px] opacity-70">
-											+{(f.elevationMm / 1000).toFixed(1)}
-											m
-										</span>
-									)}
-								</button>
-								{warehouse.floors.length > 1 && (
-									<Tip label={`Delete floor "${f.name}"`}>
-										<button
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												if (
-													confirm(
-														`Delete floor "${f.name}"? All its units will be removed.`,
-													)
-												) {
-													removeFloor(f.id);
-												}
-											}}
+						<div className="hidden sm:block h-6 w-px bg-border shrink-0" />
+
+						<span className="text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
+							Floor
+						</span>
+						<div className="flex items-center gap-1 overflow-x-auto min-w-0">
+							{warehouse.floors
+								.slice()
+								.sort((a, b) => a.floorNumber - b.floorNumber)
+								.map((f) => {
+									const isActive =
+										f.id === warehouse.activeFloorId;
+									return (
+										<div
+											key={f.id}
 											className={cn(
-												"h-7 w-6 inline-flex items-center justify-center rounded-r opacity-60 hover:opacity-100",
+												"h-8 rounded-md text-xs font-medium inline-flex items-center transition-colors",
 												isActive
-													? "hover:bg-primary-foreground/20"
-													: "hover:text-destructive",
+													? "bg-primary text-primary-foreground"
+													: "text-muted-foreground hover:bg-accent hover:text-foreground",
 											)}
 										>
-											<Trash2 className="w-3 h-3" />
-										</button>
-									</Tip>
-								)}
-							</div>
-						);
-					})}
-				<Tip label="Add a new floor or mezzanine">
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-7 px-2 gap-1 text-xs"
-						onClick={() => {
-							const name = prompt("Floor name?", "Mezzanine");
-							if (!name) {
-								return;
-							}
-							const elev = Number(
-								prompt(
-									"Elevation in meters above ground?",
-									"3",
-								) ?? 0,
-							);
-							addFloor({ name, elevationMm: elev * 1000 });
-						}}
-					>
-						<Plus className="w-3.5 h-3.5" /> Floor
-					</Button>
-				</Tip>
-			</div>
-
-			{/* Main */}
-			<div className="flex-1 flex min-h-0">
-				{/* Tool + zones sidebar */}
-				{view === "2d" && (
-					<aside className="w-14 shrink-0 border-r border-border bg-surface-elevated flex flex-col items-center py-3 gap-1">
-						{!operationsMode &&
-							TOOLS.map(({ id, icon: Icon, label }) => (
-							<Tip key={id} label={label} side="right">
-								<button
-									type="button"
-									onClick={() => setTool(id)}
-									className={cn(
-										"w-10 h-10 rounded-md flex items-center justify-center transition-colors",
-										tool === id
-											? "bg-primary text-primary-foreground shadow-sm"
-											: "text-muted-foreground hover:bg-accent hover:text-foreground",
-									)}
-								>
-									<Icon className="w-4 h-4" />
-								</button>
-							</Tip>
-						))}
-						<div className="flex-1" />
-						{!operationsMode && (
-							<>
-						<Tip
-							label="Add handling unit (pallet, carton, …)"
-							side="right"
-						>
-							<button
-								type="button"
-								onClick={() =>
-									addHandlingUnit({
-										currentStorageUnitId:
-											selectedStorage?.id,
-									})
-								}
-								className="w-10 h-10 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-							>
-								<Truck className="w-4 h-4 mx-auto" />
-							</button>
-						</Tip>
-						<Tip label="Clear all units on this floor" side="right">
-							<button
-								type="button"
-								onClick={() => {
-									if (
-										confirm(
-											"Clear all units on this floor?",
-										)
-									) {
-										clearActiveFloor();
-									}
-								}}
-								className="w-10 h-10 rounded-md text-muted-foreground hover:bg-accent hover:text-destructive"
-							>
-								<Trash2 className="w-4 h-4 mx-auto" />
-							</button>
-						</Tip>
-						<Tip
-							label="Reset entire warehouse to defaults"
-							side="right"
-						>
-							<button
-								type="button"
-								onClick={() => {
-									if (confirm("Reset entire warehouse?")) {
-										reset();
-									}
-								}}
-								className="w-10 h-10 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-							>
-								<RotateCcw className="w-4 h-4 mx-auto" />
-							</button>
-						</Tip>
-							</>
-						)}
-					</aside>
-				)}
-
-				{/* Zones panel */}
-				{view === "2d" && (
-					<aside className="w-70 shrink-0 border-r border-border bg-surface-elevated overflow-auto">
-						<div className="px-3 py-2 border-b border-border flex items-center justify-between">
-							<h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-								Zones
-							</h2>
-							<Tip label="Add a new zone">
+											<button
+												type="button"
+												onClick={() =>
+													setActiveFloor(f.id)
+												}
+												className="h-8 pl-3 pr-2 inline-flex items-center gap-1.5"
+											>
+												<span className="font-mono opacity-70">
+													{f.code}
+												</span>
+												<span>{f.name}</span>
+												{f.elevationMm > 0 && (
+													<span className="font-mono text-[10px] opacity-70">
+														+
+														{(
+															f.elevationMm /
+															1000
+														).toFixed(1)}
+														m
+													</span>
+												)}
+											</button>
+											{warehouse.floors.length > 1 && (
+												<Tip
+													label={`Delete floor "${f.name}"`}
+												>
+													<button
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															if (
+																confirm(
+																	`Delete floor "${f.name}"? All its units will be removed.`,
+																)
+															) {
+																removeFloor(
+																	f.id,
+																);
+															}
+														}}
+														className={cn(
+															"h-8 w-7 inline-flex items-center justify-center rounded-r-md opacity-60 hover:opacity-100",
+															isActive
+																? "hover:bg-primary-foreground/20"
+																: "hover:text-destructive",
+														)}
+													>
+														<Trash2 className="w-3 h-3" />
+													</button>
+												</Tip>
+											)}
+										</div>
+									);
+								})}
+							<Tip label="Add a new floor or mezzanine">
 								<Button
-									size="icon"
-									variant="ghost"
-									className="h-6 w-6"
+									size="sm"
+									variant="outline"
+									className="h-8 gap-1 shrink-0"
 									onClick={() => {
-										const id = addZone({
-											name: `Zone ${warehouse.zones.length + 1}`,
+										const name = prompt(
+											"Floor name?",
+											"Mezzanine",
+										);
+										if (!name) {
+											return;
+										}
+										const elev = Number(
+											prompt(
+												"Elevation in meters above ground?",
+												"3",
+											) ?? 0,
+										);
+										addFloor({
+											name,
+											elevationMm: elev * 1000,
 										});
-										setActiveZoneId(id);
 									}}
 								>
-									<Plus className="w-3.5 h-3.5" />
+									<Plus className="w-3.5 h-3.5" /> Floor
 								</Button>
 							</Tip>
 						</div>
-						<div className="p-2 space-y-1">
-							{warehouse.zones.length === 0 && (
-								<p className="text-[11px] text-muted-foreground p-2">
-									No zones. Add one to tag Area regions.
-								</p>
-							)}
-							{warehouse.zones.map((z) => (
-								<button
+					</div>
+
+					<div className="flex flex-wrap items-center gap-2 shrink-0">
+						{routePlan && (
+							<div className="flex items-center rounded-md border border-border bg-muted/40 p-0.5">
+								<Button
 									type="button"
-									key={z.id}
-									className={cn(
-										"group flex items-center gap-2 p-1.5 rounded cursor-pointer text-xs",
-										activeZoneId === z.id
-											? "bg-accent"
-											: "hover:bg-accent/60",
-									)}
-									onClick={() => setActiveZoneId(z.id)}
+									variant={
+										highlightPicker === "all"
+											? "secondary"
+											: "ghost"
+									}
+									size="sm"
+									className="h-7 px-2 text-xs"
+									onClick={() => setHighlightPicker("all")}
 								>
-									<input
-										type="color"
-										value={z.colorHex}
-										onChange={(e) =>
-											updateZone(z.id, {
-												colorHex: e.target.value,
-											})
+									All routes
+								</Button>
+								{routePlan.pickers.map((picker) => (
+									<Button
+										key={picker.label}
+										type="button"
+										variant={
+											highlightPicker === picker.label
+												? "secondary"
+												: "ghost"
 										}
-										className="w-4 h-4 rounded cursor-pointer border-0 p-0"
-										onClick={(e) => e.stopPropagation()}
-									/>
-									<input
-										value={z.name}
-										onChange={(e) =>
-											updateZone(z.id, {
-												name: e.target.value,
-											})
+										size="sm"
+										className="h-7 px-2 text-xs gap-1"
+										onClick={() =>
+											setHighlightPicker(picker.label)
 										}
-										onClick={(e) => e.stopPropagation()}
-										className="bg-transparent flex-1 min-w-0 outline-none"
-									/>
-									<select
-										value={z.type}
-										onChange={(e) => {
-											const t = e.target
-												.value as ZoneType;
-											updateZone(z.id, {
-												type: t,
-												colorHex:
-													ZONE_DEFAULT_COLORS[t],
-											});
-										}}
-										onClick={(e) => e.stopPropagation()}
-										className="text-[9px] bg-transparent border border-border rounded px-1"
 									>
-										{(
-											Object.keys(
-												ZONE_DEFAULT_COLORS,
-											) as ZoneType[]
-										).map((t) => (
-											<option key={t} value={t}>
-												{t}
-											</option>
-										))}
-									</select>
-									<Tip label="Delete zone">
+										<span
+											className="size-2 rounded-full"
+											style={{
+												backgroundColor: picker.color,
+											}}
+										/>
+										{picker.label}
+									</Button>
+								))}
+							</div>
+						)}
+
+						<div className="flex items-center rounded-md border border-border bg-muted/40 p-0.5">
+							{Tabs.map(({ id, label, icon: Icon, tip }) => (
+								<Tip key={id} label={tip}>
+									<Button
+										type="button"
+										variant={
+											view === id ? "secondary" : "ghost"
+										}
+										size="sm"
+										className="h-7 px-2.5 text-xs gap-1.5"
+										onClick={() => setView(id)}
+									>
+										<Icon className="w-3.5 h-3.5" />
+										{label}
+									</Button>
+								</Tip>
+							))}
+						</div>
+
+						<Tip label="Save layout to backend">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleSaveDraft}
+								className="gap-1.5"
+							>
+								<Save className="w-3.5 h-3.5" />
+								Save draft
+							</Button>
+						</Tip>
+						<Tip label="Publish draft to operational layout">
+							<Button
+								variant="default"
+								size="sm"
+								onClick={() => {
+									if (
+										confirm(
+											"Publish this draft? This will overwrite operational warehouse locations/assets.",
+										)
+									) {
+										void handlePublish();
+									}
+								}}
+								className="gap-1.5"
+							>
+								<Upload className="w-3.5 h-3.5" />
+								Publish
+							</Button>
+						</Tip>
+						<Tip label="Download warehouse as JSON">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleExport}
+								className="gap-1.5"
+							>
+								<Download className="w-3.5 h-3.5" />
+								Export
+							</Button>
+						</Tip>
+					</div>
+				</div>
+			</header>
+
+			{/* Workspace — canvas is primary */}
+			<div className="flex min-h-0 flex-1 overflow-hidden">
+				{/* Canvas */}
+				<main className="relative min-h-0 min-w-0 flex-1">
+					{view === "2d" && !operationsMode && (
+						<div className="pointer-events-none absolute inset-0 z-30">
+							<div className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-row items-center gap-1 rounded-xl border border-border bg-surface-elevated p-1.5 shadow-md">
+								{TOOLS.map(({ id, icon: Icon, label }) => (
+									<Tip key={id} label={label} side="top">
 										<button
 											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												if (
-													confirm(
-														`Delete zone "${z.name}"?`,
-													)
-												) {
-													removeZone(z.id);
-												}
-											}}
-											className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-all"
+											onClick={() => setTool(id)}
+											className={cn(
+												"flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+												tool === id
+													? "bg-primary text-primary-foreground"
+													: "text-muted-foreground hover:bg-accent hover:text-foreground",
+											)}
 										>
-											<Trash2 className="w-3 h-3" />
+											<Icon className="h-4 w-4" />
 										</button>
 									</Tip>
-								</button>
-							))}
-						</div>
-
-						<div className="px-3 py-2 border-y border-border mt-2">
-							<h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-								Handling units
-							</h2>
-						</div>
-						<div className="p-2 space-y-1">
-							{warehouse.handlingUnits.length === 0 && (
-								<p className="text-[11px] text-muted-foreground p-2">
-									No handling units yet.
-								</p>
-							)}
-							{warehouse.handlingUnits.map((h) => (
-								<button
-									type="button"
-									key={h.id}
-									onClick={() =>
-										setSelection({
-											kind: "handling",
-											id: h.id,
-										})
-									}
-									className={cn(
-										"w-full text-left flex items-center gap-2 p-1.5 rounded text-[11px]",
-										selection?.id === h.id
-											? "bg-accent"
-											: "hover:bg-accent/60",
-									)}
+								))}
+								<div className="mx-0.5 h-8 w-px bg-border" />
+								<Tip
+									label="Add handling unit (pallet, carton, …)"
+									side="top"
 								>
-									<span className="font-mono">{h.code}</span>
-									<span className="opacity-60">{h.type}</span>
-								</button>
-							))}
+									<button
+										type="button"
+										onClick={() =>
+											addHandlingUnit({
+												currentStorageUnitId:
+													selectedStorage?.id,
+											})
+										}
+										className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+									>
+										<Truck className="h-4 w-4" />
+									</button>
+								</Tip>
+								<Tip
+									label="Clear storage units on this floor (structural assets are kept)"
+									side="top"
+								>
+									<button
+										type="button"
+										onClick={() => {
+											if (
+												confirm(
+													"Clear all storage units on this floor? Walls, stairs, and other structural assets will be kept.",
+												)
+											) {
+												clearActiveFloor();
+											}
+										}}
+										className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-destructive"
+									>
+										<Trash2 className="h-4 w-4" />
+									</button>
+								</Tip>
+								<Tip
+									label="Reset entire warehouse to defaults"
+									side="top"
+								>
+									<button
+										type="button"
+										onClick={() => {
+											if (
+												confirm(
+													"Reset entire warehouse?",
+												)
+											) {
+												reset();
+											}
+										}}
+										className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+									>
+										<RotateCcw className="h-4 w-4" />
+									</button>
+								</Tip>
+							</div>
 						</div>
-					</aside>
-				)}
-
-				{/* Canvas */}
-				<main className="flex-1 min-w-0 relative">
+					)}
 					{view === "2d" && activeFloor && (
 						<>
 							<CanvasEditor
-								warehouse={warehouse}
 								floor={activeFloor}
 								tool={operationsMode ? "select" : tool}
 								zones={warehouse.zones}
@@ -828,38 +706,55 @@ const Index = ({
 								inventoryByLocationId={byLocationId}
 								maxInventoryQty={maxQty || 1}
 								selectedId={
-									selection?.kind === "storage"
+									selection?.kind === "storage" ||
+									selection?.kind === "asset"
 										? selection.id
 										: null
 								}
 								onSelect={(id) =>
 									setSelection(
-										id ? { kind: "storage", id } : null,
+										id
+											? {
+													kind: resolveSelectionKind(
+														id,
+													),
+													id,
+												}
+											: null,
 									)
 								}
+								onDelete={(id) => {
+									if (
+										activeFloor.assets.some(
+											(a) => a.id === id,
+										)
+									) {
+										removeAsset(id);
+										return;
+									}
+									removeStorageUnit(id);
+								}}
 								onAdd={(type, partial) => {
-									const toolType = type as string;
-									const assetTools = new Set([
+									const assetTypes = new Set([
 										"WALL",
 										"AISLE",
 										"DOCK_DOOR",
 										"STAIRS",
 									]);
-									if (assetTools.has(toolType)) {
+									if (assetTypes.has(type)) {
 										addAsset(
 											makeAsset(
-												toolType as AssetType,
+												type as AssetType,
 												partial as Partial<Asset>,
 											),
 										);
 										return;
 									}
-									const storageType =
-										toolType === "AREA"
-											? "FLOOR"
-											: (toolType as StorageUnitType);
 									addStorageUnit(
-										makeStorageUnit(storageType, partial),
+										makeStorageUnit(
+											type as StorageUnitType,
+											partial as Partial<StorageUnit>,
+										),
 									);
 								}}
 								onUpdate={updatePlacement}
@@ -867,17 +762,44 @@ const Index = ({
 								highlightPicker={highlightPicker}
 							/>
 							{!operationsMode && tool !== "select" && (
-								<div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-foreground/90 text-background text-xs font-mono px-3 py-1.5 rounded-full shadow-lg">
-									Drag on the canvas to draw a {tool}
-									{tool === "AREA" &&
-										activeZoneId &&
-										` (zone: ${warehouse.zones.find((z: Zone) => z.id === activeZoneId)?.name})`}
+								<div className="pointer-events-auto absolute bottom-[4.75rem] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-foreground px-3 py-1.5 font-mono text-xs text-background shadow-sm">
+									<span className="pointer-events-none">
+										Drag on the canvas to draw a {tool}
+									</span>
+									{tool === "AREA" && (
+										<select
+											value={activeZoneId ?? ""}
+											onChange={(e) =>
+												setActiveZoneId(
+													e.target.value || undefined,
+												)
+											}
+											className="max-w-[140px] rounded border border-background/20 bg-background/10 px-2 py-0.5 text-xs text-background outline-none"
+											aria-label="Active zone for area"
+										>
+											{warehouse.zones.length === 0 ? (
+												<option value="">
+													No zones
+												</option>
+											) : (
+												warehouse.zones.map((z) => (
+													<option
+														key={z.id}
+														value={z.id}
+													>
+														{z.name}
+													</option>
+												))
+											)}
+										</select>
+									)}
 								</div>
 							)}
 						</>
 					)}
 					{view === "3d" && (
-						<ThreeView
+						<div className="h-full min-h-0 overflow-hidden">
+							<ThreeView
 							warehouse={warehouse}
 							operationsMode={operationsMode}
 							inventoryByLocationId={byLocationId}
@@ -893,77 +815,129 @@ const Index = ({
 							routePlan={routePlan}
 							highlightPicker={highlightPicker}
 							agvFleet={agvFleet}
-						/>
-					)}
-					{view === "iso" && <IsoView warehouse={warehouse} />}
-				</main>
-
-				{/* Inspector */}
-				{(view === "2d" || (view === "3d" && operationsMode)) && (
-					<aside className="w-80 shrink-0 border-l border-border bg-surface-elevated overflow-auto">
-						<div className="px-4 py-3 border-b border-border">
-							<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								{operationsMode ? "Bin Details" : "Properties"}
-							</h2>
-						</div>
-						{operationsMode && (
-							<div className="p-3 border-b border-border">
-								<AgvFleetPanel />
-							</div>
-						)}
-						{operationsMode &&
-							selection?.kind === "storage" &&
-							(() => {
-								const summary = getSummary(selection.id);
-								return (
-									<div className="px-4 py-3 border-b border-border text-sm space-y-2">
-										<p className="font-medium">
-											{selectedStorage?.code ??
-												summary?.locationCode ??
-												"Bin"}
-										</p>
-										{summary && summary.totalQty > 0 ? (
-											<div className="space-y-1">
-												<p className="text-muted-foreground text-xs">
-													Total qty: {summary.totalQty}
-												</p>
-												{summary.items.map((item) => (
-													<div
-														key={`${item.skuCode}-${item.qty}`}
-														className="text-xs font-mono"
-													>
-														{item.skuCode} —{" "}
-														{item.skuName} ×{" "}
-														{item.qty}
-														{item.lotNumber
-															? ` (lot ${item.lotNumber})`
-															: ""}
-													</div>
-												))}
-											</div>
-										) : (
-											<p className="text-xs text-muted-foreground">
-												Available capacity — no
-												inventory on hand.
-											</p>
-										)}
-									</div>
-								);
-							})()}
-						{!operationsMode && (
-							<Inspector
-								warehouse={warehouse}
-								storage={selectedStorage}
-								handling={selectedHandling}
-								onUpdateStorage={updateStorageUnit}
-								onRemoveStorage={removeStorageUnit}
-								onUpdateHandling={updateHandlingUnit}
-								onRemoveHandling={removeHandlingUnit}
-								onGenerateShelves={generateShelvesForRack}
 							/>
-						)}
-					</aside>
-				)}
+						</div>
+					)}
+					{view === "iso" && (
+						<div className="h-full min-h-0 overflow-auto">
+							<IsoView warehouse={warehouse} />
+						</div>
+					)}
+
+					{showInspectorPanel && (
+						<div className="pointer-events-none absolute inset-0 z-40">
+							<aside className="pointer-events-auto absolute right-4 top-4 flex w-72 max-h-[calc(100%-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-surface-elevated/95 shadow-lg backdrop-blur-sm">
+								<div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+									<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+										{operationsMode
+											? "Bin Details"
+											: "Properties"}
+									</h2>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className="h-7 w-7"
+										onClick={() => setSelection(null)}
+										aria-label="Close properties"
+									>
+										<X className="h-3.5 w-3.5" />
+									</Button>
+								</div>
+								<div className="min-h-0 flex-1 overflow-auto">
+									{operationsMode && (
+										<div className="border-b border-border p-3">
+											<AgvFleetPanel />
+										</div>
+									)}
+									{operationsMode &&
+										selection?.kind === "storage" &&
+										(() => {
+											const summary = getSummary(
+												selection.id,
+											);
+											return (
+												<div className="space-y-2 border-b border-border px-4 py-3 text-sm">
+													<p className="font-medium">
+														{selectedStorage?.code ??
+															summary?.locationCode ??
+															"Bin"}
+													</p>
+													{summary &&
+													summary.totalQty > 0 ? (
+														<div className="space-y-1">
+															<p className="text-muted-foreground text-xs">
+																Total qty:{" "}
+																{
+																	summary.totalQty
+																}
+															</p>
+															{summary.items.map(
+																(item) => (
+																	<div
+																		key={`${item.skuCode}-${item.qty}`}
+																		className="font-mono text-xs"
+																	>
+																		{
+																			item.skuCode
+																		}{" "}
+																		—{" "}
+																		{
+																			item.skuName
+																		}{" "}
+																		×{" "}
+																		{
+																			item.qty
+																		}
+																		{item.lotNumber
+																			? ` (lot ${item.lotNumber})`
+																			: ""}
+																	</div>
+																),
+															)}
+														</div>
+													) : (
+														<p className="text-xs text-muted-foreground">
+															Available capacity
+															— no inventory on
+															hand.
+														</p>
+													)}
+												</div>
+											);
+										})()}
+									{!operationsMode && (
+										<Inspector
+											warehouse={warehouse}
+											storage={selectedStorage}
+											asset={selectedAsset}
+											handling={selectedHandling}
+											onUpdateStorage={updateStorageUnit}
+											onRemoveStorage={removeStorageUnit}
+											onUpdateAsset={updateAsset}
+											onRemoveAsset={removeAsset}
+											onUpdateHandling={
+												updateHandlingUnit
+											}
+											onRemoveHandling={
+												removeHandlingUnit
+											}
+											onGenerateShelves={
+												generateShelvesForRack
+											}
+											onGenerateBinsForRack={
+												generateBinsForRack
+											}
+											onGeneratePalletGridForArea={
+												generatePalletGridForArea
+											}
+										/>
+									)}
+								</div>
+							</aside>
+						</div>
+					)}
+				</main>
 			</div>
 		</div>
 	);

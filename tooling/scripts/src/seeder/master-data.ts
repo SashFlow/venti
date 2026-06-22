@@ -6,7 +6,6 @@ import { generateId } from "./utils";
 export interface State {
 	orgId: string;
 	users: string[];
-	uoms: string[];
 	suppliers: string[];
 	customers: string[];
 	skus: { id: string; serialTracking: boolean; batchTracking: boolean }[];
@@ -23,7 +22,6 @@ export function generateMasterData(exporter: CsvExporter): State {
 	const state: State = {
 		orgId: generateId(),
 		users: [],
-		uoms: [],
 		suppliers: [],
 		customers: [],
 		skus: [],
@@ -54,15 +52,6 @@ export function generateMasterData(exporter: CsvExporter): State {
 		});
 	}
 
-	// UOMs
-	const baseUomId = generateId();
-	state.uoms.push(baseUomId);
-	exporter.writeRow("UnitOfMeasure", {
-		id: baseUomId,
-		code: "EA",
-		name: "Each",
-	});
-
 	// Suppliers
 	for (let i = 0; i < CONFIG.NUM_SUPPLIERS; i++) {
 		const id = generateId();
@@ -70,8 +59,9 @@ export function generateMasterData(exporter: CsvExporter): State {
 		exporter.writeRow("Supplier", {
 			id,
 			organizationId: state.orgId,
-			code: `SUP-${i + 1}`,
-			name: faker.company.name(),
+			name: `Supplier ${i + 1} - ${faker.company.name()}`,
+			type: "VENDOR",
+			createdAt: now,
 		});
 	}
 
@@ -82,8 +72,9 @@ export function generateMasterData(exporter: CsvExporter): State {
 		exporter.writeRow("Customer", {
 			id,
 			organizationId: state.orgId,
-			code: `CUST-${i + 1}`,
-			name: faker.company.name(),
+			name: `Customer ${i + 1} - ${faker.company.name()}`,
+			type: "RETAIL",
+			createdAt: now,
 		});
 	}
 
@@ -104,13 +95,14 @@ export function generateMasterData(exporter: CsvExporter): State {
 			batchTracking: isBatch,
 		});
 
+		const productName = `Product ${i + 1} - ${faker.commerce.productName()}`;
+
 		exporter.writeRow("Product", {
 			id: productId,
 			createdAt: now,
 			updatedAt: now,
 			organizationId: state.orgId,
-			code: `PROD-${faker.string.alphanumeric(8).toUpperCase()}`,
-			name: faker.commerce.productName(),
+			name: productName,
 			isBatchTracked: isBatch,
 			isSerialTracked: isSerialized,
 			isPerishable: isBatch && Math.random() > 0.5,
@@ -122,8 +114,7 @@ export function generateMasterData(exporter: CsvExporter): State {
 			updatedAt: now,
 			productId: productId,
 			code: `SKU-${faker.string.alphanumeric(8).toUpperCase()}`,
-			name: faker.commerce.productName(),
-			baseUomId: baseUomId,
+			organizationId: state.orgId,
 		});
 	}
 
@@ -131,6 +122,7 @@ export function generateMasterData(exporter: CsvExporter): State {
 	for (let i = 0; i < CONFIG.NUM_WAREHOUSES; i++) {
 		const whId = generateId();
 		const floorId = generateId();
+		const addressId = generateId();
 
 		const whState = {
 			id: whId,
@@ -140,6 +132,18 @@ export function generateMasterData(exporter: CsvExporter): State {
 			outboundLocations: [] as string[],
 		};
 
+		exporter.writeRow("address", {
+			id: addressId,
+			addressLine1: faker.location.streetAddress(),
+			addressLine2: null,
+			city: faker.location.city(),
+			state: faker.location.state(),
+			zip: faker.location.zipCode(),
+			country: faker.location.country(),
+			createdAt: now,
+			updatedAt: now,
+		});
+
 		exporter.writeRow("Warehouse", {
 			id: whId,
 			createdAt: now,
@@ -147,6 +151,9 @@ export function generateMasterData(exporter: CsvExporter): State {
 			organizationId: state.orgId,
 			code: `WH-${i + 1}`,
 			name: `${faker.location.city()} Distribution Center`,
+			timezone: "UTC",
+			addressId,
+			sameReturn: true,
 			status: "ACTIVE",
 		});
 
@@ -174,18 +181,20 @@ export function generateMasterData(exporter: CsvExporter): State {
 		// Zones
 		const zones = [
 			{
-				type: "STAGING",
+				type: "ZONE",
 				code: "Z-IN",
 				name: "Inbound Staging",
 				isReceivable: true,
 				isPickable: false,
+				isQuarantine: false,
 			},
 			{
-				type: "STAGING",
+				type: "ZONE",
 				code: "Z-OUT",
 				name: "Outbound Staging",
 				isReceivable: false,
 				isPickable: false,
+				isQuarantine: false,
 			},
 			{
 				type: "ZONE",
@@ -193,6 +202,7 @@ export function generateMasterData(exporter: CsvExporter): State {
 				name: "Bulk Storage",
 				isReceivable: true,
 				isPickable: true,
+				isQuarantine: false,
 			},
 			{
 				type: "ZONE",
@@ -200,13 +210,15 @@ export function generateMasterData(exporter: CsvExporter): State {
 				name: "Picking Area",
 				isReceivable: true,
 				isPickable: true,
+				isQuarantine: false,
 			},
 			{
-				type: "QC",
+				type: "ZONE",
 				code: "Z-QC",
 				name: "Quality Control",
 				isReceivable: true,
 				isPickable: false,
+				isQuarantine: true,
 			},
 		];
 
@@ -224,7 +236,7 @@ export function generateMasterData(exporter: CsvExporter): State {
 				isPickable: z.isPickable,
 				isReceivable: z.isReceivable,
 				isReservable: true,
-				isQuarantine: z.type === "QC",
+				isQuarantine: z.isQuarantine,
 				x: null,
 				y: null,
 				z: null,
@@ -246,7 +258,7 @@ export function generateMasterData(exporter: CsvExporter): State {
 						parentLocationId: zoneId,
 						code: `IN-STG-${j + 1}`,
 						name: `Inbound Staging ${j + 1}`,
-						type: "STAGING",
+						type: "BIN",
 						isPickable: false,
 						isReceivable: true,
 						isReservable: true,
@@ -272,7 +284,7 @@ export function generateMasterData(exporter: CsvExporter): State {
 						parentLocationId: zoneId,
 						code: `OUT-STG-${j + 1}`,
 						name: `Outbound Staging ${j + 1}`,
-						type: "STAGING",
+						type: "BIN",
 						isPickable: false,
 						isReceivable: false,
 						isReservable: false,

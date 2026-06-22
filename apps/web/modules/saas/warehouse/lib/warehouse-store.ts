@@ -85,7 +85,11 @@ export function makeStorageUnit(
 		allowLooseInventory: true,
 		allowPalletInventory: true,
 		allowCartonInventory: true,
-		isPickable: type === "BIN" || type === "SHELF" || type === "RACK",
+		isPickable:
+			type === "BIN" ||
+			type === "PALLET" ||
+			type === "SHELF" ||
+			type === "RACK",
 		isStorable: true,
 		isInboundAllowed: true,
 		isOutboundAllowed: true,
@@ -117,6 +121,76 @@ export function makeAsset(
 		...partial,
 		type,
 	};
+}
+
+const SLOT_CHILD_TYPES = new Set<StorageUnitType>(["BIN", "PALLET"]);
+
+function collectDescendantIds(
+	units: StorageUnit[],
+	rootId: string,
+): Set<string> {
+	const ids = new Set<string>();
+	let added = true;
+	while (added) {
+		added = false;
+		for (const unit of units) {
+			if (
+				unit.parentStorageUnitId &&
+				(unit.parentStorageUnitId === rootId ||
+					ids.has(unit.parentStorageUnitId)) &&
+				!ids.has(unit.id)
+			) {
+				ids.add(unit.id);
+				added = true;
+			}
+		}
+	}
+	return ids;
+}
+
+export function generateGridChildren(
+	parent: StorageUnit,
+	opts: {
+		cols: number;
+		rows: number;
+		childType: "BIN" | "PALLET";
+	},
+): StorageUnit[] {
+	const cols = Math.max(1, Math.floor(opts.cols));
+	const rows = Math.max(1, Math.floor(opts.rows));
+	const cellW = parent.widthMm / cols;
+	const cellL = parent.lengthMm / rows;
+	const defaultH = DEFAULT_DIMENSIONS_MM[opts.childType].heightMm;
+	const children: StorageUnit[] = [];
+	let index = 0;
+
+	for (let row = 0; row < rows; row++) {
+		for (let col = 0; col < cols; col++) {
+			index += 1;
+			children.push(
+				makeStorageUnit(opts.childType, {
+					code: `${parent.code}-P${index}`,
+					name: `${opts.childType} ${index}`,
+					parentStorageUnitId: parent.id,
+					zoneId: parent.zoneId,
+					startXMm: parent.startXMm + col * cellW,
+					startYMm: parent.startYMm + row * cellL,
+					startZMm: parent.startZMm,
+					widthMm: cellW,
+					lengthMm: cellL,
+					heightMm: Math.min(
+						defaultH,
+						parent.heightMm > 0 ? parent.heightMm : defaultH,
+					),
+					positionIndex: index,
+					sequence: index,
+					levelIndex: parent.levelIndex,
+				}),
+			);
+		}
+	}
+
+	return children;
 }
 
 export function makeHandlingUnit(
@@ -548,12 +622,16 @@ export function useWarehouse(warehouseId: string) {
 		setWarehouse((w) => ({
 			...w,
 			updatedAt: Date.now(),
-			floors: w.floors.map((f) => ({
-				...f,
-				storageUnits: f.storageUnits.filter(
-					(u) => u.id !== id && u.parentStorageUnitId !== id,
-				),
-			})),
+			floors: w.floors.map((f) => {
+				const toRemove = collectDescendantIds(f.storageUnits, id);
+				toRemove.add(id);
+				return {
+					...f,
+					storageUnits: f.storageUnits.filter(
+						(u) => !toRemove.has(u.id),
+					),
+				};
+			}),
 			handlingUnits: w.handlingUnits.filter(
 				(h) => h.currentStorageUnitId !== id,
 			),
@@ -713,17 +791,20 @@ export function useWarehouse(warehouseId: string) {
 						const rack = f.storageUnits.find(
 							(u) => u.id === rackId,
 						);
-						if (!rack) {
+						if (!rack || rack.type !== "RACK") {
 							return f;
 						}
-						// remove existing shelf children
-						const others = f.storageUnits.filter(
-							(u) =>
-								u.parentStorageUnitId !== rackId ||
-								(u.type !== "SHELF" && u.type !== "BIN"),
+						const descendantIds = collectDescendantIds(
+							f.storageUnits,
+							rackId,
 						);
+						const others = f.storageUnits.filter(
+							(u) => !descendantIds.has(u.id),
+						);
+						const levelCount = Math.max(1, Math.min(12, levels));
+						const shelfHeight = Math.max(100, shelfHeightMm);
 						const newShelves: StorageUnit[] = [];
-						for (let i = 0; i < levels; i++) {
+						for (let i = 0; i < levelCount; i++) {
 							newShelves.push(
 								makeStorageUnit("SHELF", {
 									code: `${rack.code}-L${i + 1}`,
@@ -732,21 +813,198 @@ export function useWarehouse(warehouseId: string) {
 									zoneId: rack.zoneId,
 									startXMm: rack.startXMm,
 									startYMm: rack.startYMm,
-									startZMm: i * shelfHeightMm,
+									startZMm: rack.startZMm + i * shelfHeight,
 									widthMm: rack.widthMm,
 									lengthMm: rack.lengthMm,
 									heightMm: 50,
 									levelIndex: i + 1,
+									sequence: i + 1,
 								}),
 							);
 						}
+						const updatedRack: StorageUnit = {
+							...rack,
+							metadata: {
+								...rack.metadata,
+								layout: {
+									...(typeof rack.metadata?.layout ===
+									"object"
+										? (rack.metadata.layout as Record<
+												string,
+												unknown
+											>)
+										: {}),
+									levelCount,
+									shelfHeightMm: shelfHeight,
+								},
+							},
+						};
 						return {
 							...f,
-							storageUnits: [...others, ...newShelves],
+							storageUnits: [
+								...others.map((u) =>
+									u.id === rackId ? updatedRack : u,
+								),
+								...newShelves,
+							],
 						};
 					}),
 				};
 			});
+		},
+		[],
+	);
+
+	const generateBinsForShelf = useCallback(
+		(shelfId: string, cols: number, rows: number) => {
+			setWarehouse((w) => ({
+				...w,
+				updatedAt: Date.now(),
+				floors: w.floors.map((f) => {
+					const shelf = f.storageUnits.find((u) => u.id === shelfId);
+					if (!shelf || shelf.type !== "SHELF") {
+						return f;
+					}
+					const others = f.storageUnits.filter(
+						(u) =>
+							u.parentStorageUnitId !== shelfId ||
+							!SLOT_CHILD_TYPES.has(u.type),
+					);
+					const bins = generateGridChildren(shelf, {
+						cols,
+						rows,
+						childType: "BIN",
+					});
+					return {
+						...f,
+						storageUnits: [...others, ...bins],
+					};
+				}),
+			}));
+		},
+		[],
+	);
+
+	const generateBinsForRack = useCallback(
+		(rackId: string, cols: number, rows: number) => {
+			setWarehouse((w) => {
+				const active = w.floors.find((f) => f.id === w.activeFloorId);
+				if (!active) {
+					return w;
+				}
+				const rack = active.storageUnits.find((u) => u.id === rackId);
+				if (!rack || rack.type !== "RACK") {
+					return w;
+				}
+				const shelves = active.storageUnits.filter(
+					(u) =>
+						u.parentStorageUnitId === rackId && u.type === "SHELF",
+				);
+				if (shelves.length === 0) {
+					return w;
+				}
+				let nextUnits = active.storageUnits;
+				for (const shelf of shelves) {
+					nextUnits = nextUnits.filter(
+						(u) =>
+							u.parentStorageUnitId !== shelf.id ||
+							!SLOT_CHILD_TYPES.has(u.type),
+					);
+					nextUnits = [
+						...nextUnits,
+						...generateGridChildren(shelf, {
+							cols,
+							rows,
+							childType: "BIN",
+						}),
+					];
+				}
+				const updatedRack: StorageUnit = {
+					...rack,
+					metadata: {
+						...rack.metadata,
+						layout: {
+							...(typeof rack.metadata?.layout === "object"
+								? (rack.metadata.layout as Record<
+										string,
+										unknown
+									>)
+								: {}),
+							binsPerShelf: {
+								cols: Math.max(1, cols),
+								rows: Math.max(1, rows),
+							},
+						},
+					},
+				};
+				return {
+					...w,
+					updatedAt: Date.now(),
+					floors: w.floors.map((f) =>
+						f.id === w.activeFloorId
+							? {
+									...f,
+									storageUnits: nextUnits.map((u) =>
+										u.id === rackId ? updatedRack : u,
+									),
+								}
+							: f,
+					),
+				};
+			});
+		},
+		[],
+	);
+
+	const generatePalletGridForArea = useCallback(
+		(areaId: string, cols: number, rows: number) => {
+			setWarehouse((w) => ({
+				...w,
+				updatedAt: Date.now(),
+				floors: w.floors.map((f) => {
+					const area = f.storageUnits.find((u) => u.id === areaId);
+					if (!area || area.type !== "FLOOR") {
+						return f;
+					}
+					const others = f.storageUnits.filter(
+						(u) =>
+							u.parentStorageUnitId !== areaId ||
+							u.type !== "PALLET",
+					);
+					const slots = generateGridChildren(area, {
+						cols,
+						rows,
+						childType: "PALLET",
+					});
+					const updatedArea: StorageUnit = {
+						...area,
+						metadata: {
+							...area.metadata,
+							layout: {
+								...(typeof area.metadata?.layout === "object"
+									? (area.metadata.layout as Record<
+											string,
+											unknown
+										>)
+									: {}),
+								palletGrid: {
+									cols: Math.max(1, cols),
+									rows: Math.max(1, rows),
+								},
+							},
+						},
+					};
+					return {
+						...f,
+						storageUnits: [
+							...others.map((u) =>
+								u.id === areaId ? updatedArea : u,
+							),
+							...slots,
+						],
+					};
+				}),
+			}));
 		},
 		[],
 	);
@@ -793,6 +1051,9 @@ export function useWarehouse(warehouseId: string) {
 		updateHandlingUnit,
 		removeHandlingUnit,
 		generateShelvesForRack,
+		generateBinsForShelf,
+		generateBinsForRack,
+		generatePalletGridForArea,
 		reset,
 		clearActiveFloor,
 		initFromWarehouse,

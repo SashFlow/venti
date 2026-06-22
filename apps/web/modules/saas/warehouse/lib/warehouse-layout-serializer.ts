@@ -78,7 +78,13 @@ function toMm(v: number): number {
 }
 
 function mapStorageType(type: string): StorageUnitType {
-	if (type === "RACK" || type === "SHELF" || type === "BIN" || type === "FLOOR") {
+	if (
+		type === "RACK" ||
+		type === "SHELF" ||
+		type === "BIN" ||
+		type === "FLOOR" ||
+		type === "PALLET"
+	) {
 		return type;
 	}
 	return "BIN";
@@ -171,6 +177,12 @@ function locationToStorageUnit(
 		rotationYDeg: num(loc.rotationY),
 		rotationZDeg: num(loc.rotationZ),
 		sequence: loc.sequence ?? undefined,
+		levelIndex:
+			loc.type === "SHELF" ? (loc.sequence ?? undefined) : undefined,
+		positionIndex:
+			loc.type === "BIN" || loc.type === "PALLET"
+				? (loc.sequence ?? undefined)
+				: undefined,
 		allowMixedSku: true,
 		allowMixedBatch: true,
 		allowLooseInventory: true,
@@ -335,7 +347,14 @@ export function warehouseToLayoutPayload(warehouse: Warehouse): {
 				code: su.code,
 				name: su.name ?? null,
 				barcode: su.barcode ?? null,
-				sequence: su.sequence ?? null,
+				sequence:
+					su.sequence ??
+					(su.type === "SHELF"
+						? su.levelIndex
+						: su.positionIndex) ??
+					su.levelIndex ??
+					su.positionIndex ??
+					null,
 				x: su.startXMm,
 				y: su.startYMm,
 				z: su.startZMm,
@@ -437,18 +456,21 @@ export function locationsToWarehouse(
 		}
 	}
 
-	const zones: Zone[] = locations
-		.filter((l) => l.type === "ZONE")
-		.map((loc) => {
-			const zoneType = inferZoneType(loc);
-			return {
-				id: loc.id,
-				code: loc.code,
-				name: loc.name ?? loc.code,
-				type: zoneType,
-				colorHex: loc.colorHex ?? ZONE_DEFAULT_COLORS[zoneType],
-			};
+	const zoneByCode = new Map<string, Zone>();
+	for (const loc of locations.filter((l) => l.type === "ZONE")) {
+		if (zoneByCode.has(loc.code)) {
+			continue;
+		}
+		const zoneType = inferZoneType(loc);
+		zoneByCode.set(loc.code, {
+			id: loc.id,
+			code: loc.code,
+			name: loc.name ?? loc.code,
+			type: zoneType,
+			colorHex: loc.colorHex ?? ZONE_DEFAULT_COLORS[zoneType],
 		});
+	}
+	const zones = [...zoneByCode.values()];
 
 	const activeFloorId = floors[0]?.id ?? "";
 

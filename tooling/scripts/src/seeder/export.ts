@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { CONFIG } from "./config";
+import type { SeedTable } from "./tables";
 
 export class CsvExporter {
 	private dir: string;
@@ -13,8 +14,7 @@ export class CsvExporter {
 		}
 	}
 
-	// Define headers for each table
-	private getHeaders(table: string): string[] {
+	private getHeaders(table: SeedTable | string): string[] {
 		switch (table) {
 			case "organization":
 				return ["id", "name", "slug", "createdAt"];
@@ -27,15 +27,24 @@ export class CsvExporter {
 					"createdAt",
 					"updatedAt",
 				];
-			case "UnitOfMeasure":
-				return ["id", "code", "name"];
+			case "address":
+				return [
+					"id",
+					"addressLine1",
+					"addressLine2",
+					"city",
+					"state",
+					"zip",
+					"country",
+					"createdAt",
+					"updatedAt",
+				];
 			case "Product":
 				return [
 					"id",
 					"createdAt",
 					"updatedAt",
 					"organizationId",
-					"code",
 					"name",
 					"isBatchTracked",
 					"isSerialTracked",
@@ -48,14 +57,18 @@ export class CsvExporter {
 					"updatedAt",
 					"productId",
 					"code",
-					"name",
-					"baseUomId",
+					"organizationId",
 				];
 			case "Supplier":
-				return ["id", "organizationId", "code", "name"];
+				return ["id", "organizationId", "name", "type", "createdAt"];
 			case "Customer":
-				return ["id", "organizationId", "code", "name"];
-
+				return [
+					"id",
+					"organizationId",
+					"name",
+					"type",
+					"createdAt",
+				];
 			case "Warehouse":
 				return [
 					"id",
@@ -64,6 +77,9 @@ export class CsvExporter {
 					"organizationId",
 					"code",
 					"name",
+					"timezone",
+					"addressId",
+					"sameReturn",
 					"status",
 				];
 			case "Location":
@@ -114,7 +130,6 @@ export class CsvExporter {
 					"quantity",
 					"transactionType",
 				];
-
 			case "PurchaseOrder":
 				return [
 					"id",
@@ -184,30 +199,20 @@ export class CsvExporter {
 					"shippedAt",
 					"status",
 				];
-			case "shipment_line":
-				return [
-					"id",
-					"shipmentId",
-					"waveLineId",
-					"skuId",
-					"quantity",
-					"createdAt",
-					"updatedAt",
-				];
 			default:
 				return [];
 		}
 	}
 
-	public initTable(table: string) {
+	public initTable(table: SeedTable | string) {
 		const filePath = path.join(this.dir, `${table}.csv`);
 		const stream = fs.createWriteStream(filePath, { flags: "w" });
 		const headers = this.getHeaders(table);
-		stream.write(headers.join(",") + "\n");
+		stream.write(`${headers.join(",")}\n`);
 		this.streams.set(table, stream);
 	}
 
-	public writeRow(table: string, row: Record<string, any>) {
+	public writeRow(table: string, row: Record<string, unknown>) {
 		const stream = this.streams.get(table);
 		if (!stream) {
 			throw new Error(`Stream not initialized for table: ${table}`);
@@ -216,10 +221,13 @@ export class CsvExporter {
 		const headers = this.getHeaders(table);
 		const values = headers.map((header) => {
 			const val = row[header];
-			if (val === null || val === undefined) return "";
-			if (val instanceof Date) return val.toISOString();
+			if (val === null || val === undefined) {
+				return "";
+			}
+			if (val instanceof Date) {
+				return val.toISOString();
+			}
 			if (typeof val === "string") {
-				// Escape quotes and commas
 				if (
 					val.includes(",") ||
 					val.includes('"') ||
@@ -232,7 +240,7 @@ export class CsvExporter {
 			return val.toString();
 		});
 
-		stream.write(values.join(",") + "\n");
+		stream.write(`${values.join(",")}\n`);
 	}
 
 	public closeAll() {

@@ -1693,7 +1693,10 @@ export function LayoutTabContent({
 	warehouseCode: string;
 }) {
 	return (
-		<TabsContent value="layout" className="h-full p-0">
+		<TabsContent
+			value="layout"
+			className="flex-1 flex flex-col min-h-0 p-0 mt-0 data-[state=inactive]:hidden"
+		>
 			<WarehouseLayout
 				warehouseId={warehouseId}
 				organizationId={organizationId}

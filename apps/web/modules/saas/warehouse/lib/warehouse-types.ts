@@ -18,7 +18,12 @@ export type ZoneType =
 
 export type AssetType = "AISLE" | "DOCK_DOOR" | "WALL" | "STAIRS";
 
-export type StorageUnitType = "RACK" | "SHELF" | "BIN" | "FLOOR";
+export type StorageUnitType =
+	| "RACK"
+	| "SHELF"
+	| "BIN"
+	| "FLOOR"
+	| "PALLET";
 
 export type StorageUnitStatus =
 	| "ACTIVE"
@@ -175,7 +180,7 @@ export interface HandlingUnit {
 
 // ---------- editor-only types ----------
 
-export type SelectionKind = "storage" | "handling" | "zone" | "floor";
+export type SelectionKind = "storage" | "asset" | "handling" | "zone" | "floor";
 export interface Selection {
 	kind: SelectionKind;
 	id: string;
@@ -210,6 +215,7 @@ export const STORAGE_UNIT_COLORS: Record<StorageUnitType, string> = {
 	RACK: "#475569",
 	SHELF: "#94a3b8",
 	BIN: "#f59e0b",
+	PALLET: "#d97706",
 	FLOOR: "#a3a3a3",
 };
 
@@ -219,6 +225,16 @@ export const ASSET_COLORS: Record<AssetType, string> = {
 	WALL: "#3a3f4b",
 	STAIRS: "#94a3b8",
 };
+
+/** Building layout assets (walls, stairs, aisles, dock doors). */
+export function isStructuralAssetType(type: AssetType): boolean {
+	return (
+		type === "WALL" ||
+		type === "STAIRS" ||
+		type === "AISLE" ||
+		type === "DOCK_DOOR"
+	);
+}
 
 export const HANDLING_UNIT_COLORS: Record<HandlingUnitType, string> = {
 	PALLET: "#d97706",
@@ -248,7 +264,64 @@ export const DEFAULT_DIMENSIONS_MM: Record<
 	RACK: { widthMm: 6000, lengthMm: 1000, heightMm: 2500 },
 	SHELF: { widthMm: 1200, lengthMm: 600, heightMm: 50 },
 	BIN: { widthMm: 400, lengthMm: 400, heightMm: 300 },
+	PALLET: { widthMm: 1200, lengthMm: 1000, heightMm: 150 },
 	AISLE: { widthMm: 3000, lengthMm: 10000, heightMm: 50 },
 	DOCK_DOOR: { widthMm: 3000, lengthMm: 500, heightMm: 3500 },
 	STAIRS: { widthMm: 1200, lengthMm: 3000, heightMm: 3000 },
 };
+
+export interface RackLayoutMetadata {
+	levelCount?: number;
+	shelfHeightMm?: number;
+	binsPerShelf?: { cols: number; rows: number };
+}
+
+const ASSET_TOOLS = new Set<Tool>([
+	"WALL",
+	"AISLE",
+	"DOCK_DOOR",
+	"STAIRS",
+]);
+
+export type ResolvedToolTarget =
+	| { kind: "none" }
+	| { kind: "storage"; storageType: StorageUnitType }
+	| { kind: "asset"; assetType: AssetType };
+
+export function resolveToolTarget(tool: Tool): ResolvedToolTarget {
+	if (tool === "select") {
+		return { kind: "none" };
+	}
+	if (ASSET_TOOLS.has(tool)) {
+		return { kind: "asset", assetType: tool as AssetType };
+	}
+	if (tool === "AREA") {
+		return { kind: "storage", storageType: "FLOOR" };
+	}
+	return { kind: "storage", storageType: tool as StorageUnitType };
+}
+
+export function getDefaultDimensionsForTool(tool: Tool): {
+	widthMm: number;
+	lengthMm: number;
+	heightMm: number;
+} {
+	const target = resolveToolTarget(tool);
+	if (target.kind === "storage") {
+		return DEFAULT_DIMENSIONS_MM[target.storageType];
+	}
+	if (target.kind === "asset") {
+		return DEFAULT_DIMENSIONS_MM[target.assetType];
+	}
+	return DEFAULT_DIMENSIONS_MM.FLOOR;
+}
+
+export function getRackLayoutMetadata(
+	rack: StorageUnit,
+): RackLayoutMetadata {
+	const layout = rack.metadata?.layout;
+	if (layout && typeof layout === "object" && !Array.isArray(layout)) {
+		return layout as RackLayoutMetadata;
+	}
+	return {};
+}

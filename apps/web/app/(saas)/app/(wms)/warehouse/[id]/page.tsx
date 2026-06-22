@@ -5,10 +5,10 @@ import { Tabs, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { DemoRunner } from "@saas/demo/DemoRunner";
 import { LocationsTabContent } from "./components/locations-tab-content";
 import {
 	CycleCountTabContent,
@@ -240,29 +240,47 @@ export default function WarehouseDetailsPage() {
 	}
 
 	return (
-		<div className="w-full h-full flex flex-col gap-6 py-6 px-0 overflow-hidden">
-			<div className="flex items-start justify-between gap-3 px-6">
-				<div className="space-y-1">
-					<p className="text-sm text-muted-foreground">
-						{data.code} • {data.status}
-					</p>
-					<DemoRunner compact />
+		<div className="flex min-h-0 flex-1 flex-col overflow-hidden px-0">
+			<div className="flex min-h-0 flex-1 flex-col w-full overflow-hidden">
+				<div className="flex items-center justify-between gap-4 pb-3">
+					<div className="min-w-0">
+						<h1 className="truncate text-lg font-semibold tracking-tight">
+							{data.name}
+						</h1>
+						<p className="font-mono text-xs text-muted-foreground">
+							{data.code}
+							{data.status === "INACTIVE" ? " · Archived" : ""}
+						</p>
+					</div>
+					<div className="flex shrink-0 items-center gap-2">
+						{data.status === "INACTIVE" ? (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									void handleRestoreWarehouse();
+								}}
+								disabled={restoreWarehouseMutation.isPending}
+							>
+								{restoreWarehouseMutation.isPending
+									? "Restoring..."
+									: "Restore"}
+							</Button>
+						) : (
+							<Button
+								variant="outline"
+								size="icon"
+								aria-label="Archive warehouse"
+								onClick={() => {
+									void handleDeleteWarehouse();
+								}}
+								disabled={deleteWarehouseMutation.isPending}
+							>
+								<Trash2 className="size-4" />
+							</Button>
+						)}
+					</div>
 				</div>
-				{data.status === "INACTIVE" ? (
-					<Button
-						onClick={() => {
-							void handleRestoreWarehouse();
-						}}
-						disabled={restoreWarehouseMutation.isPending}
-					>
-						{restoreWarehouseMutation.isPending
-							? "Restoring..."
-							: "Restore Warehouse"}
-					</Button>
-				) : null}
-			</div>
-
-			<div className="flex-1 flex flex-col w-full min-w-0 overflow-hidden">
 				<Tabs
 					value={activeTab}
 					onValueChange={(tab) => {
@@ -336,8 +354,8 @@ export default function WarehouseDetailsPage() {
 						</TabsTrigger>
 					</TabsList>
 
-					{/* Tab content area: make it grow and fill width, and scroll if needed */}
-					<div className="flex-1 flex flex-col min-w-0 overflow-x-auto">
+					{/* Tab content area */}
+					<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 						<LayoutTabContent
 							warehouseId={data.id}
 							organizationId={data.organizationId}
