@@ -1,0 +1,548 @@
+## Slide 1
+
+# Indian HVAC Supply Chains Are Entering a New Operating Reality
+
+### Headline
+
+Demand volatility, rising service expectations, and fragmented warehouse operations are creating a growing profitability gap across HVAC manufacturers.
+
+### Key observations
+
+* Cooling demand increasingly concentrated into short seasonal windows
+* Channel partners expect near-real-time fulfillment
+* Spare parts availability directly impacts AMC performance
+* Working capital pressure increasing across inventory-heavy businesses
+* Existing ERP/WMS investments still leave significant operational work outside the system
+
+### Executive takeaway
+
+The next competitive advantage is no longer planning.
+
+It is execution speed.
+
+---
+
+## Slide 2
+
+# Three Hidden Profit Leaks Exist Inside Most HVAC Warehouse Networks
+
+### Profit Leak #1
+
+Excess Picker Travel
+
+* Non-optimized routes
+* Warehouse tribal knowledge
+* Overtime during seasonal peaks
+
+### Profit Leak #2
+
+Inventory Misallocation
+
+* Stock available in network but unavailable where needed
+* Emergency transfers
+* Lost installation opportunities
+
+### Profit Leak #3
+
+Manual Operational Coordination
+
+* WhatsApp orders
+* Email requests
+* Reverse logistics
+* Core returns
+* Branch reconciliation
+
+### Executive takeaway
+
+Most losses occur outside ERP workflows.
+
+---
+
+## Slide 3
+
+# Existing WMS Platforms Solve Visibility. They Do Not Always Solve Execution.
+
+### Typical Landscape
+
+ERP
+
+* SAP
+* Oracle
+* Infor
+
+WMS
+
+* Manhattan
+* Blue Yonder
+* Custom
+
+### Remaining Operational Reality
+
+Warehouse supervisors still manage:
+
+* WhatsApp requests
+* Email orders
+* Manual replenishment decisions
+* Spreadsheet reconciliations
+* Reverse logistics tracking
+
+### Executive takeaway
+
+The problem is not system availability.
+
+The problem is operational adoption and execution.
+
+---
+
+## Slide 4
+
+# Value Creation Opportunity Across The HVAC Supply Chain
+
+Build a waterfall.
+
+### Estimated Impact Areas
+
+| Value Pool                     | Annual Impact |
+| ------------------------------ | ------------- |
+| Travel Reduction               | ₹0.5–2 Cr     |
+| Inventory Rebalancing          | ₹1–5 Cr       |
+| Dead Stock Recovery            | ₹1–3 Cr       |
+| Stockout Prevention            | ₹2–8 Cr       |
+| Reverse Logistics Optimization | ₹0.5–2 Cr     |
+| Administrative Productivity    | ₹0.3–1 Cr     |
+
+### Total Opportunity
+
+₹5–20 Cr annually per network
+
+---
+
+# SECTION 2
+
+## Operational Pain
+
+---
+
+## Slide 5
+
+# Peak Season Failures Are Usually Execution Failures
+
+Visual:
+
+Summer Heat Wave
+
+↓
+
+Demand Spike
+
+↓
+
+Inventory Exists
+
+↓
+
+Wrong DC
+
+↓
+
+Technician Waits
+
+↓
+
+Installation Delayed
+
+↓
+
+Revenue Lost
+
+### Insight
+
+The challenge is not forecasting.
+
+The challenge is getting inventory to the right place before demand materializes.
+
+---
+
+## Slide 6
+
+# Reverse Logistics Remains One Of The Largest Unstructured Processes
+
+### HVAC Examples
+
+* Compressor returns
+* AMC spare recovery
+* Warranty returns
+* Damaged goods
+* Distributor returns
+
+### Current State
+
+Tracked via:
+
+* Calls
+* Emails
+* WhatsApp
+* Excel
+
+### Result
+
+* Poor visibility
+* Delayed credits
+* Lost inventory
+* Capital leakage
+
+### Executive takeaway
+
+Reverse logistics should be treated as inventory, not administration.
+
+---
+
+## Slide 7
+
+# Email And WhatsApp Have Become Unofficial Order Management Systems
+
+### Sources
+
+* Branch requests
+* Service centers
+* Distributors
+* Territory managers
+* Installation teams
+
+### Current Flow
+
+WhatsApp
+
+↓
+
+Email
+
+↓
+
+Excel
+
+↓
+
+ERP Entry
+
+↓
+
+Warehouse
+
+### Problems
+
+* Duplicate orders
+* Missing requests
+* Delayed fulfillment
+* Manual reconciliation
+
+---
+
+# SECTION 3
+
+# Introducing Venti
+
+---
+
+## Slide 8
+
+# Venti Acts As The Warehouse Execution Layer
+
+Architecture Diagram
+
+ERP
+
+↓
+
+Venti
+
+↓
+
+Operators
+
+↓
+
+Inventory Movement
+
+↓
+
+Returns
+
+↓
+
+Branch Orders
+
+↓
+
+Analytics
+
+### Key Principle
+
+Enhance existing systems.
+
+Do not replace them.
+
+---
+
+## Slide 9
+
+# Four Capabilities Drive Measurable Outcomes
+
+### 1
+
+Offline Warehouse Execution
+
+### 2
+
+Travel Optimization
+
+### 3
+
+Inventory Rebalancing
+
+### 4
+
+Order & Reverse Logistics Orchestration
+
+---
+
+## Slide 10
+
+# Offline Execution Is Critical In Indian Warehouse Environments
+
+### Typical Issues
+
+* Network dead zones
+* Mezzanine floors
+* Yard operations
+* Rural DCs
+
+### Venti
+
+* Offline task execution
+* Local synchronization
+* Auto recovery
+
+### Outcome
+
+No operational stoppages.
+
+---
+
+## Slide 11
+
+# Every Wave Creates Measurable Productivity Savings
+
+Show:
+
+847m
+
+↓
+
+583m
+
+↓
+
+31% reduction
+
+### Annualized Impact
+
+Example:
+
+40 pickers
+
+250 working days
+
+31% travel reduction
+
+Potential savings:
+
+₹60–80 lakh annually
+
+---
+
+## Slide 12
+
+# Inventory Rebalancing Turns Visibility Into Action
+
+### Current State
+
+Visibility exists
+
+No action occurs
+
+### Future State
+
+Inventory risk detected
+
+↓
+
+Recommendation generated
+
+↓
+
+Supervisor approves
+
+↓
+
+Task created
+
+↓
+
+Inventory moved
+
+---
+
+## Slide 13
+
+# Capital At Risk Becomes Visible Daily
+
+Dashboard
+
+### Metrics
+
+* Dead stock
+* Excess stock
+* Slow-moving inventory
+* Network imbalance
+* Return inventory
+
+### Executive Outcome
+
+Finance and operations operate from the same number.
+
+---
+
+# SECTION 4
+
+# Business Case
+
+---
+
+## Slide 14
+
+# Illustrative Impact For A Typical HVAC Network
+
+Build a full waterfall.
+
+Starting EBITDA
+
+*
+
+Travel Savings
+
+*
+
+Inventory Recovery
+
+*
+
+Reduced Stockouts
+
+*
+
+Return Recovery
+
+*
+
+Admin Efficiency
+
+=
+
+Improved EBITDA
+
+---
+
+## Slide 15
+
+# Time To Value Is Measured In Weeks
+
+Comparison
+
+| Traditional WMS         | Venti            |
+| ----------------------- | ---------------- |
+| 12-18 months            | 4 weeks          |
+| Major rollout           | Targeted pilot   |
+| Heavy change management | Operator-first   |
+| Large capex             | Rapid validation |
+
+---
+
+## Slide 16
+
+# Recommended Pilot
+
+### Scope
+
+1 DC
+
+100 SKUs
+
+20 Operators
+
+4 Weeks
+
+### Deliverables
+
+* Travel reduction measurement
+* Inventory imbalance visibility
+* Order pooling workflow
+* Reverse logistics workflow
+* Executive dashboard
+
+---
+
+# SECTION 5
+
+# Decision
+
+---
+
+## Slide 17
+
+# Why Leading HVAC Manufacturers Are Evaluating A New Execution Layer
+
+### Because They Already Have
+
+ERP
+
+WMS
+
+BI
+
+Planning
+
+### But Still Need
+
+* Faster execution
+* Better adoption
+* Lower travel
+* Better reconciliation
+* Working capital visibility
+
+---
+
+## Slide 18
+
+# Proposed Next Steps
+
+### Week 1
+
+Discovery
+
+### Week 2
+
+Warehouse Mapping
+
+### Week 3
+
+Pilot Go-Live
+
+### Week 4
+
+Executive Readout
+
+### Decision
+
+Scale or Stop
+
