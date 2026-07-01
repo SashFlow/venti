@@ -57,7 +57,7 @@ export const createAsnProcedure = protectedProcedure
 			include: {
 				items: {
 					include: {
-						sku: { select: { sku: true, name: true } },
+						sku: { select: { code: true } },
 					},
 				},
 			},

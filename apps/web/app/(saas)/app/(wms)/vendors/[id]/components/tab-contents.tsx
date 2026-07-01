@@ -369,30 +369,23 @@ export function SettingsTabContent({
 }
 
 export function ItemsTabContent({
-	organizationId,
-	supplierId,
+	organizationId: _organizationId,
+	supplierId: _supplierId,
 }: {
 	organizationId: string | null;
 	supplierId: string;
 }) {
-	const ITEMS_PER_PAGE = 20;
-	const [page, setPage] = useState(1);
-
-	const { data, isPending } = useQuery({
-		...orpc.masterData.suppliers.listSkus.queryOptions({
-			input: {
-				organizationId: organizationId ?? "",
-				supplierId,
-				limit: ITEMS_PER_PAGE,
-				offset: (page - 1) * ITEMS_PER_PAGE,
-			},
-		}),
-		enabled: Boolean(organizationId && supplierId),
-	});
-
-	const skuSuppliers = data?.skuSuppliers ?? [];
-	const total = data?.total ?? 0;
-	const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+	// Supplier SKU catalog is not exposed via API yet.
+	const isPending = false;
+	const skuSuppliers: Array<{
+		id: string;
+		vendorCode: string | null;
+		unitPrice: number | null;
+		moq: number | null;
+		leadTimeDays: number | null;
+		isPrimary: boolean;
+		sku: { skuCode: string; name: string };
+	}> = [];
 
 	return (
 		<TabsContent value="items" className="space-y-4">
@@ -483,31 +476,6 @@ export function ItemsTabContent({
 				</CardContent>
 			</Card>
 
-			{totalPages > 1 && (
-				<div className="flex items-center justify-between text-sm text-muted-foreground">
-					<span>
-						Page {page} of {totalPages} ({total} items)
-					</span>
-					<div className="flex items-center gap-1">
-						<Button
-							variant="ghost"
-							size="icon"
-							disabled={page <= 1}
-							onClick={() => setPage((p) => p - 1)}
-						>
-							<ChevronLeftIcon className="size-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							disabled={page >= totalPages}
-							onClick={() => setPage((p) => p + 1)}
-						>
-							<ChevronRightIcon className="size-4" />
-						</Button>
-					</div>
-				</div>
-			)}
 		</TabsContent>
 	);
 }
@@ -602,12 +570,12 @@ export function PurchaseOrdersTabContent({
 											{order.warehouse.name}
 										</TableCell>
 										<TableCell className="text-right">
-											{order._count.lines}
+											{order._count.items}
 										</TableCell>
 										<TableCell>
-											{order.expectedDate
+											{order.expectedAt
 												? new Date(
-														order.expectedDate,
+														order.expectedAt,
 													).toLocaleDateString()
 												: "—"}
 										</TableCell>

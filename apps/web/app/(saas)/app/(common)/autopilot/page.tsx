@@ -95,9 +95,13 @@ export default function AutopilotPage() {
 	const lastRun = useMemo(() => {
 		const dates = rules
 			.map((r) => r.lastRunAt)
-			.filter(Boolean) as string[];
-		if (dates.length === 0) return null;
-		return dates.sort().reverse()[0];
+			.filter((date): date is Date => date instanceof Date);
+		if (dates.length === 0) {
+			return null;
+		}
+		return dates
+			.sort((a, b) => b.getTime() - a.getTime())[0]
+			.toISOString();
 	}, [rules]);
 
 	const handleToggle = async (ruleId: string, enabled: boolean) => {

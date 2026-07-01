@@ -24,7 +24,7 @@ export function PredictiveAlerts({
 
 	const { data: demandData, isLoading: demandLoading } = useQuery({
 		...orpc.analytics.predictiveDemand.queryOptions({
-			input: { organizationId, zipCode: "110001" },
+			input: { organizationId, zipCode: "500081" },
 		}),
 		enabled: Boolean(organizationId),
 	});

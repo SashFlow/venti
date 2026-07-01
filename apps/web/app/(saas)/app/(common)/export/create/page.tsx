@@ -122,7 +122,7 @@ export default function CreatePage() {
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Select report type">
-										{type || "Select report type"}
+										{reportType || "Select report type"}
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>

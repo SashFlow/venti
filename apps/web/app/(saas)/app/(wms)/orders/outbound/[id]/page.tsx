@@ -18,13 +18,6 @@ import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-const PRIORITY_LABEL: Record<string, string> = {
-	CRITICAL: "Critical",
-	HIGH: "High",
-	NORMAL: "Normal",
-	LOW: "Low",
-};
-
 export default function OutboundOrderDetailPage() {
 	const params = useParams<{ id: string }>();
 	const { organization } = useSession();
@@ -60,10 +53,7 @@ export default function OutboundOrderDetailPage() {
 		);
 	}
 
-	const totalValue = order.lines.reduce(
-		(sum, l) => sum + Number(l.unitPrice ?? 0) * Number(l.orderedQty),
-		0,
-	);
+	const items = order.items ?? [];
 
 	return (
 		<div className="container max-w-4xl py-8 mx-auto space-y-6">
@@ -79,19 +69,6 @@ export default function OutboundOrderDetailPage() {
 							{order.orderNumber}
 						</h1>
 						<Badge variant="outline">{order.status}</Badge>
-						{order.priority && order.priority !== "NORMAL" && (
-							<Badge
-								variant={
-									order.priority === "CRITICAL" ||
-									order.priority === "HIGH"
-										? "destructive"
-										: "secondary"
-								}
-							>
-								{PRIORITY_LABEL[order.priority] ??
-									order.priority}
-							</Badge>
-						)}
 					</div>
 					<p className="text-sm text-muted-foreground">Sales Order</p>
 				</div>
@@ -116,88 +93,67 @@ export default function OutboundOrderDetailPage() {
 								Customer
 							</span>
 							<span className="font-medium">
-								{order.customerName ??
-									order.customer?.name ??
-									"—"}
+								{order.customer?.name ?? "—"}
 							</span>
 						</div>
 						<div className="flex justify-between">
 							<span className="text-muted-foreground">
-								Customer Email
-							</span>
-							<span>{order.customerEmail ?? "—"}</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Customer Ref
-							</span>
-							<span>{order.customerRef ?? "—"}</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Requested Ship
+								Ordered At
 							</span>
 							<span>
-								{order.requestedShipDate
+								{order.orderedAt
 									? new Date(
-											order.requestedShipDate,
+											order.orderedAt,
 										).toLocaleDateString()
 									: "—"}
 							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Required By
-							</span>
-							<span>
-								{order.requiredByDate
-									? new Date(
-											order.requiredByDate,
-										).toLocaleDateString()
-									: "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Shipped At
-							</span>
-							<span>
-								{order.shippedAt
-									? new Date(
-											order.shippedAt,
-										).toLocaleDateString()
-									: "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Created By
-							</span>
-							<span>{order.createdBy?.name ?? "—"}</span>
 						</div>
 					</CardContent>
 				</Card>
 
 				<Card className="border rounded-2xl">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base">Summary</CardTitle>
+						<CardTitle className="text-base">Shipment</CardTitle>
 					</CardHeader>
 					<CardContent className="grid gap-2 text-sm">
+						{order.shipment ? (
+							<>
+								<div className="flex justify-between">
+									<span className="text-muted-foreground">
+										Status
+									</span>
+									<Badge variant="outline">
+										{order.shipment.status}
+									</Badge>
+								</div>
+								<div className="flex justify-between">
+									<span className="text-muted-foreground">
+										Tracking #
+									</span>
+									<span className="font-mono text-xs">
+										{order.shipment.trackingNumber ?? "—"}
+									</span>
+								</div>
+							</>
+						) : (
+							<p className="text-muted-foreground">
+								No shipment created yet.
+							</p>
+						)}
 						<div className="flex justify-between">
 							<span className="text-muted-foreground">
 								Total Lines
 							</span>
-							<span className="font-medium">
-								{order.lines.length}
-							</span>
+							<span className="font-medium">{items.length}</span>
 						</div>
 						<div className="flex justify-between">
 							<span className="text-muted-foreground">
 								Total Ordered
 							</span>
 							<span>
-								{order.lines.reduce(
-									(s, l) => s + Number(l.orderedQty),
+								{items.reduce(
+									(sum, item) =>
+										sum + Number(item.orderedQty),
 									0,
 								)}
 							</span>
@@ -207,41 +163,13 @@ export default function OutboundOrderDetailPage() {
 								Total Picked
 							</span>
 							<span>
-								{order.lines.reduce(
-									(s, l) => s + Number(l.pickedQty ?? 0),
+								{items.reduce(
+									(sum, item) =>
+										sum + Number(item.pickedQty ?? 0),
 									0,
 								)}
 							</span>
 						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Total Shipped
-							</span>
-							<span>
-								{order.lines.reduce(
-									(s, l) => s + Number(l.shippedQty ?? 0),
-									0,
-								)}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Est. Order Value
-							</span>
-							<span className="font-medium">
-								{totalValue > 0
-									? `$${totalValue.toFixed(2)}`
-									: "—"}
-							</span>
-						</div>
-						{order.notes && (
-							<div className="pt-2 border-t">
-								<p className="text-muted-foreground text-xs mb-1">
-									Notes
-								</p>
-								<p>{order.notes}</p>
-							</div>
-						)}
 					</CardContent>
 				</Card>
 			</div>
@@ -254,10 +182,7 @@ export default function OutboundOrderDetailPage() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead className="pl-6">#</TableHead>
-								<TableHead>SKU</TableHead>
-								<TableHead>Product</TableHead>
-								<TableHead>UOM</TableHead>
+								<TableHead className="pl-6">SKU</TableHead>
 								<TableHead className="text-right">
 									Ordered
 								</TableHead>
@@ -267,57 +192,35 @@ export default function OutboundOrderDetailPage() {
 								<TableHead className="text-right">
 									Picked
 								</TableHead>
-								<TableHead className="text-right">
-									Shipped
-								</TableHead>
-								<TableHead className="text-right">
-									Unit Price
-								</TableHead>
-								<TableHead>Status</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{order.lines.map((line) => (
-								<TableRow key={line.id}>
-									<TableCell className="pl-6">
-										{line.lineNumber}
-									</TableCell>
-									<TableCell className="font-mono text-xs">
-										{line.sku?.sku ?? "—"}
-									</TableCell>
-									<TableCell>
-										{line.sku?.name ?? "—"}
-									</TableCell>
-									<TableCell>
-										{line.uom?.abbreviation ?? "—"}
+							{items.map((item) => (
+								<TableRow key={item.id}>
+									<TableCell className="pl-6 font-mono text-xs">
+										{item.sku?.code ?? "—"}
 									</TableCell>
 									<TableCell className="text-right">
-										{Number(line.orderedQty)}
+										{Number(item.orderedQty)}
 									</TableCell>
 									<TableCell className="text-right">
-										{Number(line.allocatedQty ?? 0)}
+										{Number(item.allocatedQty ?? 0)}
 									</TableCell>
 									<TableCell className="text-right">
-										{Number(line.pickedQty ?? 0)}
-									</TableCell>
-									<TableCell className="text-right">
-										{Number(line.shippedQty ?? 0)}
-									</TableCell>
-									<TableCell className="text-right">
-										{line.unitPrice
-											? `$${Number(line.unitPrice).toFixed(2)}`
-											: "—"}
-									</TableCell>
-									<TableCell>
-										<Badge
-											variant="outline"
-											className="text-xs"
-										>
-											{line.status}
-										</Badge>
+										{Number(item.pickedQty ?? 0)}
 									</TableCell>
 								</TableRow>
 							))}
+							{items.length === 0 && (
+								<TableRow>
+									<TableCell
+										colSpan={4}
+										className="text-center text-muted-foreground py-4"
+									>
+										No line items.
+									</TableCell>
+								</TableRow>
+							)}
 						</TableBody>
 					</Table>
 				</CardContent>

@@ -9,7 +9,7 @@ import { Loader2Icon, Trash2Icon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { buildVendorMetadata, readVendorMetadata } from "../lib/vendor-utils";
+import { buildVendorMetadata, deriveSupplierCode, readVendorMetadata } from "../lib/vendor-utils";
 import { useVendorsContext } from "../lib/vendors-context";
 import {
 	ItemsTabContent,
@@ -73,7 +73,7 @@ export default function VendorDetailPage() {
 		const metadata = readVendorMetadata(supplier.metadata);
 		setVendor({
 			name: supplier.name,
-			prefix: supplier.code,
+			prefix: supplier.code ?? deriveSupplierCode(supplier.name, ""),
 			email: supplier.email ?? "",
 			phone: supplier.phone ?? "",
 			communicationPreference: metadata.communicationPreference || "none",
@@ -85,8 +85,8 @@ export default function VendorDetailPage() {
 				address1: metadata.address1,
 				address2: metadata.address2,
 				city: metadata.city,
-				country: metadata.country || "us",
-				state: metadata.state || "al",
+				country: metadata.country || "in",
+				state: metadata.state || "",
 				zip: metadata.zip,
 			},
 		});

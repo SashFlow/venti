@@ -81,8 +81,8 @@ export default function WaveDetailPage() {
 	);
 
 	const wave = query.data?.wave;
-	const lines = (wave?.lines ?? []) as WaveLine[];
-	const salesOrders = (wave?.salesOrders ?? []) as WaveSalesOrder[];
+	const lines = (wave?.lines ?? []) as unknown as WaveLine[];
+	const salesOrders = (wave?.salesOrders ?? []) as unknown as WaveSalesOrder[];
 	const routePlan = parseRoutePlan(wave?.routePlan);
 
 	const handleRelease = async () => {
@@ -159,7 +159,7 @@ export default function WaveDetailPage() {
 				</div>
 				{wave.status === "CREATED" && (
 					<Dialog open={releaseOpen} onOpenChange={setReleaseOpen}>
-						<DialogTrigger asChild>
+						<DialogTrigger>
 							<Button>Release wave</Button>
 						</DialogTrigger>
 						<DialogContent>

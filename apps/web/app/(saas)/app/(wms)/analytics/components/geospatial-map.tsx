@@ -2,11 +2,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
 import { orpc } from "@shared/lib/orpc-query-utils";
+import { useQuery } from "@tanstack/react-query";
 import { MapPin, Truck, CloudLightning } from "lucide-react";
 
 export function GeospatialMap({ organizationId }: { organizationId: string }) {
-	const { data, isLoading } = orpc.analytics.geospatialRisk.useQuery({
-		organizationId,
+	const { data, isLoading } = useQuery({
+		...orpc.analytics.geospatialRisk.queryOptions({
+			input: { organizationId },
+		}),
+		enabled: Boolean(organizationId),
 	});
 
 	return (

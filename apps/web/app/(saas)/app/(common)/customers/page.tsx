@@ -90,18 +90,18 @@ export default function CustomersPage() {
 	);
 
 	const customers = useMemo<Customer[]>(() => {
-		return (data?.customers ?? []).map((customer: any) => ({
+		return (data?.customers ?? []).map((customer) => ({
 			id: customer.id,
 			name: customer.name,
 			email: customer.email,
 			phone: customer.phone,
-			isWholesaler: customer.isWholesaler,
+			isWholesaler: customer.isWholesaler ?? customer.type === "WHOLESALE",
 			notes: customer.notes,
 			lastOrderDate: customer.lastOrderAt
-				? customer.lastOrderAt.toISOString().slice(0, 10)
+				? new Date(customer.lastOrderAt).toISOString().slice(0, 10)
 				: null,
-			totalOrders: customer.totalOrders,
-			createdAt: customer.createdAt.toISOString().slice(0, 10),
+			totalOrders: customer.totalOrders ?? 0,
+			createdAt: new Date(customer.createdAt).toISOString().slice(0, 10),
 		}));
 	}, [data?.customers]);
 

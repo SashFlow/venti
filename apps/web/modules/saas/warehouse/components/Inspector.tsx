@@ -917,7 +917,7 @@ function HandlingInspector({
 					Type
 				</Label>
 				<div className="grid grid-cols-4 gap-1">
-					{(["PALLET", "CARTON", "TOTE", "CONTAINER"] as const).map(
+					{(["PALLET", "BIN", "MIX", "CONTAINER"] as const).map(
 						(t) => (
 							<button
 								key={t}

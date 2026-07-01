@@ -1,4 +1,4 @@
-import { db } from "@repo/database";
+import { db, getCustomerCode } from "@repo/database";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
@@ -32,23 +32,34 @@ export const exportCustomersProcedure = protectedProcedure
 	.handler(async ({ context: { user }, input }) => {
 		await requireOrganizationMembership(input.organizationId, user.id);
 
-		const query = input.query?.trim();
+		const query = input.query?.trim().toLowerCase();
 
 		const customers = await db.customer.findMany({
 			where: {
 				organizationId: input.organizationId,
-				OR: query
-					? [
-							{ name: { contains: query, mode: "insensitive" } },
-							{ code: { contains: query, mode: "insensitive" } },
-						]
-					: undefined,
+				...(query
+					? {
+							OR: [
+								{
+									name: {
+										contains: query,
+										mode: "insensitive",
+									},
+								},
+								{
+									email: {
+										contains: query,
+										mode: "insensitive",
+									},
+								},
+							],
+						}
+					: {}),
 			},
 			orderBy: {
 				createdAt: "desc",
 			},
 			select: {
-				code: true,
 				name: true,
 				email: true,
 				phone: true,
@@ -57,6 +68,17 @@ export const exportCustomersProcedure = protectedProcedure
 				metadata: true,
 			},
 		});
+
+		const filteredCustomers = query
+			? customers.filter((customer) => {
+					const code = getCustomerCode(customer).toLowerCase();
+					return (
+						code.includes(query) ||
+						customer.name.toLowerCase().includes(query) ||
+						(customer.email?.toLowerCase().includes(query) ?? false)
+					);
+				})
+			: customers;
 
 		const header = [
 			"Name",
@@ -72,7 +94,7 @@ export const exportCustomersProcedure = protectedProcedure
 			"Zip",
 		];
 
-		const rows = customers.map((customer) => {
+		const rows = filteredCustomers.map((customer) => {
 			const metadata =
 				customer.metadata && typeof customer.metadata === "object"
 					? (customer.metadata as Record<string, unknown>)
@@ -104,7 +126,7 @@ export const exportCustomersProcedure = protectedProcedure
 						? metadata.address1
 						: "",
 				),
-				escapeCsv(String(customer.isWholesaler)),
+				escapeCsv(String(customer.type === "WHOLESALE")),
 				escapeCsv(typeof metadata.zip === "string" ? metadata.zip : ""),
 			].join(",");
 		});
@@ -113,6 +135,6 @@ export const exportCustomersProcedure = protectedProcedure
 			fileName: "customers_export.csv",
 			contentType: "text/csv",
 			csv: `${header.join(",")}\n${rows.join("\n")}`,
-			count: customers.length,
+			count: filteredCustomers.length,
 		};
 	});

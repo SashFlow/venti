@@ -133,7 +133,7 @@ export default function OrganizationPage() {
 	const [printerType, setPrinterType] = useState("GENERIC");
 	const [itemsDefaultLengthUnit, setItemsDefaultLengthUnit] = useState("in");
 	const [itemsDefaultWeightUnit, setItemsDefaultWeightUnit] = useState("lb");
-	const [displayCurrency, setDisplayCurrency] = useState("usd");
+	const [displayCurrency, setDisplayCurrency] = useState("inr");
 	const [abcValuationMethod, setAbcValuationMethod] =
 		useState("retail_value");
 	const [metafieldSchemas, setMetafieldSchemas] = useState<MetafieldSchema[]>(

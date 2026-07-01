@@ -40,6 +40,6 @@ export const layoutAssetInputSchema = z.object({
 export const layoutSceneSchema = z.object({
 	locations: z.array(layoutLocationInputSchema),
 	assets: z.array(layoutAssetInputSchema).default([]),
-	meta: z.record(z.unknown()).optional(),
+	meta: z.record(z.string(), z.unknown()).optional(),
 });
 

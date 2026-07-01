@@ -183,7 +183,10 @@ export function useAgvFleet() {
 
 	const dispatch = useCallback((jobId: string) => {
 		const job = state.jobs.find((j) => j.id === jobId);
-		if (job) dispatchAgv(job);
+		if (!job) {
+			return false;
+		}
+		return dispatchAgv(job);
 	}, []);
 
 	useEffect(() => {

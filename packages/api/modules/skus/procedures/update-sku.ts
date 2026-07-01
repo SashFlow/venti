@@ -40,20 +40,18 @@ export const updateSKUProcedure = protectedProcedure
 	.handler(async ({ context: { user, headers }, input }) => {
 		await requireOrganizationMembership(input.organizationId, user.id);
 
+		const { name: _name, ...skuFields } = input;
 		const sku = await updateSKU({
 			organizationId: input.organizationId,
 			id: input.id,
 			data: {
-				productId: "default",
-				code: input.code,
-				name: input.name,
-				barcode: input.gtin,
-				baseUomId: input.uomId,
-				width: input.widthMm,
-				length: input.lengthMm,
-				height: input.heightMm,
-				weight: input.weightKg,
-				metadata: input.metadata as any,
+				code: skuFields.code,
+				barcode: skuFields.gtin,
+				width: skuFields.widthMm,
+				length: skuFields.lengthMm,
+				height: skuFields.heightMm,
+				weight: skuFields.weightKg,
+				metadata: skuFields.metadata as any,
 			},
 		});
 		if (!sku) {
@@ -71,7 +69,6 @@ export const updateSKUProcedure = protectedProcedure
 			resourceId: sku.id,
 			metadata: {
 				code: sku.code,
-				name: sku.name,
 			},
 		});
 

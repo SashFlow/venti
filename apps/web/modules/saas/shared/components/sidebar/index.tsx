@@ -10,6 +10,7 @@ import {
 	SidebarMenuItem,
 	SidebarSeparator,
 } from "@repo/ui/sidebar";
+import { config } from "@repo/config";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { Command } from "lucide-react";
 import * as React from "react";
@@ -38,10 +39,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">
-										{organization?.name || "Acme Inc"}
+										{organization?.name || config.appName}
 									</span>
 									<span className="truncate text-xs">
-										{organization?.slug || "Enterprise"}
+										{organization?.slug || "Workspace"}
 									</span>
 								</div>
 							</div>

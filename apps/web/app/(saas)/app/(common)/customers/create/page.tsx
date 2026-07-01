@@ -135,7 +135,7 @@ export default function CreateCustomerPage() {
 								<Input
 									id="customer-phone"
 									type="tel"
-									placeholder="+1 123-456-7890"
+									placeholder="+91 98765 43210"
 									value={phone}
 									onChange={(e) => setPhone(e.target.value)}
 								/>

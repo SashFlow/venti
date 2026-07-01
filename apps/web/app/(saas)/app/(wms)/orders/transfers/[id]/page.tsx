@@ -11,6 +11,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
+type TransferMetadata = {
+	status?: string;
+	notes?: string;
+};
+
 export default function TransferDetailPage() {
 	const params = useParams<{ id: string }>();
 	const { organization } = useSession();
@@ -51,6 +56,9 @@ export default function TransferDetailPage() {
 		);
 	}
 
+	const metadata = (transfer.metadata ?? {}) as TransferMetadata;
+	const transferStatus = metadata.status ?? "RECORDED";
+
 	const handleComplete = async () => {
 		try {
 			await completeMutation.mutateAsync({
@@ -80,36 +88,32 @@ export default function TransferDetailPage() {
 				<div className="flex-1">
 					<div className="flex items-center gap-2">
 						<h1 className="text-2xl font-semibold tracking-tight">
-							{transfer.referenceNumber ??
-								transfer.id.slice(0, 10)}
+							{transfer.referenceId ?? transfer.id.slice(0, 10)}
 						</h1>
-						<Badge variant="outline">{transfer.status}</Badge>
+						<Badge variant="outline">{transferStatus}</Badge>
 					</div>
 					<p className="text-sm text-muted-foreground">
 						Internal Transfer
 					</p>
 				</div>
-				{transfer.status !== "COMPLETED" &&
-					transfer.status !== "CANCELLED" && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleComplete}
-							disabled={completeMutation.isPending}
-						>
-							<CheckCircleIcon className="mr-1.5 size-4" />
-							{completeMutation.isPending
-								? "Completing..."
-								: "Mark Complete"}
-						</Button>
-					)}
+				{transferStatus !== "COMPLETED" && (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={handleComplete}
+						disabled={completeMutation.isPending}
+					>
+						<CheckCircleIcon className="mr-1.5 size-4" />
+						{completeMutation.isPending
+							? "Completing..."
+							: "Mark Complete"}
+					</Button>
+				)}
 			</div>
 
 			<Card className="border rounded-2xl">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base">
-						Transfer Details
-					</CardTitle>
+					<CardTitle className="text-base">Transfer Details</CardTitle>
 				</CardHeader>
 				<CardContent className="grid gap-2 text-sm">
 					<div className="flex justify-between">
@@ -120,9 +124,8 @@ export default function TransferDetailPage() {
 					</div>
 					<div className="flex justify-between">
 						<span className="text-muted-foreground">SKU</span>
-						<span>
-							{transfer.inventoryItem?.sku?.name ?? "—"} (
-							{transfer.inventoryItem?.sku?.sku ?? "—"})
+						<span className="font-mono text-xs">
+							{transfer.sku?.code ?? "—"}
 						</span>
 					</div>
 					<div className="flex justify-between">
@@ -133,40 +136,18 @@ export default function TransferDetailPage() {
 					</div>
 					<div className="flex justify-between">
 						<span className="text-muted-foreground">
-							From Storage Unit
+							From Location
 						</span>
 						<span className="font-mono text-xs">
-							{transfer.fromStorageUnit?.code ?? "—"}
+							{transfer.fromLocation?.code ?? "—"}
 						</span>
 					</div>
 					<div className="flex justify-between">
 						<span className="text-muted-foreground">
-							To Storage Unit
+							To Location
 						</span>
 						<span className="font-mono text-xs">
-							{transfer.toStorageUnit?.code ?? "—"}
-						</span>
-					</div>
-					<div className="flex justify-between">
-						<span className="text-muted-foreground">
-							Started At
-						</span>
-						<span>
-							{transfer.startedAt
-								? new Date(transfer.startedAt).toLocaleString()
-								: "—"}
-						</span>
-					</div>
-					<div className="flex justify-between">
-						<span className="text-muted-foreground">
-							Completed At
-						</span>
-						<span>
-							{transfer.completedAt
-								? new Date(
-										transfer.completedAt,
-									).toLocaleString()
-								: "—"}
+							{transfer.toLocation?.code ?? "—"}
 						</span>
 					</div>
 					<div className="flex justify-between">
@@ -176,19 +157,17 @@ export default function TransferDetailPage() {
 						<span>{transfer.performedBy?.name ?? "—"}</span>
 					</div>
 					<div className="flex justify-between">
-						<span className="text-muted-foreground">
-							Created At
-						</span>
+						<span className="text-muted-foreground">Created At</span>
 						<span>
 							{new Date(transfer.createdAt).toLocaleString()}
 						</span>
 					</div>
-					{transfer.notes && (
+					{metadata.notes && (
 						<div className="pt-2 border-t">
 							<p className="text-muted-foreground text-xs mb-1">
 								Notes
 							</p>
-							<p>{transfer.notes}</p>
+							<p>{metadata.notes}</p>
 						</div>
 					)}
 				</CardContent>

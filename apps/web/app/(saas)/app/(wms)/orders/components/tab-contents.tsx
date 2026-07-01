@@ -401,10 +401,10 @@ export function InboundTabContent({
 											{formatDate(order.createdAt)}
 										</TableCell>
 										<TableCell>
-											{formatDate(order.expectedDate)}
+											{formatDate(order.expectedAt)}
 										</TableCell>
 										<TableCell className="text-right">
-											{order._count.lines}
+											{order._count.items}
 										</TableCell>
 									</TableRow>
 								))}
@@ -465,7 +465,7 @@ export function OutboundTabContent({
 	const canNext = offset + PAGE_SIZE < total;
 	const selectableOrders = orders.filter(
 		(order) =>
-			!["FULLY_SHIPPED", "CANCELLED", "CLOSED"].includes(order.status),
+			!["SHIPPED", "CANCELLED", "CLOSED"].includes(order.status),
 	);
 	const isAllOrdersSelected =
 		selectableOrders.length > 0 &&
@@ -485,7 +485,7 @@ export function OutboundTabContent({
 			await updateOutboundStatusMutation.mutateAsync({
 				organizationId,
 				orderId: order.id,
-				status: "FULLY_SHIPPED",
+				status: "SHIPPED",
 			});
 
 			await queryClient.invalidateQueries({
@@ -540,7 +540,7 @@ export function OutboundTabContent({
 			const result = await bulkUpdateOutboundStatusMutation.mutateAsync({
 				organizationId,
 				orderIds: targetOrders.map((order) => order.id),
-				status: "FULLY_SHIPPED",
+				status: "SHIPPED",
 			});
 
 			await queryClient.invalidateQueries({
@@ -740,7 +740,7 @@ export function OutboundTabContent({
 												}}
 												disabled={
 													[
-														"FULLY_SHIPPED",
+														"SHIPPED",
 														"CANCELLED",
 														"CLOSED",
 													].includes(order.status) ||
@@ -752,7 +752,7 @@ export function OutboundTabContent({
 											{statusPill(order.status)}
 										</TableCell>
 										<TableCell>
-											{order.customerName ?? "-"}
+											{order.customer?.name ?? "-"}
 										</TableCell>
 										<TableCell>
 											{order.warehouse.name}
@@ -761,20 +761,20 @@ export function OutboundTabContent({
 											{order.orderNumber}
 										</TableCell>
 										<TableCell>
-											{formatDate(order.createdAt)}
+											{formatDate(order.orderedAt)}
 										</TableCell>
 										<TableCell>
-											{formatDate(order.requiredByDate)}
+											{formatDate(order.orderedAt)}
 										</TableCell>
 										<TableCell>
-											{order.customerRef ?? "-"}
+											-
 										</TableCell>
 										<TableCell className="text-right">
-											{order._count.lines}
+											{order._count.items}
 										</TableCell>
 										<TableCell className="text-right">
 											{[
-												"FULLY_SHIPPED",
+												"SHIPPED",
 												"CANCELLED",
 												"CLOSED",
 											].includes(order.status) ? (
@@ -860,7 +860,7 @@ export function TransferTabContent({
 
 	const handleCompleteTransfer = async (transfer: {
 		id: string;
-		referenceNumber: string | null;
+		referenceId: string | null;
 	}) => {
 		if (!organizationId) {
 			return;
@@ -879,7 +879,7 @@ export function TransferTabContent({
 			});
 
 			toast.success(
-				`Transfer ${transfer.referenceNumber ?? transfer.id.slice(0, 10)} completed.`,
+				`Transfer ${transfer.referenceId ?? transfer.id.slice(0, 10)} completed.`,
 			);
 		} catch {
 			toast.error("Failed to complete transfer.");
@@ -1024,26 +1024,24 @@ export function TransferTabContent({
 										}}
 									>
 										<TableCell>
-											{statusPill(transfer.status)}
+											{statusPill(transfer.transactionType)}
 										</TableCell>
 										<TableCell>
-											{transfer.fromStorageUnit?.code ??
+											{transfer.fromLocation?.code ??
 												"-"}
 										</TableCell>
 										<TableCell>
-											{transfer.toStorageUnit?.code ??
+											{transfer.toLocation?.code ??
 												"-"}
 										</TableCell>
 										<TableCell className="font-medium">
-											{transfer.referenceNumber ??
+											{transfer.referenceId ??
 												transfer.id.slice(0, 10)}
 										</TableCell>
 										<TableCell>
 											{formatDate(transfer.createdAt)}
 										</TableCell>
-										<TableCell>
-											{formatDate(transfer.completedAt)}
-										</TableCell>
+										<TableCell>-</TableCell>
 										<TableCell className="text-right">
 											{transfer.quantity.toString()}
 										</TableCell>
@@ -1052,7 +1050,7 @@ export function TransferTabContent({
 												"COMPLETED",
 												"CANCELLED",
 												"FAILED",
-											].includes(transfer.status) ? (
+											].includes(transfer.transactionType) ? (
 												<span className="text-muted-foreground text-xs">
 													-
 												</span>
@@ -1064,8 +1062,8 @@ export function TransferTabContent({
 														void handleCompleteTransfer(
 															{
 																id: transfer.id,
-																referenceNumber:
-																	transfer.referenceNumber,
+																referenceId:
+																	transfer.referenceId,
 															},
 														);
 													}}
@@ -1189,15 +1187,13 @@ export function ManifestTabContent({
 											)
 										}
 									>
+										<TableCell>-</TableCell>
 										<TableCell>
-											{formatDate(manifest.createdAt)}
-										</TableCell>
-										<TableCell>
-											{manifest.carrier?.name ??
-												"Unassigned"}
+											{manifest.carrier ?? "Unassigned"}
 										</TableCell>
 										<TableCell className="font-medium">
-											{manifest.shipmentNumber}
+											{manifest.trackingNumber ??
+												manifest.id.slice(0, 10)}
 										</TableCell>
 										<TableCell>
 											{manifest.shipmentsCount}
@@ -1218,6 +1214,7 @@ export function FulfillTabContent({
 }: {
 	organizationId: string;
 }) {
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [batchPage, setBatchPage] = useState(1);
 	const [shipmentPage, setShipmentPage] = useState(1);
@@ -1272,7 +1269,7 @@ export function FulfillTabContent({
 	const actionableShipments = unbatchedShipments.filter(
 		(shipment) =>
 			shipment.status === "PENDING" ||
-			shipment.status === "READY_TO_SHIP",
+			shipment.status === "PACKED",
 	);
 	const isAllShipmentsSelected =
 		actionableShipments.length > 0 &&
@@ -1282,7 +1279,7 @@ export function FulfillTabContent({
 
 	const handleProgressShipment = async (shipment: {
 		id: string;
-		shipmentNumber: string;
+		trackingNumber: string | null;
 		status: string;
 	}) => {
 		if (!organizationId) {
@@ -1291,9 +1288,9 @@ export function FulfillTabContent({
 
 		const nextStatus =
 			shipment.status === "PENDING"
-				? "READY_TO_SHIP"
-				: shipment.status === "READY_TO_SHIP"
-					? "DISPATCHED"
+				? "PACKED"
+				: shipment.status === "PACKED"
+					? "SHIPPED"
 					: null;
 
 		if (!nextStatus) {
@@ -1318,7 +1315,9 @@ export function FulfillTabContent({
 				}),
 			]);
 
-			toast.success(`Shipment ${shipment.shipmentNumber} updated.`);
+			toast.success(
+				`Shipment ${shipment.trackingNumber ?? shipment.id.slice(0, 8)} updated.`,
+			);
 		} catch {
 			toast.error("Failed to update shipment status.");
 		} finally {
@@ -1351,11 +1350,11 @@ export function FulfillTabContent({
 
 	const getNextShipmentStatus = (status: string) => {
 		if (status === "PENDING") {
-			return "READY_TO_SHIP" as const;
+			return "PACKED" as const;
 		}
 
-		if (status === "READY_TO_SHIP") {
-			return "DISPATCHED" as const;
+		if (status === "PACKED") {
+			return "SHIPPED" as const;
 		}
 
 		return null;
@@ -1400,7 +1399,7 @@ export function FulfillTabContent({
 								update,
 							): update is {
 								shipmentId: string;
-								status: "READY_TO_SHIP" | "DISPATCHED";
+								status: "PACKED" | "SHIPPED";
 							} => update !== null,
 						),
 				},
@@ -1585,23 +1584,22 @@ export function FulfillTabContent({
 											{batch.waveNumber}
 										</TableCell>
 										<TableCell>
-											{batch.releasedBy?.name ??
-												"Unassigned"}
+											Unassigned
 										</TableCell>
 										<TableCell>
-											{batch._count.salesOrders}
+											{batch._count.tasks}
 										</TableCell>
 										<TableCell>
 											{formatDate(batch.createdAt)}
 										</TableCell>
 										<TableCell>
-											{formatDate(batch.completedAt)}
+											-
 										</TableCell>
 										<TableCell>
 											{statusPill(batch.status)}
 										</TableCell>
 										<TableCell className="text-right">
-											{batch._count.lines}
+											{batch._count.tasks}
 										</TableCell>
 									</TableRow>
 								))}
@@ -1752,7 +1750,7 @@ export function FulfillTabContent({
 									>
 										<TableCell>
 											<Checkbox
-												aria-label={`Select shipment ${shipment.shipmentNumber}`}
+												aria-label={`Select shipment ${shipment.trackingNumber ?? shipment.id}`}
 												checked={selectedShipmentIds.includes(
 													shipment.id,
 												)}
@@ -1766,36 +1764,30 @@ export function FulfillTabContent({
 													(shipment.status !==
 														"PENDING" &&
 														shipment.status !==
-															"READY_TO_SHIP") ||
+															"PACKED") ||
 													isBulkUpdatingShipments
 												}
 											/>
 										</TableCell>
 										<TableCell className="font-medium">
-											{shipment.shipmentNumber}
+											{shipment.trackingNumber ??
+												shipment.id.slice(0, 10)}
 										</TableCell>
 										<TableCell>Standard</TableCell>
 										<TableCell>
 											{statusPill(shipment.status)}
 										</TableCell>
+										<TableCell>-</TableCell>
 										<TableCell>
-											{formatDate(shipment.scheduledAt)}
+											{shipment.salesOrder?.customer
+												?.name ?? "-"}
 										</TableCell>
-										<TableCell>
-											{shipment.salesOrder.customerName ??
-												"-"}
-										</TableCell>
-										<TableCell>
-											{formatDate(shipment.createdAt)}
-										</TableCell>
-										<TableCell>
-											{shipment.salesOrder.customerRef ??
-												"-"}
-										</TableCell>
+										<TableCell>-</TableCell>
+										<TableCell>-</TableCell>
 										<TableCell className="text-right">
 											{shipment.status === "PENDING" ||
 											shipment.status ===
-												"READY_TO_SHIP" ? (
+												"PACKED" ? (
 												<Button
 													variant="outline"
 													size="sm"
@@ -1803,8 +1795,8 @@ export function FulfillTabContent({
 														void handleProgressShipment(
 															{
 																id: shipment.id,
-																shipmentNumber:
-																	shipment.shipmentNumber,
+																trackingNumber:
+																	shipment.trackingNumber,
 																status: shipment.status,
 															},
 														);

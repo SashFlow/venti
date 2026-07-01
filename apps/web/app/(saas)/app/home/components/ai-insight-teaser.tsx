@@ -14,7 +14,7 @@ export function AiInsightTeaser({
 }) {
 	const { data } = useQuery({
 		...orpc.analytics.predictiveDemand.queryOptions({
-			input: { organizationId, zipCode: "110001" },
+			input: { organizationId, zipCode: "500081" },
 		}),
 		enabled: Boolean(organizationId),
 		staleTime: 120_000,

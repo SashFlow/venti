@@ -1,3 +1,8 @@
+import {
+	deriveEntityCode,
+	getMetadataCode,
+	mergeMetadataWithCode,
+} from "../lib/metadata-code";
 import { db } from "../prisma";
 import type { Prisma } from "../prisma/generated/client";
 
@@ -13,6 +18,29 @@ const customerSelect = {
 	createdAt: true,
 } satisfies Prisma.CustomerSelect;
 
+const customerListSelect = {
+	...customerSelect,
+	_count: {
+		select: {
+			salesOrders: true,
+		},
+	},
+	salesOrders: {
+		select: {
+			orderedAt: true,
+		},
+		orderBy: {
+			orderedAt: "desc" as const,
+		},
+		take: 1,
+	},
+} satisfies Prisma.CustomerSelect;
+
+type CustomerRow = Prisma.CustomerGetPayload<{ select: typeof customerSelect }>;
+type CustomerListRow = Prisma.CustomerGetPayload<{
+	select: typeof customerListSelect;
+}>;
+
 type ListCustomersInput = {
 	organizationId: string;
 	query?: string;
@@ -27,7 +55,33 @@ type CustomerPayload = {
 	type?: "RETAIL" | "WHOLESALE" | "VENDOR" | "TECHNICIAN";
 	notes?: string;
 	metadata?: Prisma.InputJsonValue;
+	code?: string;
 };
+
+export function getCustomerCode(customer: {
+	name: string;
+	metadata: unknown;
+}): string {
+	return getMetadataCode(customer.metadata, customer.name);
+}
+
+function enrichCustomer<T extends CustomerRow>(customer: T) {
+	return {
+		...customer,
+		code: getCustomerCode(customer),
+	};
+}
+
+function enrichCustomerList(customer: CustomerListRow) {
+	const latestOrder = customer.salesOrders[0];
+
+	return {
+		...enrichCustomer(customer),
+		totalOrders: customer._count.salesOrders,
+		lastOrderAt: latestOrder?.orderedAt ?? null,
+		isWholesaler: customer.type === "WHOLESALE",
+	};
+}
 
 function buildWhere({
 	organizationId,
@@ -61,7 +115,7 @@ export async function listCustomers(input: ListCustomersInput) {
 	const [customers, total] = await Promise.all([
 		db.customer.findMany({
 			where,
-			select: customerSelect,
+			select: customerListSelect,
 			take: input.limit,
 			skip: input.offset,
 			orderBy: {
@@ -72,7 +126,7 @@ export async function listCustomers(input: ListCustomersInput) {
 	]);
 
 	return {
-		customers,
+		customers: customers.map(enrichCustomerList),
 		total,
 	};
 }
@@ -81,26 +135,41 @@ export async function getCustomerById(params: {
 	organizationId: string;
 	id: string;
 }) {
-	return db.customer.findFirst({
+	const customer = await db.customer.findFirst({
 		where: {
 			id: params.id,
 			organizationId: params.organizationId,
 		},
 		select: customerSelect,
 	});
+
+	if (!customer) {
+		return null;
+	}
+
+	return enrichCustomer(customer);
 }
 
 export async function createCustomer(params: {
 	organizationId: string;
 	data: CustomerPayload;
 }) {
-	return db.customer.create({
+	const code =
+		params.data.code?.trim().toUpperCase() ||
+		getMetadataCode(params.data.metadata, params.data.name);
+
+	const { code: _code, metadata, ...rest } = params.data;
+
+	const customer = await db.customer.create({
 		data: {
 			organizationId: params.organizationId,
-			...params.data,
+			...rest,
+			metadata: mergeMetadataWithCode(metadata, code),
 		},
 		select: customerSelect,
 	});
+
+	return enrichCustomer(customer);
 }
 
 export async function updateCustomer(params: {
@@ -113,20 +182,34 @@ export async function updateCustomer(params: {
 			id: params.id,
 			organizationId: params.organizationId,
 		},
-		select: { id: true },
+		select: { id: true, name: true, metadata: true },
 	});
 
 	if (!existing) {
 		return null;
 	}
 
-	return db.customer.update({
+	const nextName = params.data.name ?? existing.name;
+	const { code: _code, metadata, ...rest } = params.data;
+	const mergedMetadata = mergeMetadataWithCode(
+		(metadata ?? existing.metadata) as Prisma.InputJsonValue | undefined,
+		params.data.code
+			? params.data.code.trim().toUpperCase()
+			: getMetadataCode(metadata ?? existing.metadata, nextName),
+	);
+
+	const customer = await db.customer.update({
 		where: {
 			id: params.id,
 		},
-		data: params.data,
+		data: {
+			...rest,
+			metadata: mergedMetadata,
+		},
 		select: customerSelect,
 	});
+
+	return enrichCustomer(customer);
 }
 
 export async function deleteCustomer(params: {
@@ -317,3 +400,5 @@ export async function deleteCustomerLocation(params: {
 		return true;
 	});
 }
+
+export { deriveEntityCode as deriveCustomerCode };

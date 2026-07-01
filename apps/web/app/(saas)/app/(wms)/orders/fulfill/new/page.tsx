@@ -140,7 +140,11 @@ export default function CreateWavePage() {
 							</Label>
 							<Select
 								value={warehouseId}
-								onValueChange={setWarehouseId}
+								onValueChange={(value) => {
+									if (value) {
+										setWarehouseId(value);
+									}
+								}}
 							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse">
@@ -176,7 +180,11 @@ export default function CreateWavePage() {
 							<Label htmlFor="waveType">Wave Type</Label>
 							<Select
 								value={waveType}
-								onValueChange={setWaveType}
+								onValueChange={(value) => {
+									if (value) {
+										setWaveType(value);
+									}
+								}}
 							>
 								<SelectTrigger id="waveType">
 									<SelectValue placeholder="Select type">
@@ -237,9 +245,9 @@ export default function CreateWavePage() {
 								<span className="text-sm font-medium">
 									{o.orderNumber}
 								</span>
-								{o.customerName && (
+								{o.customer?.name && (
 									<span className="text-sm text-muted-foreground">
-										— {o.customerName}
+										— {o.customer.name}
 									</span>
 								)}
 								<span className="ml-auto text-xs text-muted-foreground">

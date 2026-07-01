@@ -3,9 +3,9 @@
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
 } from "@repo/ui/card";
 import {
 	Table,
@@ -16,17 +16,25 @@ import {
 	TableRow,
 } from "@repo/ui/table";
 import { Badge } from "@repo/ui/badge";
+import {
+	OrgCurrencyProvider,
+	useOrgCurrency,
+} from "@saas/organizations/hooks/use-org-currency";
 import { orpc } from "@shared/lib/orpc-query-utils";
+import { useQuery } from "@tanstack/react-query";
 import { DollarSign } from "lucide-react";
 
-export function FinancialLedger({
+function FinancialLedgerContent({
 	organizationId,
 }: {
 	organizationId: string;
 }) {
-	const { data, isLoading } = orpc.analytics.getCostLedger.useQuery({
-		organizationId,
-		limit: 10,
+	const { formatCurrencyFull } = useOrgCurrency();
+	const { data, isLoading } = useQuery({
+		...orpc.analytics.getCostLedger.queryOptions({
+			input: { organizationId, limit: 10 },
+		}),
+		enabled: Boolean(organizationId),
 	});
 
 	const getBadgeVariant = (type: string) => {
@@ -34,20 +42,22 @@ export function FinancialLedger({
 			type === "PURCHASE" ||
 			type === "FREIGHT" ||
 			type === "HOLDING_COST"
-		)
+		) {
 			return "destructive";
-		if (type === "COGS") return "default";
-		if (type === "INVENTORY_GAIN" || type === "RTV_CREDIT")
+		}
+		if (type === "COGS") {
+			return "default";
+		}
+		if (type === "INVENTORY_GAIN" || type === "RTV_CREDIT") {
 			return "outline";
+		}
 		return "secondary";
 	};
 
-	const formatCurrency = (amount: any) => {
-		const val = typeof amount === "string" ? parseFloat(amount) : amount;
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: "USD",
-		}).format(val);
+	const formatCurrency = (amount: unknown) => {
+		const val =
+			typeof amount === "string" ? Number.parseFloat(amount) : Number(amount);
+		return formatCurrencyFull(Number.isFinite(val) ? val : 0);
 	};
 
 	return (
@@ -107,7 +117,11 @@ export function FinancialLedger({
 												variant={
 													getBadgeVariant(
 														entry.type,
-													) as any
+													) as
+														| "default"
+														| "secondary"
+														| "destructive"
+														| "outline"
 												}
 											>
 												{entry.type}
@@ -133,5 +147,17 @@ export function FinancialLedger({
 				</div>
 			</CardContent>
 		</Card>
+	);
+}
+
+export function FinancialLedger({
+	organizationId,
+}: {
+	organizationId: string;
+}) {
+	return (
+		<OrgCurrencyProvider organizationId={organizationId}>
+			<FinancialLedgerContent organizationId={organizationId} />
+		</OrgCurrencyProvider>
 	);
 }

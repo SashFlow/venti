@@ -13,11 +13,10 @@ import {
 } from "@repo/ui/table";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { orpc } from "@shared/lib/orpc-query-utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { toast } from "sonner";
 
 const STATUS_VARIANT: Record<
 	string,
@@ -36,7 +35,6 @@ export default function InboundOrderDetailPage() {
 	const params = useParams<{ id: string }>();
 	const { organization } = useSession();
 	const organizationId = organization?.id ?? "";
-	const queryClient = useQueryClient();
 
 	const query = useQuery({
 		...orpc.orders.getPurchaseOrder.queryOptions({
@@ -68,8 +66,10 @@ export default function InboundOrderDetailPage() {
 		);
 	}
 
-	const totalCost = order.lines.reduce(
-		(sum, l) => sum + Number(l.unitCost ?? 0) * Number(l.orderedQty),
+	const items = order.items ?? [];
+	const totalCost = items.reduce(
+		(sum, item) =>
+			sum + Number(item.unitPrice ?? 0) * Number(item.orderedQty),
 		0,
 	);
 
@@ -125,48 +125,12 @@ export default function InboundOrderDetailPage() {
 								Expected Date
 							</span>
 							<span>
-								{order.expectedDate
+								{order.expectedAt
 									? new Date(
-											order.expectedDate,
+											order.expectedAt,
 										).toLocaleDateString()
 									: "—"}
 							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Ordered At
-							</span>
-							<span>
-								{order.orderedAt
-									? new Date(
-											order.orderedAt,
-										).toLocaleDateString()
-									: "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Approved By
-							</span>
-							<span>{order.approvedBy?.name ?? "—"}</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Closed At
-							</span>
-							<span>
-								{order.closedAt
-									? new Date(
-											order.closedAt,
-										).toLocaleDateString()
-									: "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Created By
-							</span>
-							<span>{order.createdBy?.name ?? "—"}</span>
 						</div>
 						<div className="flex justify-between">
 							<span className="text-muted-foreground">
@@ -188,17 +152,16 @@ export default function InboundOrderDetailPage() {
 							<span className="text-muted-foreground">
 								Total Lines
 							</span>
-							<span className="font-medium">
-								{order.lines.length}
-							</span>
+							<span className="font-medium">{items.length}</span>
 						</div>
 						<div className="flex justify-between">
 							<span className="text-muted-foreground">
 								Total Ordered Qty
 							</span>
 							<span>
-								{order.lines.reduce(
-									(s, l) => s + Number(l.orderedQty),
+								{items.reduce(
+									(sum, item) =>
+										sum + Number(item.orderedQty),
 									0,
 								)}
 							</span>
@@ -208,8 +171,9 @@ export default function InboundOrderDetailPage() {
 								Total Received Qty
 							</span>
 							<span>
-								{order.lines.reduce(
-									(s, l) => s + Number(l.receivedQty ?? 0),
+								{items.reduce(
+									(sum, item) =>
+										sum + Number(item.receivedQty ?? 0),
 									0,
 								)}
 							</span>
@@ -220,18 +184,10 @@ export default function InboundOrderDetailPage() {
 							</span>
 							<span className="font-medium">
 								{totalCost > 0
-									? `$${totalCost.toFixed(2)}`
+									? `₹${totalCost.toFixed(2)}`
 									: "—"}
 							</span>
 						</div>
-						{order.notes && (
-							<div className="pt-2 border-t">
-								<p className="text-muted-foreground text-xs mb-1">
-									Notes
-								</p>
-								<p>{order.notes}</p>
-							</div>
-						)}
 					</CardContent>
 				</Card>
 			</div>
@@ -244,10 +200,7 @@ export default function InboundOrderDetailPage() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead className="pl-6">#</TableHead>
-								<TableHead>SKU</TableHead>
-								<TableHead>Product</TableHead>
-								<TableHead>UOM</TableHead>
+								<TableHead className="pl-6">SKU</TableHead>
 								<TableHead className="text-right">
 									Ordered
 								</TableHead>
@@ -255,51 +208,25 @@ export default function InboundOrderDetailPage() {
 									Received
 								</TableHead>
 								<TableHead className="text-right">
-									Unit Cost
+									Unit Price
 								</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead>Exp. Date</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{order.lines.map((line) => (
-								<TableRow key={line.id}>
-									<TableCell className="pl-6">
-										{line.lineNumber}
-									</TableCell>
-									<TableCell className="font-mono text-xs">
-										{line.sku?.sku ?? "—"}
-									</TableCell>
-									<TableCell>
-										{line.sku?.name ?? "—"}
-									</TableCell>
-									<TableCell>
-										{line.uom?.abbreviation ?? "—"}
+							{items.map((item) => (
+								<TableRow key={item.id}>
+									<TableCell className="pl-6 font-mono text-xs">
+										{item.sku?.code ?? "—"}
 									</TableCell>
 									<TableCell className="text-right">
-										{Number(line.orderedQty)}
+										{Number(item.orderedQty)}
 									</TableCell>
 									<TableCell className="text-right">
-										{Number(line.receivedQty ?? 0)}
+										{Number(item.receivedQty ?? 0)}
 									</TableCell>
 									<TableCell className="text-right">
-										{line.unitCost
-											? `$${Number(line.unitCost).toFixed(2)}`
-											: "—"}
-									</TableCell>
-									<TableCell>
-										<Badge
-											variant="outline"
-											className="text-xs"
-										>
-											{line.status}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-xs text-muted-foreground">
-										{line.expectedDate
-											? new Date(
-													line.expectedDate,
-												).toLocaleDateString()
+										{item.unitPrice
+											? `₹${Number(item.unitPrice).toFixed(2)}`
 											: "—"}
 									</TableCell>
 								</TableRow>

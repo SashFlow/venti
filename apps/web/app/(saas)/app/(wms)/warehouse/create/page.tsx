@@ -151,7 +151,7 @@ export default function CreateWarehousePage() {
 								onChange={(event) =>
 									setName(event.target.value)
 								}
-								placeholder="Main Distribution Center"
+								placeholder="Hyderabad Central Hub"
 								required
 							/>
 						</div>
@@ -166,7 +166,7 @@ export default function CreateWarehousePage() {
 								onChange={(event) =>
 									setCode(event.target.value.toUpperCase())
 								}
-								placeholder="WH-NYC-01"
+								placeholder="HYD-01"
 								required
 							/>
 						</div>

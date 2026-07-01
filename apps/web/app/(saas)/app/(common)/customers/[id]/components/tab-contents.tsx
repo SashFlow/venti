@@ -60,7 +60,7 @@ export type CustomerOrder = {
 	id: string;
 	orderNumber: string;
 	status: string;
-	customer?: { name: string; code: string } | null;
+	customer?: { name: string; code?: string; email?: string | null } | null;
 	orderedAt?: Date | string | null;
 	warehouse: { name: string };
 	_count: { items: number };

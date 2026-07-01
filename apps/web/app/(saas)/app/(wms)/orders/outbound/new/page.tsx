@@ -89,7 +89,13 @@ export default function CreateOutboundOrderPage() {
 
 	const warehouses = warehousesQuery.data?.warehouses ?? [];
 	const customers = customersQuery.data?.customers ?? [];
-	const skus = skusQuery.data?.skus ?? [];
+	const skuOptions = (skusQuery.data?.products ?? []).flatMap((product) =>
+		product.skus.map((sku) => ({
+			id: sku.id,
+			name: product.name,
+			code: sku.code,
+		})),
+	);
 
 	const handleAddLine = () => setLines((prev) => [...prev, newLine()]);
 	const handleRemoveLine = (id: string) =>
@@ -114,6 +120,10 @@ export default function CreateOutboundOrderPage() {
 			toast.error("Warehouse is required.");
 			return;
 		}
+		if (!customerId) {
+			toast.error("Customer is required.");
+			return;
+		}
 		const validLines = lines.filter((l) => l.skuId && l.orderedQty);
 		if (validLines.length === 0) {
 			toast.error("At least one valid line item is required.");
@@ -126,7 +136,7 @@ export default function CreateOutboundOrderPage() {
 				organizationId,
 				orderNumber: orderNumber.trim(),
 				warehouseId,
-				customerId: customerId || undefined,
+				customerId,
 				customerName: customerName.trim() || undefined,
 				customerEmail: customerEmail.trim() || undefined,
 				customerRef: customerRef.trim() || undefined,
@@ -203,7 +213,9 @@ export default function CreateOutboundOrderPage() {
 							</Label>
 							<Select
 								value={warehouseId}
-								onValueChange={setWarehouseId}
+								onValueChange={(value) => {
+									if (value) setWarehouseId(value);
+								}}
 							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse">
@@ -223,20 +235,24 @@ export default function CreateOutboundOrderPage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="customerId">Customer</Label>
+							<Label htmlFor="customerId">
+								Customer{" "}
+								<span className="text-destructive">*</span>
+							</Label>
 							<Select
 								value={customerId}
 								onValueChange={(v) => {
+									if (!v) return;
 									setCustomerId(v);
 									const c = customers.find((x) => x.id === v);
 									if (c) setCustomerName(c.name);
 								}}
 							>
 								<SelectTrigger id="customerId">
-									<SelectValue placeholder="Select customer (optional)">
+									<SelectValue placeholder="Select customer">
 										{customers.find(
 											(c) => c.id === customerId,
-										)?.name ?? "Select customer (optional)"}
+										)?.name ?? "Select customer"}
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
@@ -253,7 +269,9 @@ export default function CreateOutboundOrderPage() {
 							<Label htmlFor="priority">Priority</Label>
 							<Select
 								value={priority}
-								onValueChange={setPriority}
+								onValueChange={(value) => {
+									if (value) setPriority(value);
+								}}
 							>
 								<SelectTrigger id="priority">
 									<SelectValue placeholder="Select priority">
@@ -382,18 +400,20 @@ export default function CreateOutboundOrderPage() {
 									</Label>
 									<Select
 										value={line.skuId}
-										onValueChange={(v) =>
-											handleLineChange(
-												line.id,
-												"skuId",
-												v,
-											)
-										}
+										onValueChange={(v) => {
+											if (v) {
+												handleLineChange(
+													line.id,
+													"skuId",
+													v,
+												);
+											}
+										}}
 									>
 										<SelectTrigger>
 											<SelectValue placeholder="Select product">
 												{line.skuId
-													? skus.find(
+													? skuOptions.find(
 															(s) =>
 																s.id ===
 																line.skuId,
@@ -402,12 +422,12 @@ export default function CreateOutboundOrderPage() {
 											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
-											{skus.map((s) => (
+											{skuOptions.map((s) => (
 												<SelectItem
 													key={s.id}
 													value={s.id}
 												>
-													{s.name} ({s.sku})
+													{s.name} ({s.code})
 												</SelectItem>
 											))}
 										</SelectContent>

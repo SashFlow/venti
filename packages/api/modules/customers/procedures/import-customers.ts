@@ -1,5 +1,10 @@
 import { ORPCError } from "@orpc/server";
-import { db } from "@repo/database";
+import {
+	db,
+	deriveEntityCode,
+	getCustomerCode,
+	mergeMetadataWithCode,
+} from "@repo/database";
 import type { Prisma } from "@repo/database/prisma/generated/client";
 import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
@@ -7,12 +12,12 @@ import { requireOrganizationMembership } from "../../../lib/organization-access"
 import { protectedProcedure } from "../../../orpc/procedures";
 
 const customerImportRowSchema = z.object({
-	code: z.string().trim().min(1).max(255),
+	code: z.string().trim().max(255).optional(),
 	name: z.string().trim().min(1).max(255),
 	email: z.string().trim().email().max(255).optional(),
 	phone: z.string().trim().max(50).optional(),
 	notes: z.string().trim().optional(),
-	type: z.boolean().optional(),
+	isWholesaler: z.boolean().optional(),
 	address1: z.string().trim().optional(),
 	address2: z.string().trim().optional(),
 	city: z.string().trim().optional(),
@@ -44,22 +49,33 @@ export const importCustomersProcedure = protectedProcedure
 
 		for (const [index, row] of input.rows.entries()) {
 			try {
-				const metadata: Prisma.InputJsonValue = {
-					address1: row.address1,
-					address2: row.address2,
-					city: row.city,
-					state: row.state,
-					zip: row.zip,
-					country: row.country,
-				};
+				const code = row.code?.trim()
+					? row.code.trim().toUpperCase()
+					: deriveEntityCode(row.name);
+				const metadata: Prisma.InputJsonValue = mergeMetadataWithCode(
+					{
+						address1: row.address1,
+						address2: row.address2,
+						city: row.city,
+						state: row.state,
+						zip: row.zip,
+						country: row.country,
+					},
+					code,
+				);
 
 				const existing = await db.customer.findFirst({
 					where: {
 						organizationId: input.organizationId,
-						code: row.code,
+						metadata: {
+							path: ["code"],
+							equals: code,
+						},
 					},
 					select: { id: true },
 				});
+
+				const customerType = row.isWholesaler ? "WHOLESALE" : "RETAIL";
 
 				if (existing) {
 					await db.customer.update({
@@ -69,7 +85,7 @@ export const importCustomersProcedure = protectedProcedure
 							email: row.email,
 							phone: row.phone,
 							notes: row.notes,
-							type: row.isWholesaler ?? false,
+							type: customerType,
 							metadata,
 						},
 					});
@@ -78,12 +94,11 @@ export const importCustomersProcedure = protectedProcedure
 					await db.customer.create({
 						data: {
 							organizationId: input.organizationId,
-							code: row.code,
 							name: row.name,
 							email: row.email,
 							phone: row.phone,
 							notes: row.notes,
-							type: row.isWholesaler ?? false,
+							type: customerType,
 							metadata,
 						},
 					});

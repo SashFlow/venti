@@ -9,7 +9,6 @@ import {
 	ReactFlow,
 	useEdgesState,
 	useNodesState,
-	type Node,
 } from "@xyflow/react";
 import { useCallback, useEffect, useState } from "react";
 import "@xyflow/react/dist/style.css";
@@ -200,7 +199,7 @@ export function WorkflowBuilder() {
 		}
 	};
 
-	const styledNodes: Node[] = nodes.map((n) => ({
+	const styledNodes = nodes.map((n) => ({
 		...n,
 		style: {
 			...n.style,

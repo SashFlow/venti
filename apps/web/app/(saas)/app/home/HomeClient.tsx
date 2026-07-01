@@ -28,6 +28,10 @@ import {
 	Zap,
 } from "lucide-react";
 import { DemoRunner } from "@saas/demo/DemoRunner";
+import {
+	OrgCurrencyProvider,
+	useOrgCurrency,
+} from "@saas/organizations/hooks/use-org-currency";
 import { AiInsightTeaser } from "./components/ai-insight-teaser";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -137,19 +141,6 @@ type AnalyticsData = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatINR(amount: number): string {
-	if (amount >= 10_000_000) {
-		return `₹${(amount / 10_000_000).toFixed(1)} Cr`;
-	}
-	if (amount >= 100_000) {
-		return `₹${(amount / 100_000).toFixed(1)} L`;
-	}
-	if (amount >= 1_000) {
-		return `₹${(amount / 1_000).toFixed(0)}K`;
-	}
-	return `₹${amount.toFixed(0)}`;
-}
 
 function formatMinutes(mins: number): string {
 	if (mins < 60) {
@@ -424,6 +415,7 @@ function WarehouseControlLeadPanel({
 }: {
 	data: AnalyticsData["persona2"];
 }) {
+	const { formatCurrency } = useOrgCurrency();
 	const { otif, bottleneckZones, fifoCompliance, highValueReverseAging } =
 		data;
 	const otifColor =
@@ -482,7 +474,7 @@ function WarehouseControlLeadPanel({
 				<KpiCard
 					title="High-Value Reverse Aging"
 					value={`${highValueReverseAging.avgDays}d avg`}
-					sub={`${formatINR(highValueReverseAging.totalValue)} pending`}
+					sub={`${formatCurrency(highValueReverseAging.totalValue)} pending`}
 					icon={AlertCircle}
 					color="text-red-600"
 				/>
@@ -591,6 +583,7 @@ function WarehouseControlLeadPanel({
 // ─── Persona 3: Inventory & Quality Lead ─────────────────────────────────────
 
 function InventoryQualityPanel({ data }: { data: AnalyticsData["persona3"] }) {
+	const { formatCurrency } = useOrgCurrency();
 	const {
 		inventoryAccuracy,
 		deadStock,
@@ -616,7 +609,7 @@ function InventoryQualityPanel({ data }: { data: AnalyticsData["persona3"] }) {
 				/>
 				<KpiCard
 					title="Dead Stock Value"
-					value={formatINR(deadStock.totalValue)}
+					value={formatCurrency(deadStock.totalValue)}
 					sub={`Across ${deadStock.skuCount} SKUs (90+ days no movement)`}
 					icon={Package}
 					color="text-red-600"
@@ -691,7 +684,7 @@ function InventoryQualityPanel({ data }: { data: AnalyticsData["persona3"] }) {
 											{item.name}
 										</span>
 										<span className="font-semibold text-red-700 ml-4 whitespace-nowrap">
-											{formatINR(item.cost)}
+											{formatCurrency(item.cost)}
 											<span className="text-xs font-normal text-muted-foreground ml-1">
 												({item.returnCount} returns)
 											</span>
@@ -816,6 +809,7 @@ function InventoryQualityPanel({ data }: { data: AnalyticsData["persona3"] }) {
 // ─── Persona 4: Regional Supply Chain Manager ─────────────────────────────────
 
 function RegionalSupplyPanel({ data }: { data: AnalyticsData["persona4"] }) {
+	const { formatCurrency } = useOrgCurrency();
 	const {
 		regionalBalance,
 		transferNeedUnits,
@@ -848,7 +842,7 @@ function RegionalSupplyPanel({ data }: { data: AnalyticsData["persona4"] }) {
 				/>
 				<KpiCard
 					title="AMC Non-Return Exposure"
-					value={formatINR(totalNonReturnExposure)}
+					value={formatCurrency(totalNonReturnExposure)}
 					sub="Unreturned component value"
 					icon={AlertTriangle}
 					color="text-red-600"
@@ -933,7 +927,7 @@ function RegionalSupplyPanel({ data }: { data: AnalyticsData["persona4"] }) {
 												{w.qty.toLocaleString()}
 											</td>
 											<td className="py-1.5 text-right font-medium">
-												{formatINR(w.value)}
+												{formatCurrency(w.value)}
 											</td>
 										</tr>
 									))}
@@ -964,8 +958,8 @@ function RegionalSupplyPanel({ data }: { data: AnalyticsData["persona4"] }) {
 											{r.name}
 										</span>
 										<span className="text-xs text-muted-foreground">
-											{formatINR(r.pendingValue)} pending
-											/ {formatINR(r.recoveredValue)}{" "}
+											{formatCurrency(r.pendingValue)} pending
+											/ {formatCurrency(r.recoveredValue)}{" "}
 											recovered
 										</span>
 									</div>
@@ -1037,7 +1031,7 @@ function RegionalSupplyPanel({ data }: { data: AnalyticsData["persona4"] }) {
 											{c.name}
 										</span>
 										<span className="font-medium text-purple-700 ml-2">
-											{formatINR(c.cost)}
+											{formatCurrency(c.cost)}
 										</span>
 									</div>
 									<ProgressBar
@@ -1057,6 +1051,7 @@ function RegionalSupplyPanel({ data }: { data: AnalyticsData["persona4"] }) {
 // ─── Persona 5: Executive ─────────────────────────────────────────────────────
 
 function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
+	const { formatCurrency } = useOrgCurrency();
 	const {
 		inventoryCapitalAtRisk,
 		otifForecast,
@@ -1079,7 +1074,7 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-3xl font-bold text-red-700">
-							{formatINR(inventoryCapitalAtRisk.total)}
+							{formatCurrency(inventoryCapitalAtRisk.total)}
 						</div>
 						<div className="mt-3 space-y-1.5">
 							{[
@@ -1110,7 +1105,7 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 										{b.label}
 									</span>
 									<span className="font-medium">
-										{formatINR(b.val)}
+										{formatCurrency(b.val)}
 									</span>
 								</div>
 							))}
@@ -1157,8 +1152,8 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 							{recoveryYield.rate}%
 						</div>
 						<p className="text-xs text-muted-foreground mt-1">
-							{formatINR(recoveryYield.recoveredValue)} recovered
-							of {formatINR(recoveryYield.totalReturnValue)} (YTD)
+							{formatCurrency(recoveryYield.recoveredValue)} recovered
+							of {formatCurrency(recoveryYield.totalReturnValue)} (YTD)
 						</p>
 						<div className="mt-2">
 							<ProgressBar
@@ -1185,7 +1180,7 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-3xl font-bold text-red-700 mb-4">
-							{formatINR(reverseLeakage.total)}
+							{formatCurrency(reverseLeakage.total)}
 						</div>
 						<div className="space-y-2">
 							<div className="flex items-center justify-between text-sm">
@@ -1193,7 +1188,7 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 									Total Return Value
 								</span>
 								<span className="font-medium">
-									{formatINR(
+									{formatCurrency(
 										reverseLeakage.pendingReturnValue,
 									)}
 								</span>
@@ -1203,7 +1198,7 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 									Recovered
 								</span>
 								<span className="font-medium text-green-600">
-									{formatINR(reverseLeakage.recoveredValue)}
+									{formatCurrency(reverseLeakage.recoveredValue)}
 								</span>
 							</div>
 							<div className="flex items-center justify-between text-sm border-t pt-2">
@@ -1211,7 +1206,7 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 									Unrecovered (Leakage)
 								</span>
 								<span className="font-bold text-red-700">
-									{formatINR(reverseLeakage.total)}
+									{formatCurrency(reverseLeakage.total)}
 								</span>
 							</div>
 						</div>
@@ -1226,7 +1221,7 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-3xl font-bold text-green-700 mb-4">
-							{formatINR(recoveryOpportunity.total)}
+							{formatCurrency(recoveryOpportunity.total)}
 						</div>
 						<p className="text-sm text-muted-foreground">
 							Immediately recoverable through repair and AMC
@@ -1267,7 +1262,7 @@ function ExecutivePanel({ data }: { data: AnalyticsData["persona5"] }) {
 											</span>
 										</span>
 										<span className="font-bold text-red-700 ml-4 whitespace-nowrap">
-											{formatINR(item.cost)}
+											{formatCurrency(item.cost)}
 											<span className="text-xs font-normal text-muted-foreground ml-1">
 												({item.qty.toLocaleString()}{" "}
 												replaced)
@@ -1355,7 +1350,8 @@ export default function HomeClient({
 	});
 
 	return (
-		<div className="space-y-6">
+		<OrgCurrencyProvider organizationId={organizationId}>
+			<div className="space-y-6">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<p className="text-sm text-muted-foreground">
 					Control tower — persona dashboards
@@ -1426,5 +1422,6 @@ export default function HomeClient({
 				) : null}
 			</Tabs>
 		</div>
+		</OrgCurrencyProvider>
 	);
 }

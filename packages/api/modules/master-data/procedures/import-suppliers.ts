@@ -1,5 +1,9 @@
 import { ORPCError } from "@orpc/server";
-import { db } from "@repo/database";
+import {
+	db,
+	deriveEntityCode,
+	mergeMetadataWithCode,
+} from "@repo/database";
 import type { Prisma } from "@repo/database/prisma/generated/client";
 import { z } from "zod";
 import { writeAuditLog } from "../../../lib/audit";
@@ -28,23 +32,6 @@ const importSuppliersInput = z.object({
 	rows: z.array(supplierImportRowSchema).min(1).max(1000),
 });
 
-function normalizeCode(name: string, prefix?: string) {
-	const explicitPrefix = prefix?.trim();
-	if (explicitPrefix) {
-		return explicitPrefix.toUpperCase().slice(0, 50);
-	}
-
-	const fromName = name
-		.replace(/[^a-zA-Z0-9]/g, "")
-		.toUpperCase()
-		.slice(0, 8);
-	if (fromName) {
-		return fromName;
-	}
-
-	return `SUP${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-}
-
 export const importSuppliersProcedure = protectedProcedure
 	.route({
 		method: "POST",
@@ -63,24 +50,30 @@ export const importSuppliersProcedure = protectedProcedure
 
 		for (const [index, row] of input.rows.entries()) {
 			try {
-				const code = normalizeCode(row.name, row.prefix);
-				const metadata: Prisma.InputJsonValue = {
-					accountNumber: row.accountNumber,
-					representativeName: row.representativeName,
-					brands: row.brands,
-					notes: row.notes,
-					address1: row.address1,
-					address2: row.address2,
-					city: row.city,
-					state: row.state,
-					zip: row.zip,
-					country: row.country,
-				};
+				const code = deriveEntityCode(row.name, row.prefix);
+				const metadata: Prisma.InputJsonValue = mergeMetadataWithCode(
+					{
+						accountNumber: row.accountNumber,
+						representativeName: row.representativeName,
+						brands: row.brands,
+						notes: row.notes,
+						address1: row.address1,
+						address2: row.address2,
+						city: row.city,
+						state: row.state,
+						zip: row.zip,
+						country: row.country,
+					},
+					code,
+				);
 
 				const existing = await db.supplier.findFirst({
 					where: {
 						organizationId: input.organizationId,
-						code,
+						metadata: {
+							path: ["code"],
+							equals: code,
+						},
 					},
 					select: { id: true },
 				});
@@ -90,6 +83,8 @@ export const importSuppliersProcedure = protectedProcedure
 						where: { id: existing.id },
 						data: {
 							name: row.name,
+							email: row.email,
+							phone: row.phone,
 							metadata,
 						},
 					});
@@ -98,8 +93,9 @@ export const importSuppliersProcedure = protectedProcedure
 					await db.supplier.create({
 						data: {
 							organizationId: input.organizationId,
-							code,
 							name: row.name,
+							email: row.email,
+							phone: row.phone,
 							metadata,
 						},
 					});

@@ -151,7 +151,10 @@ export function OrganizationMembersList({
 								<OrganizationRoleSelect
 									value={row.original.role}
 									onSelect={async (value) =>
-										updateMemberRole(row.original.id, value)
+										updateMemberRole(
+											row.original.id,
+											value as OrganizationMemberRole,
+										)
 									}
 									disabled={
 										!userIsOrganizationAdmin ||

@@ -93,7 +93,7 @@ export default function VendorsPage() {
 				email: supplier.email,
 				phone: supplier.phone,
 				accountNumber: metadata.accountNumber || null,
-				openOrders: 0,
+				openOrders: supplier.openOrderCount ?? 0,
 			};
 		});
 	}, [data?.suppliers]);

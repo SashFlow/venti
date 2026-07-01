@@ -158,7 +158,14 @@ export function FulfillmentTabContent({
 				</div>
 				<div className="mt-3 max-w-xs">
 					<p className="text-sm font-medium mb-1.5">Printer type</p>
-					<Select value={printerType} onValueChange={setPrinterType}>
+					<Select
+						value={printerType}
+						onValueChange={(value) => {
+							if (value) {
+								setPrinterType(value);
+							}
+						}}
+					>
 						<SelectTrigger>
 							<SelectValue />
 						</SelectTrigger>

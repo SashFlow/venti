@@ -1,3 +1,4 @@
+export * from "./lib/metadata-code";
 export * from "./prisma";
 export * from "./services/customers-service";
 export * from "./services/inventory-service";

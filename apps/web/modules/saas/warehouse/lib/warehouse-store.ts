@@ -692,13 +692,15 @@ export function useWarehouse(warehouseId: string) {
 						storageUnits: hasStorage
 							? f.storageUnits.map((u) =>
 									u.id === id
-										? { ...u, ...patch }
+										? ({ ...u, ...patch } as typeof u)
 										: u,
 								)
 							: f.storageUnits,
 						assets: hasAsset
 							? f.assets.map((a) =>
-									a.id === id ? { ...a, ...patch } : a,
+									a.id === id
+										? ({ ...a, ...patch } as typeof a)
+										: a,
 								)
 							: f.assets,
 					};

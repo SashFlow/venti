@@ -146,6 +146,7 @@ export default function CreateTransferPage() {
 							<Select
 								value={warehouseId}
 								onValueChange={(value) => {
+									if (!value) return;
 									setWarehouseId(value);
 									setFromLocationId("");
 									setToLocationId("");
@@ -182,7 +183,12 @@ export default function CreateTransferPage() {
 							<Label htmlFor="skuId">
 								SKU <span className="text-destructive">*</span>
 							</Label>
-							<Select value={skuId} onValueChange={setSkuId}>
+							<Select
+								value={skuId}
+								onValueChange={(value) => {
+									if (value) setSkuId(value);
+								}}
+							>
 								<SelectTrigger id="skuId">
 									<SelectValue placeholder="Select SKU" />
 								</SelectTrigger>
@@ -200,7 +206,9 @@ export default function CreateTransferPage() {
 							<Label htmlFor="fromLocationId">From Location</Label>
 							<Select
 								value={fromLocationId}
-								onValueChange={setFromLocationId}
+								onValueChange={(value) => {
+									if (value) setFromLocationId(value);
+								}}
 								disabled={!warehouseId}
 							>
 								<SelectTrigger id="fromLocationId">
@@ -221,7 +229,9 @@ export default function CreateTransferPage() {
 							<Label htmlFor="toLocationId">To Location</Label>
 							<Select
 								value={toLocationId}
-								onValueChange={setToLocationId}
+								onValueChange={(value) => {
+									if (value) setToLocationId(value);
+								}}
 								disabled={!warehouseId}
 							>
 								<SelectTrigger id="toLocationId">

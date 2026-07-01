@@ -60,7 +60,7 @@ export default function CreateInboundOrderPage() {
 	});
 
 	const suppliersQuery = useQuery({
-		...orpc.masterData.list.queryOptions({
+		...orpc.masterData.suppliers.list.queryOptions({
 			input: { organizationId, limit: 100, offset: 0 },
 		}),
 		enabled: Boolean(organizationId),
@@ -79,7 +79,13 @@ export default function CreateInboundOrderPage() {
 
 	const warehouses = warehousesQuery.data?.warehouses ?? [];
 	const suppliers = suppliersQuery.data?.suppliers ?? [];
-	const skus = skusQuery.data?.skus ?? [];
+	const skuOptions = (skusQuery.data?.products ?? []).flatMap((product) =>
+		product.skus.map((sku) => ({
+			id: sku.id,
+			name: product.name,
+			code: sku.code,
+		})),
+	);
 
 	const handleAddLine = () => setLines((prev) => [...prev, newLine()]);
 
@@ -194,7 +200,9 @@ export default function CreateInboundOrderPage() {
 							</Label>
 							<Select
 								value={warehouseId}
-								onValueChange={setWarehouseId}
+								onValueChange={(value) => {
+									if (value) setWarehouseId(value);
+								}}
 							>
 								<SelectTrigger id="warehouseId">
 									<SelectValue placeholder="Select warehouse">
@@ -220,7 +228,9 @@ export default function CreateInboundOrderPage() {
 							</Label>
 							<Select
 								value={supplierId}
-								onValueChange={setSupplierId}
+								onValueChange={(value) => {
+									if (value) setSupplierId(value);
+								}}
 							>
 								<SelectTrigger id="supplierId">
 									<SelectValue placeholder="Select supplier">
@@ -293,18 +303,20 @@ export default function CreateInboundOrderPage() {
 									</Label>
 									<Select
 										value={line.skuId}
-										onValueChange={(v) =>
-											handleLineChange(
-												line.id,
-												"skuId",
-												v,
-											)
-										}
+										onValueChange={(v) => {
+											if (v) {
+												handleLineChange(
+													line.id,
+													"skuId",
+													v,
+												);
+											}
+										}}
 									>
 										<SelectTrigger>
 											<SelectValue placeholder="Select product">
 												{line.skuId
-													? skus.find(
+													? skuOptions.find(
 															(s) =>
 																s.id ===
 																line.skuId,
@@ -313,12 +325,12 @@ export default function CreateInboundOrderPage() {
 											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
-											{skus.map((s) => (
+											{skuOptions.map((s) => (
 												<SelectItem
 													key={s.id}
 													value={s.id}
 												>
-													{s.name} ({s.sku})
+													{s.name} ({s.code})
 												</SelectItem>
 											))}
 										</SelectContent>

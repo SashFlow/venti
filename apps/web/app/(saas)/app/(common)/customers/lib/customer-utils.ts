@@ -58,6 +58,14 @@ export function readCustomerMetadata(metadata: unknown): Required<
 		}),
 	);
 
+	const customAttributesRaw = asRecord(record.customAttributes);
+	const customAttributes = Object.fromEntries(
+		Object.entries(customAttributesRaw).map(([key, value]) => [
+			key,
+			typeof value === "string" ? value : "",
+		]),
+	);
+
 	return {
 		address1: readString(record, "address1"),
 		address2: readString(record, "address2"),
@@ -70,6 +78,7 @@ export function readCustomerMetadata(metadata: unknown): Required<
 		monthlyDay: readString(record, "monthlyDay"),
 		quarterlyMonth: readString(record, "quarterlyMonth"),
 		yearlyDate: readString(record, "yearlyDate"),
+		customAttributes,
 		openByDay,
 		windowByDay,
 	};

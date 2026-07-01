@@ -1,6 +1,7 @@
 "use client";
 
 import { orpc } from "@shared/lib/orpc-query-utils";
+import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, TrendingDown } from "lucide-react";
 import { Card } from "@repo/ui/card";
 
@@ -9,8 +10,11 @@ export function CostOfDelayTicker({
 }: {
 	organizationId: string;
 }) {
-	const { data, isLoading } = orpc.analytics.costOfDelay.useQuery({
-		organizationId,
+	const { data, isLoading } = useQuery({
+		...orpc.analytics.costOfDelay.queryOptions({
+			input: { organizationId },
+		}),
+		enabled: Boolean(organizationId),
 	});
 
 	if (isLoading)

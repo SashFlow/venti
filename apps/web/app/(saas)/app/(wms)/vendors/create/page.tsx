@@ -101,7 +101,7 @@ function AddressFields({
 				<Label htmlFor={`${prefix}-country`}>Country</Label>
 				<Input
 					id={`${prefix}-country`}
-					placeholder="e.g. United States"
+					placeholder="e.g. India"
 					value={address.country}
 					onChange={(event) =>
 						onChange({ country: event.target.value })
@@ -112,7 +112,7 @@ function AddressFields({
 				<Label htmlFor={`${prefix}-state`}>State</Label>
 				<Input
 					id={`${prefix}-state`}
-					placeholder="e.g. California"
+					placeholder="e.g. Telangana"
 					value={address.state}
 					onChange={(event) =>
 						onChange({ state: event.target.value })
@@ -321,7 +321,7 @@ export default function CreateVendorPage() {
 								<Input
 									id="vendor-phone"
 									type="tel"
-									placeholder="+1 123-456-7890"
+									placeholder="+91 98765 43210"
 									value={phone}
 									onChange={(event) =>
 										setPhone(event.target.value)

@@ -1,4 +1,4 @@
-import { db } from "@repo/database";
+import { db, getSupplierCode } from "@repo/database";
 import { z } from "zod";
 import { requireOrganizationMembership } from "../../../lib/organization-access";
 import { protectedProcedure } from "../../../orpc/procedures";
@@ -32,28 +32,48 @@ export const exportSuppliersProcedure = protectedProcedure
 	.handler(async ({ context: { user }, input }) => {
 		await requireOrganizationMembership(input.organizationId, user.id);
 
-		const query = input.query?.trim();
+		const query = input.query?.trim().toLowerCase();
 
 		const suppliers = await db.supplier.findMany({
 			where: {
 				organizationId: input.organizationId,
-				OR: query
-					? [
-							{ code: { contains: query, mode: "insensitive" } },
-							{ name: { contains: query, mode: "insensitive" } },
-							{ email: { contains: query, mode: "insensitive" } },
-						]
-					: undefined,
+				...(query
+					? {
+							OR: [
+								{
+									name: {
+										contains: query,
+										mode: "insensitive",
+									},
+								},
+								{
+									email: {
+										contains: query,
+										mode: "insensitive",
+									},
+								},
+							],
+						}
+					: {}),
 			},
 			orderBy: {
 				createdAt: "desc",
 			},
 			select: {
-				code: true,
 				name: true,
 				metadata: true,
 			},
 		});
+
+		const filteredSuppliers = query
+			? suppliers.filter((supplier) => {
+					const code = getSupplierCode(supplier).toLowerCase();
+					return (
+						code.includes(query) ||
+						supplier.name.toLowerCase().includes(query)
+					);
+				})
+			: suppliers;
 
 		const header = [
 			"Code",
@@ -70,14 +90,14 @@ export const exportSuppliersProcedure = protectedProcedure
 			"Note",
 		];
 
-		const rows = suppliers.map((supplier) => {
+		const rows = filteredSuppliers.map((supplier) => {
 			const metadata =
 				supplier.metadata && typeof supplier.metadata === "object"
 					? (supplier.metadata as Record<string, unknown>)
 					: {};
 
 			return [
-				escapeCsv(supplier.code),
+				escapeCsv(getSupplierCode(supplier)),
 				escapeCsv(supplier.name),
 				escapeCsv(
 					typeof metadata.accountNumber === "string"
@@ -124,6 +144,6 @@ export const exportSuppliersProcedure = protectedProcedure
 			fileName: "suppliers_export.csv",
 			contentType: "text/csv",
 			csv: `${header.join(",")}\n${rows.join("\n")}`,
-			count: suppliers.length,
+			count: filteredSuppliers.length,
 		};
 	});

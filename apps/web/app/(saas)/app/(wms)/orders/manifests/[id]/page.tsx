@@ -3,14 +3,6 @@
 import { Badge } from "@repo/ui/badge";
 import { Button } from "@repo/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@repo/ui/table";
 import { useSession } from "@saas/auth/hooks/use-session";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -59,12 +51,12 @@ export default function ManifestDetailPage() {
 		);
 	}
 
-	const handleDispatch = async () => {
+	const handleShip = async () => {
 		try {
 			await updateMutation.mutateAsync({
 				organizationId,
 				shipmentId: shipment.id,
-				status: "DISPATCHED",
+				status: "SHIPPED",
 			});
 			await queryClient.invalidateQueries({
 				queryKey: orpc.orders.getShipment.key(),
@@ -72,7 +64,7 @@ export default function ManifestDetailPage() {
 			await queryClient.invalidateQueries({
 				queryKey: orpc.orders.listManifests.key(),
 			});
-			toast.success("Shipment marked as dispatched.");
+			toast.success("Shipment marked as shipped.");
 		} catch {
 			toast.error("Failed to update shipment status.");
 		}
@@ -97,6 +89,9 @@ export default function ManifestDetailPage() {
 		}
 	};
 
+	const title =
+		shipment.trackingNumber ?? `Shipment ${shipment.id.slice(0, 8)}`;
+
 	return (
 		<div className="container max-w-4xl py-8 mx-auto space-y-6">
 			<div className="flex items-center gap-3">
@@ -108,7 +103,7 @@ export default function ManifestDetailPage() {
 				<div className="flex-1">
 					<div className="flex items-center gap-2">
 						<h1 className="text-2xl font-semibold tracking-tight">
-							{shipment.shipmentNumber}
+							{title}
 						</h1>
 						<Badge variant="outline">{shipment.status}</Badge>
 					</div>
@@ -117,18 +112,19 @@ export default function ManifestDetailPage() {
 					</p>
 				</div>
 				<div className="flex gap-2">
-					{shipment.status === "READY_TO_SHIP" && (
+					{(shipment.status === "PENDING" ||
+						shipment.status === "PACKED") && (
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={handleDispatch}
+							onClick={handleShip}
 							disabled={updateMutation.isPending}
 						>
 							<SendIcon className="mr-1.5 size-4" />
-							Mark Dispatched
+							Mark Shipped
 						</Button>
 					)}
-					{shipment.status === "DISPATCHED" && (
+					{shipment.status === "SHIPPED" && (
 						<Button
 							variant="outline"
 							size="sm"
@@ -141,160 +137,58 @@ export default function ManifestDetailPage() {
 				</div>
 			</div>
 
-			<div className="grid gap-4 md:grid-cols-2">
-				<Card className="border rounded-2xl">
-					<CardHeader className="pb-3">
-						<CardTitle className="text-base">
-							Shipment Info
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-2 text-sm">
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Warehouse
-							</span>
-							<span className="font-medium">
-								{shipment.warehouse?.name ?? "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Sales Order
-							</span>
-							<span>
-								{shipment.salesOrder ? (
-									<Link
-										href={`/app/orders/outbound/${shipment.salesOrder.id}`}
-										className="underline text-primary"
-									>
-										{shipment.salesOrder.orderNumber}
-									</Link>
-								) : (
-									"—"
-								)}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Customer
-							</span>
-							<span>
-								{shipment.salesOrder?.customerName ?? "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Carrier
-							</span>
-							<span>{shipment.carrier?.name ?? "—"}</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Tracking #
-							</span>
-							<span className="font-mono text-xs">
-								{shipment.trackingNumber ?? "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Dock Door
-							</span>
-							<span>{shipment.dockDoor?.name ?? "—"}</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Scheduled At
-							</span>
-							<span>
-								{shipment.scheduledAt
-									? new Date(
-											shipment.scheduledAt,
-										).toLocaleString()
-									: "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Dispatched At
-							</span>
-							<span>
-								{shipment.dispatchedAt
-									? new Date(
-											shipment.dispatchedAt,
-										).toLocaleString()
-									: "—"}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">
-								Delivered At
-							</span>
-							<span>
-								{shipment.deliveredAt
-									? new Date(
-											shipment.deliveredAt,
-										).toLocaleString()
-									: "—"}
-							</span>
-						</div>
-						{shipment.notes && (
-							<div className="pt-2 border-t">
-								<p className="text-muted-foreground text-xs mb-1">
-									Notes
-								</p>
-								<p>{shipment.notes}</p>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-
-				<Card className="border rounded-2xl">
-					<CardHeader className="pb-3">
-						<CardTitle className="text-base">
-							Shipped Lines
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="p-0">
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead className="pl-4">SKU</TableHead>
-									<TableHead>Product</TableHead>
-									<TableHead className="text-right">
-										Shipped Qty
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{shipment.lines.map((l) => (
-									<TableRow key={l.id}>
-										<TableCell className="pl-4 font-mono text-xs">
-											{l.sku?.sku ?? "—"}
-										</TableCell>
-										<TableCell>
-											{l.sku?.name ?? "—"}
-										</TableCell>
-										<TableCell className="text-right">
-											{Number(l.shippedQty)}
-										</TableCell>
-									</TableRow>
-								))}
-								{shipment.lines.length === 0 && (
-									<TableRow>
-										<TableCell
-											colSpan={3}
-											className="text-center text-muted-foreground py-4"
-										>
-											No lines yet.
-										</TableCell>
-									</TableRow>
-								)}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
-			</div>
+			<Card className="border rounded-2xl">
+				<CardHeader className="pb-3">
+					<CardTitle className="text-base">Shipment Info</CardTitle>
+				</CardHeader>
+				<CardContent className="grid gap-2 text-sm">
+					<div className="flex justify-between">
+						<span className="text-muted-foreground">Warehouse</span>
+						<span className="font-medium">
+							{shipment.warehouse?.name ?? "—"}
+						</span>
+					</div>
+					<div className="flex justify-between">
+						<span className="text-muted-foreground">Sales Order</span>
+						<span>
+							{shipment.salesOrder ? (
+								<Link
+									href={`/app/orders/outbound/${shipment.salesOrder.id}`}
+									className="underline text-primary"
+								>
+									{shipment.salesOrder.orderNumber}
+								</Link>
+							) : (
+								"—"
+							)}
+						</span>
+					</div>
+					<div className="flex justify-between">
+						<span className="text-muted-foreground">Customer</span>
+						<span>
+							{shipment.salesOrder?.customer?.name ?? "—"}
+						</span>
+					</div>
+					<div className="flex justify-between">
+						<span className="text-muted-foreground">Carrier</span>
+						<span>{shipment.carrier ?? "—"}</span>
+					</div>
+					<div className="flex justify-between">
+						<span className="text-muted-foreground">Tracking #</span>
+						<span className="font-mono text-xs">
+							{shipment.trackingNumber ?? "—"}
+						</span>
+					</div>
+					<div className="flex justify-between">
+						<span className="text-muted-foreground">Shipped At</span>
+						<span>
+							{shipment.shippedAt
+								? new Date(shipment.shippedAt).toLocaleString()
+								: "—"}
+						</span>
+					</div>
+				</CardContent>
+			</Card>
 		</div>
 	);
 }

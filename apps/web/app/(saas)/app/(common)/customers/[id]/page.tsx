@@ -38,6 +38,8 @@ const WEEK_DAYS: Weekday[] = [
 	"Sunday",
 ];
 
+const DEFAULT_YEARLY_DATE = `${new Date().getFullYear()}-01-01`;
+
 export default function CustomerDetailPage() {
 	const params = useParams();
 	const customerId = params.id as string;
@@ -56,7 +58,7 @@ export default function CustomerDetailPage() {
 	const [deliveryNotes, setDeliveryNotes] = useState("");
 	const [monthlyDay, setMonthlyDay] = useState("1");
 	const [quarterlyMonth, setQuarterlyMonth] = useState("q1-first-month");
-	const [yearlyDate, setYearlyDate] = useState("2026-01-15");
+	const [yearlyDate, setYearlyDate] = useState(DEFAULT_YEARLY_DATE);
 
 	const [customAttributes, setCustomAttributes] = useState<
 		Record<string, string>
@@ -144,14 +146,14 @@ export default function CustomerDetailPage() {
 		setCustomerEmail(customer.email ?? "");
 		setCustomerPhone(customer.phone ?? "");
 		setCustomerNotes(customer.notes ?? "");
-		setIsWholesaler(customer.isWholesaler);
+		setIsWholesaler(customer.type === "WHOLESALE");
 
 		const metadata = readCustomerMetadata(customer.metadata);
 		setDeliveryNotes(metadata.deliveryNotes);
 		setScheduleMode((metadata.scheduleMode as ScheduleMode) || "weekly");
 		setMonthlyDay(metadata.monthlyDay || "1");
 		setQuarterlyMonth(metadata.quarterlyMonth || "q1-first-month");
-		setYearlyDate(metadata.yearlyDate || "2026-01-15");
+		setYearlyDate(metadata.yearlyDate || DEFAULT_YEARLY_DATE);
 
 		const raw = customer.metadata as Record<string, unknown> | null;
 		if (
