@@ -92,8 +92,10 @@ export const getDashboardAnalyticsProcedure = protectedProcedure
 			input.organizationId,
 			context.user.id,
 		);
-		const { organizationId } = input;
+		return fetchDashboardAnalytics(input.organizationId);
+	});
 
+export async function fetchDashboardAnalytics(organizationId: string) {
 		// ── Run all analytics queries in parallel ──────────────────────────────
 
 		const [
@@ -793,4 +795,4 @@ export const getDashboardAnalyticsProcedure = protectedProcedure
 				},
 			},
 		};
-	});
+}
