@@ -5,10 +5,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { CostOfDelayTicker } from "./components/cost-of-delay-ticker";
 import { FinancialLedger } from "./components/financial-ledger";
 import { GeospatialMap } from "./components/geospatial-map";
+import { InboundOutboundTimeline } from "./components/inbound-outbound-timeline";
 import { KpiSummary } from "./components/kpi-summary";
 import { OperationsMetrics } from "./components/operations-metrics";
 import { OutlierInsights } from "./components/outlier-insights";
 import { PredictiveAlerts } from "./components/predictive-alerts";
+import { SkuInvestmentQuadrant } from "./components/sku-investment-quadrant";
 
 export default function AnalyticsDashboardPage() {
 	const { organization } = useSession();
@@ -24,14 +26,16 @@ export default function AnalyticsDashboardPage() {
 						Analytics & Control Tower
 					</h1>
 					<p className="text-sm text-muted-foreground sm:text-base">
-						Real-time supply chain intelligence, outlier detection,
-						and financial ledgers.
+						Real-time supply chain intelligence, flow trends, SKU
+						capital allocation, and financial ledgers.
 					</p>
 				</div>
 
 				<CostOfDelayTicker organizationId={organizationId} />
 
 				<KpiSummary organizationId={organizationId} />
+
+				<InboundOutboundTimeline organizationId={organizationId} />
 
 				<OutlierInsights organizationId={organizationId} />
 
@@ -71,7 +75,8 @@ export default function AnalyticsDashboardPage() {
 						</div>
 					</TabsContent>
 
-					<TabsContent value="performance" className="flex-none">
+					<TabsContent value="performance" className="flex-none space-y-4">
+						<SkuInvestmentQuadrant organizationId={organizationId} />
 						<OperationsMetrics organizationId={organizationId} />
 					</TabsContent>
 
